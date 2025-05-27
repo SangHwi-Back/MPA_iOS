@@ -8,7 +8,7 @@
 import XCTest
 
 final class MyLocalMarketiOSUITestsLaunchTests: XCTestCase {
-
+    // swiftlint:disable:next static_over_final_class
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }

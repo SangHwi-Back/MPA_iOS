@@ -8,11 +8,10 @@
 import Foundation
 import SwiftUICore
 
-protocol UseCases where R: RepositoryProtocol, N: NetworkProtocol {
-    associatedtype R
-    associatedtype N
+protocol UseCases where Repo: RepositoryProtocol, Net: NetworkProtocol {
+    associatedtype Repo
+    associatedtype Net
     
-    var repository: R { get }
-    var network: N { get }
+    var repository: Repo { get }
+    var network: Net { get }
 }
-

@@ -12,7 +12,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Product]
     
-    private func DateText(date: Date?) -> Text {
+    private func contentDateText(_ date: Date?) -> Text {
         if let date {
             Text("Item at \(date, format: Date.FormatStyle(date: .numeric, time: .standard))")
         } else {
@@ -20,13 +20,13 @@ struct ContentView: View {
         }
     }
     
-    private var Contents: some View {
+    private var contentViewContents: some View {
         List {
             ForEach(items) { item in
                 NavigationLink {
-                    DateText(date: item.date)
+                    contentDateText(item.date)
                 } label: {
-                    DateText(date: item.date)
+                    contentDateText(item.date)
                 }
             }
             .onDelete(perform: deleteItems)
@@ -60,14 +60,20 @@ struct ContentView: View {
     // MARK: - BODY
     var body: some View {
         NavigationSplitView {
-            Contents
+            contentViewContents
         } detail: {
             Text("Select an item")
         }
     }
 }
 
-fileprivate struct ToolBar: ViewModifier {
+private extension View {
+    func addEditAndAddToolBar(_ addItem: @escaping () -> Void) -> some View {
+        return modifier(ToolBar(addItem: addItem))
+    }
+}
+
+private struct ToolBar: ViewModifier {
     var addItem: () -> Void
     func body(content: Content) -> some View {
         content
@@ -81,12 +87,6 @@ fileprivate struct ToolBar: ViewModifier {
                     }
                 }
             }
-    }
-}
-
-private extension View {
-    func addEditAndAddToolBar(_ addItem: @escaping () -> Void) -> some View {
-        return modifier(ToolBar(addItem: addItem))
     }
 }
 

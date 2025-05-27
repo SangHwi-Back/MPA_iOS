@@ -13,7 +13,7 @@ struct MyLocalMarketiOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.productViewModel, Persistence.CacheContainer)
+                .environment(\.productViewModel, ProductViewModel.defaultValue)
         }
         .modelContainer(Persistence.CacheContainer)
     }

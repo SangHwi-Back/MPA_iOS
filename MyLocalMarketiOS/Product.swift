@@ -22,7 +22,16 @@ final class Product {
     var createdAt: String
     var updatedAt: String?
     
-    init(id: Int, name: String, desc: String, price: UInt, stock: UInt, images: [String], createdAt: String, updatedAt: String?) {
+    init(
+        id: Int,
+        name: String,
+        desc: String,
+        price: UInt,
+        stock: UInt,
+        images: [String],
+        createdAt: String,
+        updatedAt: String?
+    ) {
         self.id = id
         self.name = name
         self.desc = desc

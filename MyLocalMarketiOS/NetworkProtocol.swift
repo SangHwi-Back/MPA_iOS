@@ -17,8 +17,9 @@ extension NetworkProtocol {
         return Task {
             return try await withCheckedThrowingContinuation { continuation in
                 // Handle the response
-                let task = URLSession.shared.uploadTask(with: URLRequest(url: url), from: data) { data, response, error in
-                    if let error = error {
+                let request = URLRequest(url: url)
+                let task = URLSession.shared.uploadTask(with: request, from: data) { data, response, error in
+                    if error != nil {
                         continuation.resume(throwing: NetworkError.internalServerError)
                         return
                     }
@@ -56,7 +57,7 @@ extension NetworkProtocol {
         return Task {
             return try await withCheckedThrowingContinuation { continuation in
                 let task = URLSession.shared.dataTask(with: url) { data, response, error in
-                    if let error = error {
+                    if error != nil {
                         continuation.resume(throwing: NetworkError.internalServerError)
                         return
                     }

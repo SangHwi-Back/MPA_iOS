@@ -12,6 +12,7 @@
 		1B57CAD62DE555D60002249D /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1B57CAD52DE555D60002249D /* Config.xcconfig */; };
 		1B57CAD72DE555D60002249D /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1B57CAD52DE555D60002249D /* Config.xcconfig */; };
 		1B57CAD82DE555D60002249D /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1B57CAD52DE555D60002249D /* Config.xcconfig */; };
+		1B57CC632DE5D2350002249D /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 1B57CC622DE5D22E0002249D /* .swiftlint.yml */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +39,7 @@
 		1B57CACE2DE553C50002249D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		1B57CAD12DE5552F0002249D /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		1B57CAD52DE555D60002249D /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		1B57CC622DE5D22E0002249D /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -86,6 +88,7 @@
 		1B57CA852DE54F0E0002249D = {
 			isa = PBXGroup;
 			children = (
+				1B57CC622DE5D22E0002249D /* .swiftlint.yml */,
 				1B57CACE2DE553C50002249D /* README.md */,
 				1B57CAD12DE5552F0002249D /* .gitignore */,
 				1B57CAD52DE555D60002249D /* Config.xcconfig */,
@@ -114,6 +117,7 @@
 			buildConfigurationList = 1B57CAB42DE54F100002249D /* Build configuration list for PBXNativeTarget "MyLocalMarketiOS" */;
 			buildPhases = (
 				1B57CA8A2DE54F0E0002249D /* Sources */,
+				1B57CC602DE5D0130002249D /* Run SwiftLint */,
 				1B57CA8B2DE54F0E0002249D /* Frameworks */,
 				1B57CA8C2DE54F0E0002249D /* Resources */,
 			);
@@ -209,6 +213,9 @@
 			);
 			mainGroup = 1B57CA852DE54F0E0002249D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1B57CC612DE5D0280002249D /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1B57CA8F2DE54F0E0002249D /* Products */;
 			projectDirPath = "";
@@ -226,6 +233,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B57CC632DE5D2350002249D /* .swiftlint.yml in Resources */,
 				1B57CAD22DE555300002249D /* .gitignore in Resources */,
 				1B57CACF2DE553C50002249D /* README.md in Resources */,
 				1B57CAD62DE555D60002249D /* Config.xcconfig in Resources */,
@@ -249,6 +257,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		1B57CC602DE5D0130002249D /* Run SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Run SwiftLint";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swiftlint >/dev/null; then\n  swiftlint > \"${BUILT_PRODUCTS_DIR}/swiftlint.log\"\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1B57CA8A2DE54F0E0002249D /* Sources */ = {
@@ -417,6 +446,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"MyLocalMarketiOS/Preview Content\"";
 				DEVELOPMENT_TEAM = L3ZPWB4HNK;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -446,6 +476,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"MyLocalMarketiOS/Preview Content\"";
 				DEVELOPMENT_TEAM = L3ZPWB4HNK;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -577,6 +608,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1B57CC612DE5D0280002249D /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SimplyDanny/SwiftLintPlugins";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.59.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = 1B57CA862DE54F0E0002249D /* Project object */;
 }

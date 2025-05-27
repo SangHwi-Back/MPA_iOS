@@ -11,7 +11,7 @@ import SwiftData
 class Persistence {
     static var CacheContainer: ModelContainer = {
         let schema = Schema([
-            Product.self,
+            Product.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         
