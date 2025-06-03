@@ -1,14 +1,14 @@
 //
-//  MyLocalMarketiOSUITestsLaunchTests.swift
-//  MyLocalMarketiOSUITests
+//  MPA_iosUITestsLaunchTests.swift
+//  MPA_iosUITests
 //
-//  Created by 백상휘 on 5/27/25.
+//  Created by 백상휘 on 6/3/25.
 //
 
 import XCTest
 
-final class MyLocalMarketiOSUITestsLaunchTests: XCTestCase {
-    // swiftlint:disable:next static_over_final_class
+final class MPA_iosUITestsLaunchTests: XCTestCase {
+
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
@@ -21,7 +21,10 @@ final class MyLocalMarketiOSUITestsLaunchTests: XCTestCase {
     func testLaunch() throws {
         let app = XCUIApplication()
         app.launch()
-        
+
+        // Insert steps here to perform after app launch but before taking a screenshot,
+        // such as logging into a test account or navigating somewhere in the app
+
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"
         attachment.lifetime = .keepAlways

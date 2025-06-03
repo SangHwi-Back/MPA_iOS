@@ -1,15 +1,15 @@
 //
-//  MyLocalMarketiOSApp.swift
-//  MyLocalMarketiOS
+//  MPA_iosApp.swift
+//  MPA_ios
 //
-//  Created by 백상휘 on 5/27/25.
+//  Created by 백상휘 on 6/3/25.
 //
 
 import SwiftUI
 import SwiftData
 
 @main
-struct MyLocalMarketiOSApp: App {
+struct MPA_iosApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

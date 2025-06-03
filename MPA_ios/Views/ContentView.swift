@@ -34,6 +34,17 @@ struct ContentView: View {
         .addEditAndAddToolBar(addItem)
     }
     
+    // MARK: - BODY
+    var body: some View {
+        NavigationSplitView {
+            contentViewContents
+        } detail: {
+            Text("")
+        }
+    }
+}
+
+private extension ContentView {
     private func addItem() {
         withAnimation {
             let newItem = Product(
@@ -54,15 +65,6 @@ struct ContentView: View {
             for index in offsets {
                 modelContext.delete(items[index])
             }
-        }
-    }
-    
-    // MARK: - BODY
-    var body: some View {
-        NavigationSplitView {
-            contentViewContents
-        } detail: {
-            Text("Select an item")
         }
     }
 }
