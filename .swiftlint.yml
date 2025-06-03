@@ -11,12 +11,12 @@ opt_in_rules:
   - file_header
 
 included:
-  - MyLocalMarketiOS
-  - MyLocalMarketiOSTests
-  - MyLocalMarketiOSUITests
+  - MPA_ios
+  - MPA_iosTests
+  - MPA_iosUITests
 
 excluded:
-  - MyLocalMarketiOS/Common/GeneratedAssets
+  - MPA_ios/Common/GeneratedAssets
 
 force_cast: warning
 force_try:
