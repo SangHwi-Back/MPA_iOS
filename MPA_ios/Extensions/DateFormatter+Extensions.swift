@@ -14,3 +14,15 @@ extension ISO8601DateFormatter {
         return formatter
     }()
 }
+
+extension DateFormatter {
+    static let common: DateFormatter = {
+        #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+#else
+        return ISO8601DateFormatter.common
+#endif
+    }()
+}

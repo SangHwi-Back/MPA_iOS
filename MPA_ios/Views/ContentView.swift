@@ -36,10 +36,11 @@ struct ContentView: View {
     
     // MARK: - BODY
     var body: some View {
+        // TODO: iOS -> NavigationStackView, iPadOS -> NavigationSplitView
         NavigationSplitView {
             contentViewContents
         } detail: {
-            Text("")
+            MainView()
         }
     }
 }
@@ -77,9 +78,24 @@ private extension View {
 
 private struct ToolBar: ViewModifier {
     var addItem: () -> Void
+    
+    private let menuItems = ContextMenu {
+        Button("Show Calendar") {
+            // TODO: Show Calendar modal
+            print("Calendar")
+        }
+    }
+    
     func body(content: Content) -> some View {
         content
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Image(systemName: "calendar")
+                        .contextMenu(menuItems)
+                }
+                #endif
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     EditButton()
                 }
