@@ -9,6 +9,11 @@ import SwiftUI
 
 struct MainView: View {
     @State var replay: Bool = true
+    let bottomView: () -> AnyView
+    
+    init(@ViewBuilder content: @escaping () -> some View = { EmptyView() }) {
+        self.bottomView = { AnyView(content()) }
+    }
     
     var titleTextView: some View {
         ZStack {
@@ -25,13 +30,18 @@ struct MainView: View {
     var body: some View {
         VStack {
             titleTextView
+            
             BubbleView()
                 .padding(.horizontal, 20)
+            
+            bottomView()
         }
         .navigationTitle("Contents")
     }
 }
 
 #Preview {
-    MainView()
+    MainView {
+        Text("Additional Content")
+    }
 }

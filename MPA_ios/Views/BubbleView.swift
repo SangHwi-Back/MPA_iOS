@@ -26,9 +26,9 @@ struct BubbleView: View {
             } else {
                 BubbleContainerViewRepresentable(
                     bubbles: bubbles,
-                    frame: CGRect(origin: .zero, size: geo.size)
+                    frame: CGRect(origin: .zero, size: CGSize(width: geo.size.width, height: 280))
                 )
-                .frame(width: geo.size.width, height: geo.size.height)
+                .frame(width: geo.size.width, height: 280)
                 .background(Color.gray.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
@@ -79,8 +79,10 @@ class BubbleContainerView: UIView {
         for bubble in bubbles {
             let bubbleView = BubbleUIView(bubble: bubble)
             // 랜덤 위치 배치(충돌 방지용)
-            let x = CGFloat.random(in: bubble.size...(bounds.width - bubble.size))
-            let y = CGFloat.random(in: bubble.size...(bounds.height - bubble.size))
+            let enableWidth = (bounds.width - bubble.size) >= bubble.size
+            let enableHeight = (bounds.height - bubble.size) >= bubble.size
+            let x = CGFloat.random(in: enableWidth ? bubble.size...(bounds.width - bubble.size) : bubble.size...bubble.size)
+            let y = CGFloat.random(in: enableHeight ? bubble.size...(bounds.height - bubble.size) : bubble.size...bubble.size)
             bubbleView.frame = CGRect(x: x, y: y, width: bubble.size, height: bubble.size)
             addSubview(bubbleView)
             bubbleViews.append(bubbleView)
