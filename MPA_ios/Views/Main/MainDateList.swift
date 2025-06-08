@@ -12,24 +12,51 @@ struct MainDateList: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Product]
     
-    private func contentDateText(_ date: Date?) -> Text {
+    private func contentDateText(_ date: Date?) -> some View {
+        var label: Text
         if let date {
-            Text("Item at \(date, format: Date.FormatStyle(date: .numeric, time: .standard))")
+            label = Text("Item at \(date, format: Date.FormatStyle(date: .numeric, time: .standard))")
         } else {
-            Text("No Date")
+            label = Text("No Date")
         }
+        
+        return ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.1))
+            label
+        }
+        .frame(height: 60)
+    }
+    
+    private var ListContents: some View {
+        ForEach(items) { item in
+            NavigationLink {
+                contentDateText(item.date)
+            } label: {
+                contentDateText(item.date)
+            }
+            .listRowSeparator(.hidden)
+        }
+        .onDelete(perform: deleteItems)
     }
     
     var body: some View {
-        List {
-            ForEach(items) { item in
-                NavigationLink {
-                    contentDateText(item.date)
-                } label: {
-                    contentDateText(item.date)
+        Group {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+                if items.isEmpty {
+                    Color.clear
+                } else {
+                    List {
+                        ListContents
+                    }
+                    .listStyle(.plain)
+                    .listRowBackground(Color.clear)
                 }
+        } else {
+            VStack {
+                ListContents
             }
-            .onDelete(perform: deleteItems)
+        }
         }
         .addEditAndAddToolBar(addItem)
     }
@@ -69,7 +96,7 @@ private extension View {
 private struct ToolBar: ViewModifier {
     var addItem: () -> Void
     
-    private let menuItems = ContextMenu {
+    private let showCalendar = ContextMenu {
         Button("Show Calendar") {
             // TODO: Show Calendar modal
             print("Calendar")
@@ -79,12 +106,14 @@ private struct ToolBar: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarLeading) {
-                    Image(systemName: "calendar")
-                        .contextMenu(menuItems)
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Image(systemName: "calendar")
+                            .tint(.blue)
+                            .contextMenu(showCalendar)
+                            
+                    }
                 }
-                #endif
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     EditButton()

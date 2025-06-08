@@ -9,11 +9,7 @@ import SwiftUI
 
 struct MainView: View {
     @State var replay: Bool = true
-    let bottomView: () -> AnyView
-    
-    init(@ViewBuilder content: @escaping () -> some View = { EmptyView() }) {
-        self.bottomView = { AnyView(content()) }
-    }
+    @State var mainViewHeight: CGFloat = 280
     
     var titleTextView: some View {
         ZStack {
@@ -24,24 +20,21 @@ struct MainView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 55)
-        .padding(.horizontal, 20)
     }
     
     var body: some View {
         VStack {
             titleTextView
-            
-            BubbleView()
-                .padding(.horizontal, 20)
-            
-            bottomView()
+            GeometryReader { geo in
+                BubbleView(size: CGSize(width: geo.size.width, height: mainViewHeight))
+            }
+            .frame(height: mainViewHeight)
+            Spacer()
         }
         .navigationTitle("Contents")
     }
 }
 
 #Preview {
-    MainView {
-        Text("Additional Content")
-    }
+    MainView()
 }

@@ -18,20 +18,19 @@ struct BubbleView: View {
         BubbleData(text: "Four", color: .systemOrange, size: 70),
         BubbleData(text: "Five", color: .systemPurple, size: 90)
     ]
+    let size: CGSize
     
     var body: some View {
-        GeometryReader { geo in
-            if geo.size.width == 0 {
-                EmptyView()
-            } else {
-                BubbleContainerViewRepresentable(
-                    bubbles: bubbles,
-                    frame: CGRect(origin: .zero, size: CGSize(width: geo.size.width, height: 280))
-                )
-                .frame(width: geo.size.width, height: 280)
-                .background(Color.gray.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
+        if size.width == 0 {
+            EmptyView()
+        } else {
+            BubbleContainerViewRepresentable(
+                bubbles: bubbles,
+                frame: CGRect(origin: .zero, size: CGSize(width: size.width, height: 280))
+            )
+            .frame(width: size.width, height: 280)
+            .background(Color.gray.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
 }
