@@ -24,12 +24,16 @@ struct MainDateListItem: View {
                 Button {
                     print("Delete!")
                 } label: {
-                    Image(systemName: "minus")
-                        .foregroundStyle(.white)
+                    ZStack {
+                        Rectangle()
+                            .fill(Color.red)
+                            
+                        Image(systemName: "minus")
+                            .foregroundStyle(.red)
+                    }
+                    .frame(width: 50)
+                    .frame(maxHeight: .infinity)
                 }
-                .frame(width: 50)
-                .frame(maxHeight: .infinity)
-                .background(Color.red)
             }
         }
         .animation(.easeInOut, value: isSwiped)
