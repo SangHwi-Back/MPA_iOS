@@ -9,41 +9,33 @@ import SwiftUI
 import SwiftData
 
 struct MainDateList: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Product]
+    @StateObject private var model: MainDateListViewModel
     
-    private func contentDateText(_ date: Date?) -> some View {
-        var label: Text
-        if let date {
-            label = Text("Item at \(date, format: Date.FormatStyle(date: .numeric, time: .standard))")
-        } else {
-            label = Text("No Date")
-        }
-        
-        return ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.1))
-            label
-        }
-        .frame(height: 60)
+    init() {
+        let viewModel = MainDateListViewModel()
+        _model = StateObject(wrappedValue: viewModel)
     }
     
     private var ListContents: some View {
-        ForEach(items) { item in
+        ForEach(model.items) { item in
             NavigationLink {
-                contentDateText(item.date)
+                Text("Detail")
             } label: {
-                contentDateText(item.date)
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    MainDateListLabel()
+                } else {
+                    MainDateListItem(product: item)
+                }
             }
             .listRowSeparator(.hidden)
         }
-        .onDelete(perform: deleteItems)
+        .onDelete(perform: model.deleteItems)
     }
     
     var body: some View {
         Group {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-                if items.isEmpty {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                if model.items.isEmpty {
                     Color.clear
                 } else {
                     List {
@@ -52,47 +44,22 @@ struct MainDateList: View {
                     .listStyle(.plain)
                     .listRowBackground(Color.clear)
                 }
-        } else {
-            VStack {
-                ListContents
+            } else {
+                VStack {
+                    ListContents
+                }
             }
         }
-        }
-        .addEditAndAddToolBar(addItem)
+        .addEditAndAddToolBar(model.addItem)
     }
 }
-
-private extension MainDateList {
-    private func addItem() {
-        withAnimation {
-            let newItem = Product(
-                id: items.count + 1,
-                name: "New Item",
-                desc: "",
-                price: 0,
-                stock: 0,
-                images: [],
-                createdAt: ISO8601DateFormatter.common.string(from: Date()),
-                updatedAt: nil)
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
-    }
-}
-
 
 private extension View {
     func addEditAndAddToolBar(_ addItem: @escaping () -> Void) -> some View {
         return modifier(ToolBar(addItem: addItem))
     }
 }
+
 private struct ToolBar: ViewModifier {
     var addItem: () -> Void
     
@@ -115,9 +82,12 @@ private struct ToolBar: ViewModifier {
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        EditButton()
+                    }
                 }
+                
                 ToolbarItem {
                     Button(action: addItem) {
                         Label("Add Item", systemImage: "plus")
