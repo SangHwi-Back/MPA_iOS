@@ -27,22 +27,22 @@ struct MainDateListItem: View {
                     ZStack {
                         Rectangle()
                             .fill(Color.red)
-                            
+                        
                         Image(systemName: "minus")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.white)
                     }
-                    .frame(width: 50)
+                    .frame(width: 60)
                     .frame(maxHeight: .infinity)
                 }
             }
         }
         .animation(.easeInOut, value: isSwiped)
         .offset(x: swipeOffset)
-        .gesture(DragGesture()
+        .gesture(DragGesture(minimumDistance: 30, coordinateSpace: .local)
             .onChanged { gesture in
                 if gesture.translation.width < 0 {
                     swipeOffset = gesture.translation.width
-                    if swipeOffset <= -50 {
+                    if swipeOffset <= -60 {
                         isSwiped = true
                     }
                 } else {
