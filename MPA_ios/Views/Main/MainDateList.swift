@@ -17,14 +17,18 @@ struct MainDateList: View {
     }
     
     private var ListContents: some View {
-        ForEach(model.items) { item in
+        ForEach(model.items, id: \.id) { item in
             NavigationLink {
                 Text("Detail")
             } label: {
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     MainDateListLabel()
                 } else {
-                    MainDateListItem(product: item)
+                    MainDateListSwipeableItem(product: item) {
+                        if let index = model.items.firstIndex(of: item) {
+                            model.deleteItems(at: IndexSet(integer: index))
+                        }
+                    }
                 }
             }
             .listRowSeparator(.hidden)
@@ -96,7 +100,6 @@ private struct ToolBar: ViewModifier {
             }
     }
 }
-
 
 #Preview {
     MainDateList()
