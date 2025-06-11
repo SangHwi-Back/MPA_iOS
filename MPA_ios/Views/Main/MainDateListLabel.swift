@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MainDateListLabel: View {
+    @State private var isPressed: Bool = false
+    
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
@@ -15,6 +17,9 @@ struct MainDateListLabel: View {
             Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
         }
         .frame(height: 60)
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .opacity(isPressed ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
     }
 }
 

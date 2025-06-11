@@ -12,9 +12,11 @@ struct MainDateListSwipeableItem: View {
     @State private var isSwiped: Bool = false
     private let product: Product
     private let onDelete: (() -> Void)?
+    let isPressed: Bool
     
-    init(product: Product, onDelete: (() -> Void)? = nil) {
+    init(product: Product, isPressed: Bool = false, onDelete: (() -> Void)? = nil) {
         self.product = product
+        self.isPressed = isPressed
         self.onDelete = onDelete
     }
     
@@ -38,6 +40,9 @@ struct MainDateListSwipeableItem: View {
                 DeleteButton
             }
         }
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .opacity(isPressed ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
         .animation(.easeInOut, value: isSwiped)
         .offset(x: swipeOffset)
         .gesture(DragGesture(minimumDistance: 30, coordinateSpace: .local)

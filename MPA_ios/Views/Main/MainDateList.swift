@@ -10,17 +10,18 @@ import SwiftData
 
 struct MainDateList: View {
     @StateObject private var model: MainDateListViewModel
+    @State private var tappedItemId: Int? = nil
+    @Binding private var path: [Product]
     
-    init() {
+    init(_ path: Binding<[Product]>) {
+        self._path = path
         let viewModel = MainDateListViewModel()
         _model = StateObject(wrappedValue: viewModel)
     }
     
     private var ListContents: some View {
         ForEach(model.items, id: \.id) { item in
-            NavigationLink {
-                Text("Detail")
-            } label: {
+            Group {
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     MainDateListLabel()
                 } else {
@@ -32,6 +33,19 @@ struct MainDateList: View {
                 }
             }
             .listRowSeparator(.hidden)
+            .scaleEffect(tappedItemId == item.id ? 0.95 : 1.0)
+            .opacity(tappedItemId == item.id ? 0.6 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: tappedItemId)
+            .onTapGesture {
+                withAnimation {
+                    tappedItemId = item.id
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        tappedItemId = nil
+                        path.append(item)
+                    }
+                }
+            }
         }
         .onDelete(perform: model.deleteItems)
     }
@@ -54,18 +68,22 @@ struct MainDateList: View {
                 }
             }
         }
-        .addEditAndAddToolBar(model.addItem)
+        .addToolbar($path)
     }
 }
 
 private extension View {
-    func addEditAndAddToolBar(_ addItem: @escaping () -> Void) -> some View {
-        return modifier(ToolBar(addItem: addItem))
+    func addToolbar(_ path: Binding<[Product]> = .constant([])) -> some View {
+        return modifier(ToolBar(path))
     }
 }
 
 private struct ToolBar: ViewModifier {
-    var addItem: () -> Void
+    @Binding private var path: [Product]
+    
+    init(_ path: Binding<[Product]>) {
+        self._path = path
+    }
     
     private let showCalendar = ContextMenu {
         Button("Show Calendar") {
@@ -93,7 +111,17 @@ private struct ToolBar: ViewModifier {
                 }
                 
                 ToolbarItem {
-                    Button(action: addItem) {
+                    Button {
+                        path.append(Product(
+                            id: -1,
+                            name: "New Item",
+                            desc: "",
+                            price: 0,
+                            stock: 0,
+                            images: [],
+                            createdAt: ISO8601DateFormatter.common.string(from: Date()),
+                            updatedAt: nil))
+                    } label: {
                         Label("Add Item", systemImage: "plus")
                     }
                 }
@@ -102,5 +130,5 @@ private struct ToolBar: ViewModifier {
 }
 
 #Preview {
-    MainDateList()
+    MainDateList(.constant([]))
 }
