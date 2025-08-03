@@ -14,8 +14,8 @@ struct MainView: View {
     var titleTextView: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.2))
-                
+                .fill(.ultraThickMaterial)
+            
             Text("Hello This is \(DateFormatter.common.string(from: Date()))")
         }
         .frame(maxWidth: .infinity)
@@ -27,11 +27,13 @@ struct MainView: View {
             titleTextView
             GeometryReader { geo in
                 BubbleView(size: CGSize(width: geo.size.width, height: mainViewHeight))
+                    .background(.ultraThinMaterial)
             }
             .frame(height: mainViewHeight)
             Spacer()
         }
         .navigationTitle("Contents")
+        
     }
 }
 

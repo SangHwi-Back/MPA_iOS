@@ -13,39 +13,28 @@ struct DailyJournalView: View {
         case title, contents
     }
     
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.journalPaths) private var journalPaths
     
-    @State private var title: String = ""
-    @State private var content: String = ""
-    @State private var selectedDate: Date = Date()
+    @Binding var model: DailyJournalViewModel
+    
     @State private var showingDatePicker = false
     
     @FocusState private var focusedField: Field?
     
-    private let existingEntry: Product?
-    private let isEditing: Bool
     private var shouldShowPlaceholder: Bool {
-        content
+        model.product.desc
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty
         && focusedField != .contents
     }
     
     private var isSubmitEnable: Bool {
-        title.isNotEmpty && content.isNotEmpty
+        model.product.name.isNotEmpty
+        && model.product.desc.isNotEmpty
     }
     
     init(entry: Product? = nil) {
-        self.existingEntry = entry
-        self.isEditing = entry != nil
-        
-        if let entry = entry {
-            _title = State(initialValue: entry.name)
-            _content = State(initialValue: entry.desc)
-            _selectedDate = State(initialValue: entry.date ?? Date())
-        }
+        self._model = .constant(.init(productId: entry?.id ?? 0))
     }
     
     private var TitleText: (String) -> Text = { text in
@@ -58,10 +47,10 @@ struct DailyJournalView: View {
         VStack(alignment: .leading, spacing: 8) {
             TitleText("Title")
             
-            TextField("Enter your journal title", text: $title)
+            TextField("Enter your journal title", text: $model.product.name)
                 .textFieldStyle(.plain)
                 .padding(16)
-                .background(Color(.systemGray6))
+                .background(.thickMaterial)
                 .localRoundedShadowed()
         }
     }
@@ -77,7 +66,7 @@ struct DailyJournalView: View {
                     Image(systemName: "calendar")
                         .foregroundColor(.blue)
                     
-                    Text(selectedDate, style: .date)
+                    Text(model.isEditMode ? model.product.createdDate : model.product.updatedDate ?? Date(), style: .date)
                         .foregroundColor(.primary)
                     
                     Spacer()
@@ -86,7 +75,7 @@ struct DailyJournalView: View {
                         .foregroundColor(.gray)
                 }
                 .padding(16)
-                .background(Color(.systemGray6))
+                .background(.thickMaterial)
                 .localRoundedShadowed()
             }
         }
@@ -94,7 +83,7 @@ struct DailyJournalView: View {
             NavigationStack {
                 DatePicker(
                     "Select Date",
-                    selection: $selectedDate,
+                    selection: $model.product.createdDate,
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
@@ -118,10 +107,10 @@ struct DailyJournalView: View {
             
             ZStack(alignment: .topLeading) {
                 
-                TextEditor(text: $content)
+                TextEditor(text: $model.product.desc)
                     .padding(12)
                     .scrollContentBackground(.hidden)
-                    .background(Color(.systemGray6))
+                    .background(.thickMaterial)
                     .localRoundedShadowed()
                     .focused($focusedField, equals: .contents)
                     .frame(minHeight: 150)
@@ -137,11 +126,8 @@ struct DailyJournalView: View {
     
     private var actionButtons: some View {
         CustomButton(
-            title: isEditing ? "Update" : "Insert",
-            backgroundColor: isSubmitEnable ? Color.blue : Color(.systemGray4),
-            action: {
-                // TODO: Save Data
-            }
+            title: model.isEditMode ? "Update" : "Insert",
+            action: model.saveItem
         )
         .disabled(!isSubmitEnable)
     }
@@ -158,7 +144,7 @@ struct DailyJournalView: View {
             }
             .padding(20)
         }
-        .navigationTitle(isEditing ? "Edit Entry" : "New Entry")
+        .navigationTitle(model.isEditMode ? "Edit Entry" : "New Entry")
         .navigationBarTitleDisplayMode(.large)
         .toolbar(content: {
             ToolbarItem(placement: .topBarTrailing) {
@@ -178,8 +164,14 @@ struct DailyJournalView: View {
 
 private struct CustomButton: View {
     let title: String
-    let backgroundColor: Color
+    let backgroundColor: Color?
     let action: () -> Void
+    
+    init(title: String, backgroundColor: Color? = nil, action: @escaping () -> Void) {
+        self.title = title
+        self.backgroundColor = backgroundColor
+        self.action = action
+    }
     
     var body: some View {
         Button(action: action) {
@@ -188,7 +180,12 @@ private struct CustomButton: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(16)
-                .background(backgroundColor)
+                .if(backgroundColor != nil, transform: {
+                    $0.background(backgroundColor!)
+                })
+                .if(backgroundColor == nil, transform: {
+                    $0.background(.thickMaterial)
+                })
                 .localRoundedShadowed()
         }
     }
@@ -198,7 +195,7 @@ private struct LocalRoundedShadowViewModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .cornerRadius(12)
-            .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+            .shadow(radius: 3)
     }
 }
 

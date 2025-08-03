@@ -67,6 +67,7 @@ struct MainDateList: View {
             }
         }
         .addToolbar(model)
+        .background(.ultraThinMaterial)
     }
 }
 
@@ -105,6 +106,7 @@ private struct ToolBar: ViewModifier {
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         EditButton()
+                            .background(.regularMaterial, ignoresSafeAreaEdges: .horizontal)
                     }
                 }
                 
@@ -112,7 +114,8 @@ private struct ToolBar: ViewModifier {
                     ButtonWithAnimate {
                         model.tappedToolbarAddItem()
                     } label: {
-                        Label("Add Item", systemImage: "plus")
+                        Image(systemName: "plus")
+                            .foregroundColor(.primary)
                     }
                 }
             }

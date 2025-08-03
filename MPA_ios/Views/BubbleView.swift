@@ -29,7 +29,7 @@ struct BubbleView: View {
                 frame: CGRect(origin: .zero, size: CGSize(width: size.width, height: 280))
             )
             .frame(width: size.width, height: 280)
-            .background(Color.gray.opacity(0.1))
+            .background(.ultraThickMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
@@ -67,7 +67,7 @@ class BubbleContainerView: UIView {
     init(frame: CGRect, bubbles: [BubbleData]) {
         self.bubbles = bubbles
         super.init(frame: frame)
-        backgroundColor = .clear
+        backgroundColor = UIColor.systemBackground.withAlphaComponent(0.1)
         setupBubbles()
         setupPhysics()
     }

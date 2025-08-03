@@ -27,15 +27,7 @@ class MainDateListViewModel: ObservableObject {
     
     @discardableResult
     func addItem() -> Product {
-        let newItem = Product(
-            id: items.count + 1,
-            name: "New Item",
-            desc: "",
-            price: 0,
-            stock: 0,
-            images: [],
-            createdAt: ISO8601DateFormatter.common.string(from: Date()),
-            updatedAt: nil)
+        let newItem = Product(id: items.count + 1)
         modelContext.insert(newItem)
         
         fetchItems()
@@ -77,15 +69,7 @@ class MainDateListViewModel: ObservableObject {
     }
     
     func tappedToolbarAddItem() {
-        navigationPath.append(Product(
-            id: items.count + 1,
-            name: "New Item",
-            desc: "",
-            price: 0,
-            stock: 0,
-            images: [],
-            createdAt: ISO8601DateFormatter.common.string(from: Date()),
-            updatedAt: nil))
+        navigationPath.append(Product(id: items.count + 1))
     }
     
     enum MainDateLocalError {

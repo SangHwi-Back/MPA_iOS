@@ -12,8 +12,12 @@ struct MainDateListLabel: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.1), style: .init(eoFill: true, antialiased: true))
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                }
             Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
         }
         .frame(height: 60)

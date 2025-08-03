@@ -27,6 +27,19 @@ struct ButtonWithAnimate<Label: View>: View {
             withAnimation(animation) {
                 action()
             }
-        }, label: label)
+        }, label: {
+            label()
+                .padding(4)
+                .background(
+                    Circle()
+                        .fill(.regularMaterial)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                        )
+                )
+            
+        })
+        .buttonStyle(PlainButtonStyle())
     }
 }
