@@ -11,11 +11,9 @@ import SwiftData
 struct MainDateList: View {
     @StateObject private var model: MainDateListViewModel
     @State private var tappedItemId: Int? = nil
-    @Binding private var path: [Product]
     
     init(_ path: Binding<[Product]>) {
-        self._path = path
-        let viewModel = MainDateListViewModel()
+        let viewModel = MainDateListViewModel(navigationPath: path)
         _model = StateObject(wrappedValue: viewModel)
     }
     
@@ -26,8 +24,10 @@ struct MainDateList: View {
                     MainDateListLabel()
                 } else {
                     MainDateListSwipeableItem(product: item) {
-                        if let index = model.items.firstIndex(of: item) {
-                            model.deleteItems(at: IndexSet(integer: index))
+                        withAnimation {
+                            if let index = model.items.firstIndex(of: item) {
+                                model.deleteItems(at: IndexSet(integer: index))
+                            }
                         }
                     }
                 }
@@ -39,10 +39,10 @@ struct MainDateList: View {
             .onTapGesture {
                 withAnimation {
                     tappedItemId = item.id
+                    model.tappedList(item.id)
                     
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                         tappedItemId = nil
-                        path.append(item)
                     }
                 }
             }
@@ -59,8 +59,6 @@ struct MainDateList: View {
                     List {
                         ListContents
                     }
-                    .listStyle(.plain)
-                    .listRowBackground(Color.clear)
                 }
             } else {
                 VStack {
@@ -68,21 +66,21 @@ struct MainDateList: View {
                 }
             }
         }
-        .addToolbar($path)
+        .addToolbar(model)
     }
 }
 
 private extension View {
-    func addToolbar(_ path: Binding<[Product]> = .constant([])) -> some View {
-        return modifier(ToolBar(path))
+    func addToolbar(_ model: MainDateListViewModel) -> some View {
+        return modifier(ToolBar(model))
     }
 }
 
 private struct ToolBar: ViewModifier {
-    @Binding private var path: [Product]
+    private var model: MainDateListViewModel
     
-    init(_ path: Binding<[Product]>) {
-        self._path = path
+    init(_ model: MainDateListViewModel) {
+        self.model = model
     }
     
     private let showCalendar = ContextMenu {
@@ -111,16 +109,8 @@ private struct ToolBar: ViewModifier {
                 }
                 
                 ToolbarItem {
-                    Button {
-                        path.append(Product(
-                            id: -1,
-                            name: "New Item",
-                            desc: "",
-                            price: 0,
-                            stock: 0,
-                            images: [],
-                            createdAt: ISO8601DateFormatter.common.string(from: Date()),
-                            updatedAt: nil))
+                    ButtonWithAnimate {
+                        model.tappedToolbarAddItem()
                     } label: {
                         Label("Add Item", systemImage: "plus")
                     }

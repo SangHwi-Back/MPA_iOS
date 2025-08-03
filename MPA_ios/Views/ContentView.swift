@@ -23,6 +23,7 @@ struct ContentView: View {
                 }
                 .navigationDestination(for: Product.self) { _ in
                     DailyJournalView()
+                        .environment(\.journalPaths, path)
                 }
             }
         } else {
@@ -35,6 +36,7 @@ struct ContentView: View {
                 .padding(.horizontal, 20)
                 .navigationDestination(for: Product.self) { _ in
                     DailyJournalView()
+                        .environment(\.journalPaths, path)
                 }
             }
         }

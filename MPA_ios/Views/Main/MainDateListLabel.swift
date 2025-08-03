@@ -13,7 +13,7 @@ struct MainDateListLabel: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.1))
+                .fill(Color.gray.opacity(0.1), style: .init(eoFill: true, antialiased: true))
             Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
         }
         .frame(height: 60)

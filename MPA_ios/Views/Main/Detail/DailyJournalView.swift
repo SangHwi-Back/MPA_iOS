@@ -15,6 +15,7 @@ struct DailyJournalView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.journalPaths) private var journalPaths
     
     @State private var title: String = ""
     @State private var content: String = ""
@@ -25,6 +26,16 @@ struct DailyJournalView: View {
     
     private let existingEntry: Product?
     private let isEditing: Bool
+    private var shouldShowPlaceholder: Bool {
+        content
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
+        && focusedField != .contents
+    }
+    
+    private var isSubmitEnable: Bool {
+        title.isNotEmpty && content.isNotEmpty
+    }
     
     init(entry: Product? = nil) {
         self.existingEntry = entry
@@ -37,26 +48,27 @@ struct DailyJournalView: View {
         }
     }
     
+    private var TitleText: (String) -> Text = { text in
+        Text(text)
+            .font(.headline)
+            .foregroundColor(.primary)
+    }
+    
     private var titleField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Title")
-                .font(.headline)
-                .foregroundColor(.primary)
+            TitleText("Title")
             
             TextField("Enter your journal title", text: $title)
                 .textFieldStyle(.plain)
                 .padding(16)
                 .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                .localRoundedShadowed()
         }
     }
     
     private var dateSelector: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Date")
-                .font(.headline)
-                .foregroundColor(.primary)
+            TitleText("Date")
             
             Button {
                 showingDatePicker = true
@@ -75,8 +87,7 @@ struct DailyJournalView: View {
                 }
                 .padding(16)
                 .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                .localRoundedShadowed()
             }
         }
         .sheet(isPresented: $showingDatePicker) {
@@ -103,9 +114,7 @@ struct DailyJournalView: View {
     
     private var contentEditor: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Content")
-                .font(.headline)
-                .foregroundColor(.primary)
+            TitleText("Content")
             
             ZStack(alignment: .topLeading) {
                 
@@ -113,37 +122,31 @@ struct DailyJournalView: View {
                     .padding(12)
                     .scrollContentBackground(.hidden)
                     .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    .frame(minHeight: 150)
+                    .localRoundedShadowed()
                     .focused($focusedField, equals: .contents)
+                    .frame(minHeight: 150)
                 
-                if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && focusedField != .contents {
+                if shouldShowPlaceholder {
                     Text("Write about your day...")
                         .foregroundColor(.gray)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                 }
             }
         }
     }
     
     private var actionButtons: some View {
-        HStack(spacing: 16) {
-            CustomButton(title: "Cancel", backgroundColor: Color(.systemGray5), action: {
-                dismiss()
-            })
-            
-            CustomButton(
-                title: isEditing ? "Update" : "Insert",
-                backgroundColor: title.isEmpty || content.isEmpty ? Color.gray : Color.blue,
-                action: {
-                    // TODO: Save Data
-                }
-            )
-            .disabled(title.isEmpty || content.isEmpty)
-        }
+        CustomButton(
+            title: isEditing ? "Update" : "Insert",
+            backgroundColor: isSubmitEnable ? Color.blue : Color(.systemGray4),
+            action: {
+                // TODO: Save Data
+            }
+        )
+        .disabled(!isSubmitEnable)
     }
+    
+    static let nonMutableDependency = 5
     
     var body: some View {
         ScrollView {
@@ -157,6 +160,16 @@ struct DailyJournalView: View {
         }
         .navigationTitle(isEditing ? "Edit Entry" : "New Entry")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar(content: {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(Color(.systemGray3))
+                }
+            }
+        })
         .onTapGesture {
             focusedField = nil
         }
@@ -176,12 +189,25 @@ private struct CustomButton: View {
                 .frame(maxWidth: .infinity)
                 .padding(16)
                 .background(backgroundColor)
-                .cornerRadius(12)
-                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                .localRoundedShadowed()
         }
+    }
+}
+
+private struct LocalRoundedShadowViewModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+    }
+}
+
+private extension View {
+    func localRoundedShadowed() -> some View {
+        modifier(LocalRoundedShadowViewModifier())
     }
 }
 
 #Preview {
     DailyJournalView()
-} 
+}

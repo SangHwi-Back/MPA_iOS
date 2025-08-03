@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftData
-import SwiftUICore
+import SwiftUI
 
 class ProductViewModel: ObservableObject {
     let context: ModelContext
