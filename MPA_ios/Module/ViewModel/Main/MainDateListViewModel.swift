@@ -77,8 +77,15 @@ class MainDateListViewModel: ObservableObject {
     }
     
     func tappedToolbarAddItem() {
-        let newItem = addItem()
-        tappedList(newItem.id)
+        navigationPath.append(Product(
+            id: items.count + 1,
+            name: "New Item",
+            desc: "",
+            price: 0,
+            stock: 0,
+            images: [],
+            createdAt: ISO8601DateFormatter.common.string(from: Date()),
+            updatedAt: nil))
     }
     
     enum MainDateLocalError {
