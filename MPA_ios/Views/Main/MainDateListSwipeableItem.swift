@@ -25,10 +25,13 @@ struct MainDateListSwipeableItem: View {
             onDelete?()
         } label: {
             ZStack {
-                Rectangle().fill(Color.red)
-                Image(systemName: "minus").foregroundStyle(.white)
+                RoundedRectangle(cornerRadius: 30).fill(Color.clear)
+                    .frame(width: 60).frame(maxHeight: .infinity)
+                Image(systemName: "minus")
+                    .resizable()
+                    .foregroundStyle(.clear)
+                    .frame(width: 60).frame(maxHeight: .infinity)
             }
-            .frame(width: 60).frame(maxHeight: .infinity)
         }
     }
     

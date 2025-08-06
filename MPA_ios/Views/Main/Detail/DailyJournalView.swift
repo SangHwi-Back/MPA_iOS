@@ -50,8 +50,8 @@ struct DailyJournalView: View {
             TextField("Enter your journal title", text: $model.product.name)
                 .textFieldStyle(.plain)
                 .padding(16)
-                .background(.thickMaterial)
-                .localRoundedShadowed()
+                .glassEffect()
+                .shadow(radius: 3)
         }
     }
     
@@ -75,8 +75,8 @@ struct DailyJournalView: View {
                         .foregroundColor(.gray)
                 }
                 .padding(16)
-                .background(.thickMaterial)
-                .localRoundedShadowed()
+                .glassEffect()
+                .shadow(radius: 3)
             }
         }
         .sheet(isPresented: $showingDatePicker) {
@@ -110,8 +110,8 @@ struct DailyJournalView: View {
                 TextEditor(text: $model.product.desc)
                     .padding(12)
                     .scrollContentBackground(.hidden)
-                    .background(.thickMaterial)
-                    .localRoundedShadowed()
+                    .glassEffect(in: .rect(cornerRadius: 12))
+                    .shadow(radius: 3)
                     .focused($focusedField, equals: .contents)
                     .frame(minHeight: 150)
                 
@@ -146,6 +146,7 @@ struct DailyJournalView: View {
         }
         .navigationTitle(model.isEditMode ? "Edit Entry" : "New Entry")
         .navigationBarTitleDisplayMode(.large)
+        .scrollDismissesKeyboard(.immediately)
         .toolbar(content: {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -184,24 +185,10 @@ private struct CustomButton: View {
                     $0.background(backgroundColor!)
                 })
                 .if(backgroundColor == nil, transform: {
-                    $0.background(.thickMaterial)
+                    $0.glassEffect()
                 })
-                .localRoundedShadowed()
+                .shadow(radius: 3)
         }
-    }
-}
-
-private struct LocalRoundedShadowViewModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .cornerRadius(12)
-            .shadow(radius: 3)
-    }
-}
-
-private extension View {
-    func localRoundedShadowed() -> some View {
-        modifier(LocalRoundedShadowViewModifier())
     }
 }
 

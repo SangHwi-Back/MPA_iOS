@@ -59,15 +59,16 @@ struct MainDateList: View {
                     List {
                         ListContents
                     }
+                    .glassEffect()
                 }
             } else {
                 VStack {
                     ListContents
                 }
+                .glassEffect()
             }
         }
         .addToolbar(model)
-        .background(.ultraThinMaterial)
     }
 }
 
@@ -104,18 +105,18 @@ private struct ToolBar: ViewModifier {
                 }
                 
                 if UIDevice.current.userInterfaceIdiom == .pad {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: .topBarLeading) {
                         EditButton()
-                            .background(.regularMaterial, ignoresSafeAreaEdges: .horizontal)
+                            .glassEffect()
                     }
                 }
                 
-                ToolbarItem {
+                ToolbarItem(placement: .topBarTrailing) {
                     ButtonWithAnimate {
                         model.tappedToolbarAddItem()
                     } label: {
                         Image(systemName: "plus")
-                            .foregroundColor(.primary)
+                            .frame(width: 24, height: 24)
                     }
                 }
             }
@@ -123,5 +124,7 @@ private struct ToolBar: ViewModifier {
 }
 
 #Preview {
-    MainDateList(.constant([]))
+    MainDateList(.constant([
+        Product.init(id: 0, name: "Test1", desc: "", price: 0, stock: 0, images: [], createdAt: "", updatedAt: "")
+    ]))
 }

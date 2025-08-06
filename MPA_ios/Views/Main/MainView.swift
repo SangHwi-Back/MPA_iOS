@@ -12,28 +12,18 @@ struct MainView: View {
     @State var mainViewHeight: CGFloat = 280
     
     var titleTextView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.ultraThickMaterial)
-            
-            Text("Hello This is \(DateFormatter.common.string(from: Date()))")
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 55)
+        Text("Hello This is \(DateFormatter.common.string(from: Date()))")
+            .frame(maxWidth: .infinity)
+            .frame(height: 55)
+            .glassEffect()
     }
     
     var body: some View {
-        VStack {
+        ScrollView {
             titleTextView
-            GeometryReader { geo in
-                BubbleView(size: CGSize(width: geo.size.width, height: mainViewHeight))
-                    .background(.ultraThinMaterial)
-            }
-            .frame(height: mainViewHeight)
-            Spacer()
+            BubbleView(height: mainViewHeight)
         }
         .navigationTitle("Contents")
-        
     }
 }
 

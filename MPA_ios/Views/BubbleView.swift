@@ -18,20 +18,15 @@ struct BubbleView: View {
         BubbleData(text: "Four", color: .systemOrange, size: 70),
         BubbleData(text: "Five", color: .systemPurple, size: 90)
     ]
-    let size: CGSize
+    let height: CGFloat
     
     var body: some View {
-        if size.width == 0 {
-            EmptyView()
-        } else {
-            BubbleContainerViewRepresentable(
-                bubbles: bubbles,
-                frame: CGRect(origin: .zero, size: CGSize(width: size.width, height: 280))
-            )
-            .frame(width: size.width, height: 280)
-            .background(.ultraThickMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
+        BubbleContainerViewRepresentable(
+            bubbles: bubbles,
+            frame: .zero
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
     }
 }
 
@@ -67,7 +62,14 @@ class BubbleContainerView: UIView {
     init(frame: CGRect, bubbles: [BubbleData]) {
         self.bubbles = bubbles
         super.init(frame: frame)
-        backgroundColor = UIColor.systemBackground.withAlphaComponent(0.1)
+        let effect = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
+        effect.translatesAutoresizingMaskIntoConstraints = false
+        self.addSubview(effect)
+        effect.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
+        effect.leadingAnchor.constraint(equalTo: self.leadingAnchor).isActive = true
+        effect.trailingAnchor.constraint(equalTo: self.trailingAnchor).isActive = true
+        effect.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
+        
         setupBubbles()
         setupPhysics()
     }

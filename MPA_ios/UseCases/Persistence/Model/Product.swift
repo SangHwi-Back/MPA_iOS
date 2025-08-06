@@ -67,7 +67,7 @@ final class Product {
     convenience init(id: Int) {
         self.init(
             id: id,
-            name: "New Item",
+            name: "",
             desc: "",
             price: 0,
             stock: 0,

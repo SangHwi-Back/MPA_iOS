@@ -12,21 +12,19 @@ struct MainDateListLabel: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.regularMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                }
+            RoundedRectangle(cornerRadius: 8)
+                .glassEffect()
             Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
         }
         .frame(height: 60)
-        .scaleEffect(isPressed ? 0.95 : 1.0)
-        .opacity(isPressed ? 0.8 : 1.0)
+//        .scaleEffect(isPressed ? 0.95 : 1.0)
         .animation(.easeInOut(duration: 0.1), value: isPressed)
     }
 }
 
 #Preview {
-    MainDateListLabel()
+    ScrollView {
+        MainDateListLabel()
+    }
+    .background(Color.red.opacity(0.8))
 }

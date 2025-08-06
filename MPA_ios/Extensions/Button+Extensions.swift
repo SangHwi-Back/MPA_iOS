@@ -28,18 +28,12 @@ struct ButtonWithAnimate<Label: View>: View {
                 action()
             }
         }, label: {
-            label()
-                .padding(4)
-                .background(
-                    Circle()
-                        .fill(.regularMaterial)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.25), lineWidth: 1)
-                        )
-                )
-            
+            Circle()
+                .stroke(Color.white, lineWidth: 1, antialiased: true)
+                .background(content: {
+                    label().padding(4)
+                })
+                .glassEffect()
         })
-        .buttonStyle(PlainButtonStyle())
     }
 }
