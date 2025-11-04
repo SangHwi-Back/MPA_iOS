@@ -17,6 +17,10 @@ class DailyJournalViewModel: ObservableObject {
     @Environment(\.journalPaths) private var journalPaths
     @Binding var product: Product
     
+    var confirmButtonEnabled: Bool {
+        product.name.isEmpty.not && product.desc.isEmpty.not
+    }
+    
     init(productId: Int) {
         modelContext = Persistence.CacheContainer.mainContext
         

@@ -49,6 +49,7 @@ struct DailyJournalView: View {
             TitleText("Title")
             
             TextField("Enter your journal title", text: $model.product.name)
+                .focused($focusedField, equals: .title)
                 .textFieldStyle(.plain)
                 .padding(16)
                 .glassEffect()
@@ -125,26 +126,21 @@ struct DailyJournalView: View {
         }
     }
     
-    private var actionButtons: some View {
-        CustomButton(
-            title: model.isEditMode ? "Update" : "Insert",
-            action: {
-                model.saveItem()
-                dismiss()
-            }
-        )
-        .disabled(!isSubmitEnable)
-    }
-    
-    static let nonMutableDependency = 5
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 titleField
                 dateSelector
                 contentEditor
-                actionButtons
+                
+                CustomButton(
+                    title: model.isEditMode ? "Update" : "Insert",
+                    enabled: model.confirmButtonEnabled,
+                    action: {
+                        model.saveItem()
+                        dismiss()
+                    }
+                )
             }
             .padding(20)
         }
@@ -160,21 +156,58 @@ struct DailyJournalView: View {
                         .foregroundStyle(Color(.systemGray3))
                 }
             }
+
+            ToolbarItemGroup(placement: .keyboard) {
+                Button { movePreviousField() } label: {
+                    Image(systemName: "chevron.up")
+                }
+                .disabled(focusedField == .title || focusedField == nil)
+
+                Button { moveNextField() } label: {
+                    Image(systemName: "chevron.down")
+                }
+                .disabled(focusedField == .contents)
+
+                Spacer()
+
+                Button("완료") {
+                    focusedField = nil
+                }
+            }
         })
         .onTapGesture {
             focusedField = nil
+        }
+    }
+    
+    private func movePreviousField() {
+        if focusedField == .title {
+            focusedField = nil
+        } else if focusedField == .contents {
+            focusedField = .title
+        }
+    }
+    
+    private func moveNextField() {
+        if focusedField == nil {
+            focusedField = .title
+        } else if focusedField == .title {
+            focusedField = .contents
         }
     }
 }
 
 private struct CustomButton: View {
     let title: String
-    let backgroundColor: Color?
+    let enabled: Bool
     let action: () -> Void
     
-    init(title: String, backgroundColor: Color? = nil, action: @escaping () -> Void) {
+    init(title: String,
+         enabled: Bool,
+         action: @escaping () -> Void
+    ) {
         self.title = title
-        self.backgroundColor = backgroundColor
+        self.enabled = enabled
         self.action = action
     }
     
@@ -185,14 +218,10 @@ private struct CustomButton: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(16)
-                .if(backgroundColor != nil, transform: {
-                    $0.background(backgroundColor!)
-                })
-                .if(backgroundColor == nil, transform: {
-                    $0.glassEffect()
-                })
-                .shadow(radius: 3)
         }
+        .glassEffect(.regular.tint(enabled ? Color.blue : Color.gray).interactive(),
+                     in: Capsule())
+        .disabled(enabled.not)
     }
 }
 
