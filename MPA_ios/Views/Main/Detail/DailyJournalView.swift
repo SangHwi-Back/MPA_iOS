@@ -34,7 +34,8 @@ struct DailyJournalView: View {
     }
     
     init(entry: Product? = nil) {
-        self._model = .constant(.init(productId: entry?.id ?? 0))
+        let vm = DailyJournalViewModel(productId: entry?.id ?? 0)
+        self._model = Binding.constant(vm)
     }
     
     private var TitleText: (String) -> Text = { text in
@@ -127,7 +128,10 @@ struct DailyJournalView: View {
     private var actionButtons: some View {
         CustomButton(
             title: model.isEditMode ? "Update" : "Insert",
-            action: model.saveItem
+            action: {
+                model.saveItem()
+                dismiss()
+            }
         )
         .disabled(!isSubmitEnable)
     }

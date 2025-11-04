@@ -8,11 +8,11 @@
 import SwiftUI
 
 extension EnvironmentValues {
-    @Entry var journalPaths: [Product] = []
+    @Entry var journalPaths: Binding<[Product]> = .constant([])
 }
 
 extension View {
-    func myCustomValue(_ str: String) -> some View {
-        environment(\.journalPaths, [])
+    func myCustomValue(_ path: Binding<[Product]>) -> some View {
+        environment(\.journalPaths, path)
     }
 }

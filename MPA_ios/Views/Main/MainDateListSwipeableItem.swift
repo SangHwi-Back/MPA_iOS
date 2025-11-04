@@ -43,9 +43,7 @@ struct MainDateListSwipeableItem: View {
                 DeleteButton
             }
         }
-        .scaleEffect(isPressed ? 0.95 : 1.0)
         .opacity(isPressed ? 0.8 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: isPressed)
         .animation(.easeInOut, value: isSwiped)
         .offset(x: swipeOffset)
         .gesture(DragGesture(minimumDistance: 30, coordinateSpace: .local)

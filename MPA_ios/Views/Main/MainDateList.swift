@@ -19,25 +19,25 @@ struct MainDateList: View {
     
     private var ListContents: some View {
         ForEach(model.items, id: \.id) { item in
-            Group {
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    MainDateListLabel()
-                } else {
-                    MainDateListSwipeableItem(product: item) {
-                        withAnimation {
-                            if let index = model.items.firstIndex(of: item) {
-                                model.deleteItems(at: IndexSet(integer: index))
-                            }
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                MainDateListLabel()
+                    .listModifier(id: item.id, tappedItemId: $tappedItemId) {
+                        tappedItemId = item.id
+                        model.tappedList(item.id)
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            tappedItemId = nil
+                        }
+                    }
+            } else {
+                MainDateListSwipeableItem(product: item) {
+                    withAnimation {
+                        if let index = model.items.firstIndex(of: item) {
+                            model.deleteItems(at: IndexSet(integer: index))
                         }
                     }
                 }
-            }
-            .listRowSeparator(.hidden)
-            .scaleEffect(tappedItemId == item.id ? 0.95 : 1.0)
-            .opacity(tappedItemId == item.id ? 0.6 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: tappedItemId)
-            .onTapGesture {
-                withAnimation {
+                .listModifier(id: item.id, tappedItemId: $tappedItemId) {
                     tappedItemId = item.id
                     model.tappedList(item.id)
                     
@@ -59,22 +59,27 @@ struct MainDateList: View {
                     List {
                         ListContents
                     }
-                    .glassEffect()
                 }
             } else {
                 VStack {
                     ListContents
                 }
-                .glassEffect()
             }
         }
         .addToolbar(model)
+        .onWillAppear {
+            model.fetchItems()
+        }
     }
 }
 
 private extension View {
     func addToolbar(_ model: MainDateListViewModel) -> some View {
         return modifier(ToolBar(model))
+    }
+    
+    func listModifier(id: Int, tappedItemId: Binding<Int?>, animationHandler: @escaping () -> Void) -> some View {
+        return modifier(ListModifier(tappedItemId: tappedItemId, id: id, animationHandler: animationHandler))
     }
 }
 
@@ -120,6 +125,76 @@ private struct ToolBar: ViewModifier {
                     }
                 }
             }
+    }
+}
+
+private struct ListModifier: ViewModifier {
+    @Binding var tappedItemId: Int?
+    var id: Int
+    var animationHandler: () -> Void
+    
+    func body(content: Content) -> some View {
+        content
+            .listRowSeparator(.hidden)
+            .scaleEffect(tappedItemId == id ? 0.95 : 1.0)
+            .opacity(tappedItemId == id ? 0.6 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: tappedItemId)
+            .onTapGesture {
+                withAnimation {
+                    animationHandler()
+                }
+            }
+    }
+}
+
+extension View {
+    func onWillAppear(_ perform: @escaping () -> Void) -> some View {
+        modifier(WillAppearModifier(callback: perform))
+    }
+}
+
+struct WillAppearModifier: ViewModifier {
+    let callback: () -> Void
+
+    func body(content: Content) -> some View {
+        content.background(UIViewLifeCycleHandler(onWillAppear: callback))
+    }
+}
+
+struct UIViewLifeCycleHandler: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    var onWillAppear: () -> Void = { }
+
+    func makeUIViewController(context: UIViewControllerRepresentableContext<Self>) -> UIViewControllerType {
+        context.coordinator
+    }
+
+    func updateUIViewController(
+        _: UIViewControllerType,
+        context _: UIViewControllerRepresentableContext<Self>
+    ) { }
+
+    func makeCoordinator() -> Self.Coordinator {
+        Coordinator(onWillAppear: onWillAppear)
+    }
+
+    class Coordinator: UIViewControllerType {
+        let onWillAppear: () -> Void
+
+        init(onWillAppear: @escaping () -> Void) {
+            self.onWillAppear = onWillAppear
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        required init?(coder _: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            onWillAppear()
+        }
     }
 }
 

@@ -11,14 +11,11 @@ struct MainDateListLabel: View {
     @State private var isPressed: Bool = false
     
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .glassEffect()
-            Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
-        }
-        .frame(height: 60)
-//        .scaleEffect(isPressed ? 0.95 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: isPressed)
+        Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .glassEffect()
+//            .animation(.easeInOut(duration: 0.1), value: isPressed)
     }
 }
 

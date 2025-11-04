@@ -21,9 +21,9 @@ struct ContentView: View {
                     MainView()
                         .padding(.horizontal, 20)
                 }
-                .navigationDestination(for: Product.self) { _ in
-                    DailyJournalView()
-                        .environment(\.journalPaths, path)
+                .navigationDestination(for: Product.self) { product in
+                    DailyJournalView(entry: product)
+                        .environment(\.journalPaths, $path)
                 }
             }
         } else {
@@ -34,9 +34,9 @@ struct ContentView: View {
                         .modelContainer(for: Product.self, inMemory: true)
                 }}
                 .padding(.horizontal, 20)
-                .navigationDestination(for: Product.self) { _ in
-                    DailyJournalView()
-                        .environment(\.journalPaths, path)
+                .navigationDestination(for: Product.self) { product in
+                    DailyJournalView(entry: product)
+                        .environment(\.journalPaths, $path)
                 }
             }
         }

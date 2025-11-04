@@ -15,9 +15,11 @@ enum MyMigrationPlan: SchemaMigrationPlan {
     
     static var stages: [MigrationStage] {
         [
-            MigrationStage.lightweight(
+            MigrationStage.custom(
                 fromVersion: ProductSchemaV1.self,
-                toVersion: ProductSchemaV2.self)
+                toVersion: ProductSchemaV2.self,
+                willMigrate: { try? $0.delete(model: Product.self) },
+                didMigrate: nil)
         ]
     }
 }
@@ -31,10 +33,12 @@ enum ProductSchemaV1: VersionedSchema {
     final class Product {
         @Attribute(.unique)
         var id: Int
+        
         var name: String
         var desc: String
         var price: UInt
         var stock: UInt
+        
         var images: [String]
         var createdAt: String
         var updatedAt: String?
@@ -68,11 +72,14 @@ enum ProductSchemaV2: VersionedSchema {
     
     @Model
     final class Product {
-        @Attribute(.unique) var id: Int
+        @Attribute(.unique)
+        var id: Int
+        
         var name: String
         var desc: String
         var price: UInt
         var stock: UInt
+        
         var images: [String]
         var createdAt: String
         var createdDate: Date
@@ -95,27 +102,15 @@ enum ProductSchemaV2: VersionedSchema {
             self.price = price
             self.stock = stock
             self.images = images
+            
             self.createdAt = createdAt
-            
-            var date: (String) -> Date = {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                
-                if let date = formatter.date(from: $0) {
-                    return date
-                } else {
-                    return Date()
-                }
-            }
-            
-            self.createdDate = date(createdAt)
+            self.createdDate = ISO8601DateFormatter.common.date(from: createdAt) ?? Date()
             
             self.updatedAt = updatedAt
-            if let updatedAt {
-                self.updatedDate = date(updatedAt)
-            }
-            else {
-                self.updatedDate = nil
+            self.updatedDate = nil
+            
+            if let updatedAt, let date = ISO8601DateFormatter.common.date(from: updatedAt) {
+                self.updatedDate = Date()
             }
         }
     }

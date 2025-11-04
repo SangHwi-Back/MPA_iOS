@@ -64,6 +64,9 @@ class BubbleContainerView: UIView {
         super.init(frame: frame)
         let effect = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
         effect.translatesAutoresizingMaskIntoConstraints = false
+        
+        effect.layer.cornerRadius = 8
+        
         self.addSubview(effect)
         effect.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
         effect.leadingAnchor.constraint(equalTo: self.leadingAnchor).isActive = true

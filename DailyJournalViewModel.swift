@@ -44,6 +44,7 @@ class DailyJournalViewModel: ObservableObject {
     
     func saveItem() {
         modelContext.insert(product)
+        try? modelContext.save()
     }
     
     private func fetchItem() {
