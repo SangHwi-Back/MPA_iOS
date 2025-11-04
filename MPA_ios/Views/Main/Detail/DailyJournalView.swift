@@ -33,8 +33,8 @@ struct DailyJournalView: View {
         && model.product.desc.isNotEmpty
     }
     
-    init(entry: Product? = nil) {
-        let vm = DailyJournalViewModel(productId: entry?.id ?? 0)
+    init(entry: Product) {
+        let vm = DailyJournalViewModel(productId: entry.id)
         self._model = Binding.constant(vm)
     }
     
@@ -197,5 +197,5 @@ private struct CustomButton: View {
 }
 
 #Preview {
-    DailyJournalView()
+    DailyJournalView(entry: .init(id: 0))
 }

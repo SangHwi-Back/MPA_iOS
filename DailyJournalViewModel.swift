@@ -34,7 +34,7 @@ class DailyJournalViewModel: ObservableObject {
                 isEditMode = true
             }
             else {
-                self._product = .constant(Product(id: result.count + 1))
+                self._product = .constant(Product(id: productId))
                 isEditMode = false
             }
         } catch {
@@ -43,11 +43,13 @@ class DailyJournalViewModel: ObservableObject {
     }
     
     func saveItem() {
-        modelContext.insert(product)
-        try? modelContext.save()
-    }
-    
-    private func fetchItem() {
+        guard isEditMode.not else {
+            try? modelContext.save()
+            return
+        }
         
+        modelContext.insert(product)
+        
+        try? modelContext.save()
     }
 }

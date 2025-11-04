@@ -10,24 +10,23 @@ import SwiftData
 
 struct MainDateList: View {
     @StateObject private var model: MainDateListViewModel
+    
+    @Binding private var path: [Product]
+    
     @State private var tappedItemId: Int? = nil
     
     init(_ path: Binding<[Product]>) {
-        let viewModel = MainDateListViewModel(navigationPath: path)
-        _model = StateObject(wrappedValue: viewModel)
+        self._path = path
+        _model = StateObject(wrappedValue: MainDateListViewModel())
     }
     
     private var ListContents: some View {
         ForEach(model.items, id: \.id) { item in
             if UIDevice.current.userInterfaceIdiom == .pad {
-                MainDateListLabel()
-                    .listModifier(id: item.id, tappedItemId: $tappedItemId) {
-                        tappedItemId = item.id
-                        model.tappedList(item.id)
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            tappedItemId = nil
-                        }
+                MainDateListLabel().listModifier(
+                    id: item.id,
+                    tappedItemId: $tappedItemId) {
+                        self.tappedItem(item)
                     }
             } else {
                 MainDateListSwipeableItem(product: item) {
@@ -37,14 +36,11 @@ struct MainDateList: View {
                         }
                     }
                 }
-                .listModifier(id: item.id, tappedItemId: $tappedItemId) {
-                    tappedItemId = item.id
-                    model.tappedList(item.id)
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        tappedItemId = nil
+                .listModifier(
+                    id: item.id,
+                    tappedItemId: $tappedItemId) {
+                        self.tappedItem(item)
                     }
-                }
             }
         }
         .onDelete(perform: model.deleteItems)
@@ -66,16 +62,28 @@ struct MainDateList: View {
                 }
             }
         }
-        .addToolbar(model)
-        .onWillAppear {
-            model.fetchItems()
+        .addToolbar(model, path: $path)
+        .onChange(of: path.count) { oldValue, newValue in
+            if oldValue > newValue {
+                model.fetchItems()
+            }
+        }
+    }
+    
+    private func tappedItem(_ item: Product) {
+        tappedItemId = item.id
+        
+        path.append(item)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            tappedItemId = nil
         }
     }
 }
 
 private extension View {
-    func addToolbar(_ model: MainDateListViewModel) -> some View {
-        return modifier(ToolBar(model))
+    func addToolbar(_ model: MainDateListViewModel, path: Binding<[Product]>) -> some View {
+        return modifier(ToolBar(model, path: path))
     }
     
     func listModifier(id: Int, tappedItemId: Binding<Int?>, animationHandler: @escaping () -> Void) -> some View {
@@ -85,9 +93,11 @@ private extension View {
 
 private struct ToolBar: ViewModifier {
     private var model: MainDateListViewModel
+    @Binding private var path: [Product]
     
-    init(_ model: MainDateListViewModel) {
+    init(_ model: MainDateListViewModel, path: Binding<[Product]>) {
         self.model = model
+        self._path = path
     }
     
     private let showCalendar = ContextMenu {
@@ -118,7 +128,8 @@ private struct ToolBar: ViewModifier {
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     ButtonWithAnimate {
-                        model.tappedToolbarAddItem()
+                        let item = model.tappedToolbarAddItem()
+                        path.append(item)
                     } label: {
                         Image(systemName: "plus")
                             .frame(width: 24, height: 24)

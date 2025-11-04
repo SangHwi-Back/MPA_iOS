@@ -16,11 +16,7 @@ class MainDateListViewModel: ObservableObject {
     @Published private(set) var items: [Product] = []
     @Published var showError: MainDateLocalError = .none
     
-    @Binding private(set) var navigationPath: [Product]
-
-    init(navigationPath: Binding<[Product]>) {
-        _navigationPath = navigationPath
-        
+    init() {
         modelContext = Persistence.CacheContainer.mainContext
         fetchItems()
     }
@@ -53,23 +49,14 @@ class MainDateListViewModel: ObservableObject {
         }
     }
     
-    func tappedList(_ id: Int) {
-        do {
-            let item = try modelContext.fetch(FetchDescriptor(predicate: #Predicate<Product> { $0.id == id }))
-            
-            if let item = item.first {
-                navigationPath.append(item)
-            }
-            else {
-                self.showError = .dataNotFound
-            }
-        } catch {
-            self.showError = .swiftDataFailed(error)
+    func tappedToolbarAddItem() -> Product {
+        let id = items.max(by: { $0.id < $1.id })?.id
+        
+        if let id {
+            return Product(id: id + 1)
+        } else {
+            return Product(id: 0)
         }
-    }
-    
-    func tappedToolbarAddItem() {
-        navigationPath.append(Product(id: items.count + 1))
     }
     
     enum MainDateLocalError {
