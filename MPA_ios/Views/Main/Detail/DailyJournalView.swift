@@ -18,7 +18,8 @@ struct DailyJournalView: View {
     @Binding var model: DailyJournalViewModel
     
     @State private var showingDatePicker = false
-    
+    @State private var showingConfirmModal = false
+
     @FocusState private var focusedField: Field?
     
     private var shouldShowPlaceholder: Bool {
@@ -134,17 +135,18 @@ struct DailyJournalView: View {
                 contentEditor
                 
                 CustomButton(
-                    title: model.isEditMode ? "Update" : "Insert",
-                    enabled: model.confirmButtonEnabled,
+                    data: CustomButtonData(
+                        title: model.isEditMode ? "Update" : "Insert",
+                        enabled: model.insertOrUpdateEnabled
+                    ),
                     action: {
-                        model.saveItem()
-                        dismiss()
+                        showingConfirmModal = true
                     }
                 )
             }
             .padding(20)
         }
-        .navigationTitle(model.isEditMode ? "Edit Entry" : "New Entry")
+        .navigationTitle(model.isEditMode ? "Edit Journal" : "New Journal")
         .navigationBarTitleDisplayMode(.large)
         .scrollDismissesKeyboard(.immediately)
         .toolbar(content: {
@@ -178,6 +180,23 @@ struct DailyJournalView: View {
         .onTapGesture {
             focusedField = nil
         }
+        .sheet(isPresented: $showingConfirmModal) {
+            ConfirmationModalView(
+                data: ConfirmationData(
+                    title: model.product.name,
+                    date: model.product.createdDate,
+                    content: model.product.desc,
+                    isEditMode: model.isEditMode
+                ),
+                onConfirm: {
+                    model.saveItem()
+                    dismiss()
+                },
+                onCancel: {
+                    showingConfirmModal = false
+                }
+            )
+        }
     }
     
     private func movePreviousField() {
@@ -194,34 +213,6 @@ struct DailyJournalView: View {
         } else if focusedField == .title {
             focusedField = .contents
         }
-    }
-}
-
-private struct CustomButton: View {
-    let title: String
-    let enabled: Bool
-    let action: () -> Void
-    
-    init(title: String,
-         enabled: Bool,
-         action: @escaping () -> Void
-    ) {
-        self.title = title
-        self.enabled = enabled
-        self.action = action
-    }
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(16)
-        }
-        .glassEffect(.regular.tint(enabled ? Color.blue : Color.gray).interactive(),
-                     in: Capsule())
-        .disabled(enabled.not)
     }
 }
 

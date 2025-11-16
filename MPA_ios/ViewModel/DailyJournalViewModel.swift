@@ -17,7 +17,7 @@ class DailyJournalViewModel: ObservableObject {
     @Environment(\.journalPaths) private var journalPaths
     @Binding var product: Product
     
-    var confirmButtonEnabled: Bool {
+    var insertOrUpdateEnabled: Bool {
         product.name.isEmpty.not && product.desc.isEmpty.not
     }
     
