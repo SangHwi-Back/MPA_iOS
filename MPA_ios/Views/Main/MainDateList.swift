@@ -15,9 +15,9 @@ struct MainDateList: View {
     
     @State private var tappedItemId: Int? = nil
     
-    init(_ path: Binding<[Product]>) {
+    init(repository: ProductRepositoryProtocol, _ path: Binding<[Product]>) {
         self._path = path
-        _model = StateObject(wrappedValue: MainDateListViewModel())
+        _model = StateObject(wrappedValue: MainDateListViewModel(repository: repository))
     }
     
     private var ListContents: some View {
@@ -207,10 +207,4 @@ struct UIViewLifeCycleHandler: UIViewControllerRepresentable {
             onWillAppear()
         }
     }
-}
-
-#Preview {
-    MainDateList(.constant([
-        Product.init(id: 0, name: "Test1", desc: "", price: 0, stock: 0, images: [], createdAt: "", updatedAt: "")
-    ]))
 }

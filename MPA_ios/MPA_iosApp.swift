@@ -10,11 +10,13 @@ import SwiftData
 
 @main
 struct MPA_iosApp: App {
+    let persistence = Persistence()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.productViewModel, ProductViewModel.defaultValue)
+                .productRepository(ProductRepository(persistence: persistence))
         }
-        .modelContainer(Persistence.CacheContainer)
+        .modelContainer(persistence.container)
     }
 }

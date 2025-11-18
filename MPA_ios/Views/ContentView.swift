@@ -9,12 +9,13 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.productRepository) private var repository
     @State private var path: [Product] = []
     
     var body: some View {
         if UIDevice.current.userInterfaceIdiom == .pad {
             NavigationSplitView {
-                MainDateList($path)
+                MainDateList(repository: repository, $path)
                     .modelContainer(for: Product.self, inMemory: true)
             } detail: {
                 NavigationStack(path: $path) {
@@ -22,7 +23,7 @@ struct ContentView: View {
                         .padding(.horizontal, 20)
                 }
                 .navigationDestination(for: Product.self) { product in
-                    DailyJournalView(entry: product)
+                    DailyJournalView(repository: repository, entry: product)
                         .environment(\.journalPaths, $path)
                 }
             }
@@ -30,12 +31,12 @@ struct ContentView: View {
             NavigationStack(path: $path) {
                 ScrollView { VStack(spacing: 15) {
                     MainView()
-                    MainDateList($path)
+                    MainDateList(repository: repository, $path)
                         .modelContainer(for: Product.self, inMemory: true)
                 }}
                 .padding(.horizontal, 20)
                 .navigationDestination(for: Product.self) { product in
-                    DailyJournalView(entry: product)
+                    DailyJournalView(repository: repository, entry: product)
                         .environment(\.journalPaths, $path)
                 }
             }

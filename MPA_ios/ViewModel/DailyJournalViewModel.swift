@@ -11,29 +11,26 @@ import SwiftUI
 
 @MainActor
 class DailyJournalViewModel: ObservableObject {
-    private var modelContext: ModelContext
     private(set) var isEditMode: Bool = false
     
     @Environment(\.journalPaths) private var journalPaths
+    private var repository: ProductRepositoryProtocol
+    
+    private var productId: Int
     @Binding var product: Product
     
     var insertOrUpdateEnabled: Bool {
         product.name.isEmpty.not && product.desc.isEmpty.not
     }
     
-    init(productId: Int) {
-        modelContext = Persistence.CacheContainer.mainContext
-        
-        var descriptor = FetchDescriptor<Product>(
-            predicate: #Predicate { $0.id == productId },
-            sortBy: [SortDescriptor(\.createdAt, order: .forward)])
-        
-        descriptor.fetchLimit = 1
+    init(repository: any ProductRepositoryProtocol, productId: Int) {
+        self.productId = productId
+        self.repository = repository
         
         do {
-            let result = try modelContext.fetch(descriptor)
+            let product = try self.repository.fetch(id: productId)
             
-            if let item = result.first {
+            if let item = product {
                 self._product = .constant(item)
                 isEditMode = true
             }
@@ -48,12 +45,10 @@ class DailyJournalViewModel: ObservableObject {
     
     func saveItem() {
         guard isEditMode.not else {
-            try? modelContext.save()
+            try? repository.update(product)
             return
         }
         
-        modelContext.insert(product)
-        
-        try? modelContext.save()
+        try? repository.save(product)
     }
 }

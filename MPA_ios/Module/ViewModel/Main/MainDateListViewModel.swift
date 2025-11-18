@@ -11,42 +11,33 @@ import SwiftUI
 
 @MainActor
 class MainDateListViewModel: ObservableObject {
-    private var modelContext: ModelContext
-    
     @Published private(set) var items: [Product] = []
     @Published var showError: MainDateLocalError = .none
     
-    init() {
-        modelContext = Persistence.CacheContainer.mainContext
+    private var repository: ProductRepositoryProtocol
+    
+    init(repository: ProductRepositoryProtocol) {
+        self.repository = repository
         fetchItems()
     }
     
     @discardableResult
     func addItem() -> Product {
         let newItem = Product(id: items.count + 1)
-        modelContext.insert(newItem)
         
-        fetchItems()
-        
+        try? repository.save(newItem)
         return newItem
     }
     
     func deleteItems(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(items[index])
+            try? repository.delete(items[index])
         }
         fetchItems()
     }
     
     func fetchItems() {
-        let descriptor = FetchDescriptor<Product>(sortBy: [
-            .init(\.createdAt, order: .forward)
-        ])
-        do {
-            items = try modelContext.fetch(descriptor)
-        } catch {
-            print("Error fetching items: \(error)")
-        }
+        items = (try? repository.fetchAll()) ?? []
     }
     
     func tappedToolbarAddItem() -> Product {

@@ -34,8 +34,10 @@ struct DailyJournalView: View {
         && model.product.desc.isNotEmpty
     }
     
-    init(entry: Product) {
-        let vm = DailyJournalViewModel(productId: entry.id)
+    init(repository: ProductRepositoryProtocol, entry: Product) {
+        let vm = DailyJournalViewModel(
+            repository: repository,
+            productId: entry.id)
         self._model = Binding.constant(vm)
     }
     
@@ -214,8 +216,4 @@ struct DailyJournalView: View {
             focusedField = .contents
         }
     }
-}
-
-#Preview {
-    DailyJournalView(entry: .init(id: 0))
 }
