@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
     @Environment(\.productRepository) private var repository
@@ -29,12 +28,11 @@ struct ContentView: View {
             }
         } else {
             NavigationStack(path: $path) {
-                ScrollView { VStack(spacing: 15) {
+                ScrollView { VStack(spacing: 0) {
                     MainView()
                     MainDateList(repository: repository, $path)
                         .modelContainer(for: Product.self, inMemory: true)
                 }}
-                .padding(.horizontal, 20)
                 .navigationDestination(for: Product.self) { product in
                     DailyJournalView(repository: repository, entry: product)
                         .environment(\.journalPaths, $path)
@@ -44,6 +42,12 @@ struct ContentView: View {
     }
 }
 
-#Preview {
+//#Preview("데이터 없음") {
+//    ContentView()
+//        .productRepository(MockProductRepository(withSampleData: false))
+//}
+
+#Preview("데이터 있음") {
     ContentView()
+        .productRepository(MockProductRepository(withSampleData: true))
 }

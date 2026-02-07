@@ -64,8 +64,7 @@ class BubbleContainerView: UIView {
         super.init(frame: frame)
         let effect = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
         effect.translatesAutoresizingMaskIntoConstraints = false
-        
-        effect.layer.cornerRadius = 8
+        effect.layer.cornerRadius = 24
         
         self.addSubview(effect)
         effect.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
@@ -164,4 +163,9 @@ class BubbleUIView: UIView {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+#Preview {
+    MainView()
+        .padding()
 }

@@ -7,13 +7,29 @@
 
 import SwiftUI
 
+private struct ProductRepositoryKey: EnvironmentKey {
+    @MainActor
+    static let defaultValue: any ProductRepositoryProtocol = ProductRepository(persistence: Persistence())
+}
+
+private struct JournalPathsKey: EnvironmentKey {
+    static let defaultValue: Binding<[Product]> = .constant([])
+}
+
 extension EnvironmentValues {
-    @Entry var productRepository: ProductRepository = ProductRepository(persistence: Persistence())
-    @Entry var journalPaths: Binding<[Product]> = .constant([])
+    var productRepository: any ProductRepositoryProtocol {
+        get { self[ProductRepositoryKey.self] }
+        set { self[ProductRepositoryKey.self] = newValue }
+    }
+
+    var journalPaths: Binding<[Product]> {
+        get { self[JournalPathsKey.self] }
+        set { self[JournalPathsKey.self] = newValue }
+    }
 }
 
 extension View {
-    func productRepository(_ repository: ProductRepository) -> some View {
+    func productRepository(_ repository: any ProductRepositoryProtocol) -> some View {
         environment(\.productRepository, repository)
     }
 

@@ -21,7 +21,11 @@ struct MainView: View {
     var body: some View {
         ScrollView {
             titleTextView
+                .padding(.bottom, 20)
+                .padding(.horizontal)
             BubbleView(height: mainViewHeight)
+                .padding(.horizontal)
+                .padding(.bottom, 20)
         }
         .navigationTitle("Contents")
     }

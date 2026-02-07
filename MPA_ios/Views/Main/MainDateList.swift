@@ -20,14 +20,14 @@ struct MainDateList: View {
         _model = StateObject(wrappedValue: MainDateListViewModel(repository: repository))
     }
     
-    private var ListContents: some View {
+    private var ListContentsForEach: some View {
         ForEach(model.items, id: \.id) { item in
             if UIDevice.current.userInterfaceIdiom == .pad {
-                MainDateListLabel().listModifier(
-                    id: item.id,
-                    tappedItemId: $tappedItemId) {
+                MainDateListLabel()
+                    .listModifier(id: item.id, tappedItemId: $tappedItemId) {
                         self.tappedItem(item)
                     }
+                    .padding(.horizontal)
             } else {
                 MainDateListSwipeableItem(product: item) {
                     withAnimation {
@@ -36,11 +36,10 @@ struct MainDateList: View {
                         }
                     }
                 }
-                .listModifier(
-                    id: item.id,
-                    tappedItemId: $tappedItemId) {
-                        self.tappedItem(item)
-                    }
+                .padding(.horizontal)
+                .listModifier(id: item.id, tappedItemId: $tappedItemId) {
+                    self.tappedItem(item)
+                }
             }
         }
         .onDelete(perform: model.deleteItems)
@@ -52,14 +51,10 @@ struct MainDateList: View {
                 if model.items.isEmpty {
                     Color.clear
                 } else {
-                    List {
-                        ListContents
-                    }
+                    List { ListContentsForEach }
                 }
             } else {
-                VStack {
-                    ListContents
-                }
+                VStack { ListContentsForEach }
             }
         }
         .addToolbar(model, path: $path)
@@ -115,7 +110,6 @@ private struct ToolBar: ViewModifier {
                         Image(systemName: "calendar")
                             .tint(.blue)
                             .contextMenu(showCalendar)
-                            
                     }
                 }
                 
@@ -166,7 +160,7 @@ extension View {
 
 struct WillAppearModifier: ViewModifier {
     let callback: () -> Void
-
+    
     func body(content: Content) -> some View {
         content.background(UIViewLifeCycleHandler(onWillAppear: callback))
     }
@@ -174,37 +168,49 @@ struct WillAppearModifier: ViewModifier {
 
 struct UIViewLifeCycleHandler: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController
-
+    
     var onWillAppear: () -> Void = { }
-
+    
     func makeUIViewController(context: UIViewControllerRepresentableContext<Self>) -> UIViewControllerType {
         context.coordinator
     }
-
+    
     func updateUIViewController(
         _: UIViewControllerType,
         context _: UIViewControllerRepresentableContext<Self>
     ) { }
-
+    
     func makeCoordinator() -> Self.Coordinator {
         Coordinator(onWillAppear: onWillAppear)
     }
-
+    
     class Coordinator: UIViewControllerType {
         let onWillAppear: () -> Void
-
+        
         init(onWillAppear: @escaping () -> Void) {
             self.onWillAppear = onWillAppear
             super.init(nibName: nil, bundle: nil)
         }
-
+        
         required init?(coder _: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
-
+        
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             onWillAppear()
         }
     }
+}
+
+//#Preview("데이터 없음") {
+//    ContentView()
+//        .productRepository(MockProductRepository(withSampleData: false))
+//}
+
+#Preview("데이터 있음") {
+    MainDateList.init(
+        repository: MockProductRepository(withSampleData: true),
+        Binding.constant([Product]())
+    )
 }

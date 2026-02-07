@@ -13,9 +13,8 @@ struct MainDateListLabel: View {
     var body: some View {
         Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .glassEffect()
-//            .animation(.easeInOut(duration: 0.1), value: isPressed)
+            .frame(height: 55)
+            .glassEffect(.regular.interactive(), in: Capsule())
     }
 }
 
@@ -23,5 +22,5 @@ struct MainDateListLabel: View {
     ScrollView {
         MainDateListLabel()
     }
-    .background(Color.red.opacity(0.8))
+    .background(Color.black)
 }
