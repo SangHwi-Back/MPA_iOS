@@ -41,100 +41,14 @@ struct DailyJournalView: View {
         self._model = Binding.constant(vm)
     }
     
-    private var TitleText: (String) -> Text = { text in
-        Text(text)
-            .font(.headline)
-            .foregroundColor(.primary)
-    }
-    
-    private var titleField: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TitleText("Title")
-            
-            TextField("Enter your journal title", text: $model.product.name)
-                .focused($focusedField, equals: .title)
-                .textFieldStyle(.plain)
-                .padding(16)
-                .glassEffect()
-                .shadow(radius: 3)
-        }
-    }
-    
-    private var dateSelector: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TitleText("Date")
-            
-            Button {
-                showingDatePicker = true
-            } label: {
-                HStack {
-                    Image(systemName: "calendar")
-                        .foregroundColor(.blue)
-                    
-                    Text(model.isEditMode ? model.product.createdDate : model.product.updatedDate ?? Date(), style: .date)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.down")
-                        .foregroundColor(.gray)
-                }
-                .padding(16)
-                .glassEffect()
-                .shadow(radius: 3)
-            }
-        }
-        .sheet(isPresented: $showingDatePicker) {
-            NavigationStack {
-                DatePicker(
-                    "Select Date",
-                    selection: $model.product.createdDate,
-                    displayedComponents: .date
-                )
-                .datePickerStyle(.graphical)
-                .navigationTitle("Select Date")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            showingDatePicker = false
-                        }
-                    }
-                }
-            }
-            .presentationDetents([.medium])
-        }
-    }
-    
-    private var contentEditor: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TitleText("Content")
-            
-            ZStack(alignment: .topLeading) {
-                
-                TextEditor(text: $model.product.desc)
-                    .padding(12)
-                    .scrollContentBackground(.hidden)
-                    .glassEffect(in: .rect(cornerRadius: 12))
-                    .shadow(radius: 3)
-                    .focused($focusedField, equals: .contents)
-                    .frame(minHeight: 150)
-                
-                if shouldShowPlaceholder {
-                    Text("Write about your day...")
-                        .foregroundColor(.gray)
-                        .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                }
-            }
-        }
-    }
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                titleField
-                dateSelector
-                contentEditor
+                TitleField($model.product.name)
+                DateSelector(
+                    isEditMode: model.isEditMode,
+                    product: $model.product)
+                ContentEditor($model.product.desc)
                 
                 CustomButton(
                     data: CustomButtonData(
@@ -152,15 +66,6 @@ struct DailyJournalView: View {
         .navigationBarTitleDisplayMode(.large)
         .scrollDismissesKeyboard(.immediately)
         .toolbar(content: {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .foregroundStyle(Color(.systemGray3))
-                }
-            }
-
             ToolbarItemGroup(placement: .keyboard) {
                 Button { movePreviousField() } label: {
                     Image(systemName: "chevron.up")
@@ -179,9 +84,7 @@ struct DailyJournalView: View {
                 }
             }
         })
-        .onTapGesture {
-            focusedField = nil
-        }
+        .onTapGesture { focusedField = nil }
         .sheet(isPresented: $showingConfirmModal) {
             ConfirmationModalView(
                 data: ConfirmationData(
@@ -194,12 +97,101 @@ struct DailyJournalView: View {
                     model.saveItem()
                     dismiss()
                 },
-                onCancel: {
-                    showingConfirmModal = false
-                }
+                onCancel: { showingConfirmModal = false }
             )
         }
     }
+    
+    private var TitleText: (String) -> Text = { text in
+        Text(text)
+            .font(.headline)
+            .foregroundColor(.primary)
+    }
+    
+    private func TitleField(_ name: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TitleText("Title")
+            
+            TextField("Enter your journal title", text: name)
+                .focused($focusedField, equals: .title)
+                .textFieldStyle(.plain)
+                .padding(16)
+                .glassEffect(.regular.interactive())
+        }
+    }
+    
+    private func DateSelector(isEditMode: Bool, product: Binding<Product>) -> some View {
+        let _product = product.wrappedValue
+        let dateText = isEditMode ? _product.createdDate : _product.updatedDate
+        return VStack(alignment: .leading, spacing: 8) {
+            TitleText("Date")
+            
+            ZStack {
+                Button {
+                    showingDatePicker = true
+                } label: {
+                    HStack {
+                        Image(systemName: "calendar")
+                            .foregroundColor(.blue)
+                        
+                        Text(dateText ?? Date(), style: .date)
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.down")
+                            .foregroundColor(.gray)
+                    }
+                    .padding(16)
+                }
+            }
+            .glassEffect(.regular.interactive())
+        }
+        .sheet(isPresented: $showingDatePicker) {
+            NavigationStack {
+                DatePicker(
+                    "Select Date",
+                    selection: product.createdDate,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .navigationTitle("Select Date")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            showingDatePicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+        }
+    }
+    
+    private func ContentEditor(_ desc: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TitleText("Content")
+            
+            ZStack(alignment: .topLeading) {
+                
+                TextEditor(text: desc)
+                    .padding(.horizontal, 12)
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .focused($focusedField, equals: .contents)
+                    .frame(minHeight: 150)
+                
+                if shouldShowPlaceholder {
+                    Text("Write about your day...")
+                        .foregroundColor(.gray)
+                        .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                }
+            }
+            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 24))
+        }
+    }
+    
     
     private func movePreviousField() {
         if focusedField == .title {
@@ -216,4 +208,11 @@ struct DailyJournalView: View {
             focusedField = .contents
         }
     }
+}
+
+#Preview {
+    DailyJournalView(
+        repository: MockProductRepository(withSampleData: false),
+        entry: Product(id: 0)
+    )
 }

@@ -26,8 +26,7 @@ struct CustomButton: View {
                 .frame(maxWidth: .infinity)
                 .padding(16)
         }
-        .glassEffect(.regular.tint(data.enabled ? Color.blue : Color.gray).interactive(),
-                     in: Capsule())
+        .glassEffect(.regular.tint(data.enabled ? Color.blue : Color.gray).interactive())
         .disabled(data.enabled.not)
     }
 }
