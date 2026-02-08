@@ -5,8 +5,6 @@
 //  Created by 백상휘 on 6/8/25.
 //
 
-import Foundation
-import SwiftData
 import SwiftUI
 
 @MainActor
@@ -24,20 +22,39 @@ class MainDateListViewModel: ObservableObject {
     @discardableResult
     func addItem() -> Product {
         let newItem = Product(id: items.count + 1)
-        
+#if DEBUG
+        do { try repository.save(newItem) } catch {
+            fatalError(error.localizedDescription)
+        }
+#else
         try? repository.save(newItem)
+#endif
         return newItem
     }
     
     func deleteItems(at offsets: IndexSet) {
         for index in offsets {
+#if DEBUG
+            do { try repository.delete(items[index]) } catch {
+                fatalError(error.localizedDescription)
+            }
+#else
             try? repository.delete(items[index])
+#endif
         }
         fetchItems()
     }
     
-    func fetchItems() {
+    @discardableResult
+    func fetchItems() -> [Product] {
+#if DEBUG
+        do { items = try repository.fetchAll() } catch {
+            fatalError(error.localizedDescription)
+        }
+#else
         items = (try? repository.fetchAll()) ?? []
+#endif
+        return items
     }
     
     func tappedToolbarAddItem() -> Product {

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct MainDateList: View {
     @StateObject private var model: MainDateListViewModel

@@ -45,10 +45,22 @@ class DailyJournalViewModel: ObservableObject {
     
     func saveItem() {
         guard isEditMode.not else {
+#if DEBUG
+            do { try repository.update(product) } catch {
+                fatalError(error.localizedDescription)
+            }
+#else
             try? repository.update(product)
+#endif
             return
         }
         
+#if DEBUG
+        do { try repository.save(product) } catch {
+            fatalError(error.localizedDescription)
+        }
+#else
         try? repository.save(product)
+#endif
     }
 }
