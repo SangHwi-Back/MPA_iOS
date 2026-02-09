@@ -14,19 +14,8 @@ struct MainView: View {
     
     private var model = SystemLanguageModel.default
     
-    var titleTextView: some View {
-        Text("Hello This is \(DateFormatter.common.string(from: Date()))")
-            .frame(maxWidth: .infinity)
-            .frame(height: 55)
-            .glassEffect()
-    }
-    
     var body: some View {
         ScrollView {
-            titleTextView
-                .padding(.bottom, 20)
-                .padding(.horizontal)
-
             AppleIntelligenceStatusView()
                 .padding(.horizontal)
                 .padding(.bottom, 20)
