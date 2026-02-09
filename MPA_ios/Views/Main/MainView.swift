@@ -6,10 +6,13 @@
 //
 
 import SwiftUI
+import FoundationModels
 
 struct MainView: View {
     @State var replay: Bool = true
     @State var mainViewHeight: CGFloat = 280
+    
+    private var model = SystemLanguageModel.default
     
     var titleTextView: some View {
         Text("Hello This is \(DateFormatter.common.string(from: Date()))")
@@ -23,6 +26,11 @@ struct MainView: View {
             titleTextView
                 .padding(.bottom, 20)
                 .padding(.horizontal)
+
+            AppleIntelligenceStatusView()
+                .padding(.horizontal)
+                .padding(.bottom, 20)
+
             BubbleView(height: mainViewHeight)
                 .padding(.horizontal)
                 .padding(.bottom, 20)

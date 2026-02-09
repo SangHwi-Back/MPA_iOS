@@ -15,7 +15,7 @@ struct DailyJournalView: View {
     
     @Environment(\.dismiss) private var dismiss
     
-    @Binding var model: DailyJournalViewModel
+    @StateObject var model: DailyJournalViewModel
     
     @State private var showingDatePicker = false
     @State private var showingConfirmModal = false
@@ -38,7 +38,7 @@ struct DailyJournalView: View {
         let vm = DailyJournalViewModel(
             repository: repository,
             productId: entry.id)
-        self._model = Binding.constant(vm)
+        self._model = StateObject(wrappedValue: vm)
     }
     
     var body: some View {
