@@ -22,7 +22,7 @@ struct MainDateList: View {
     private var ListContentsForEach: some View {
         ForEach(model.items, id: \.id) { item in
             if UIDevice.current.userInterfaceIdiom == .pad {
-                MainDateListLabel()
+                MainDateListLabel(product: item)
                     .listModifier(id: item.id, tappedItemId: $tappedItemId) {
                         self.tappedItem(item)
                     }

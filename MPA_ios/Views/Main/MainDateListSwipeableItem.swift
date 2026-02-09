@@ -37,7 +37,7 @@ struct MainDateListSwipeableItem: View {
     
     var body: some View {
         HStack {
-            MainDateListLabel()
+            MainDateListLabel(product: product)
             
             if isSwiped {
                 DeleteButton

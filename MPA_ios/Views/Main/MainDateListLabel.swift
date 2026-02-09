@@ -9,9 +9,43 @@ import SwiftUI
 
 struct MainDateListLabel: View {
     @State private var isPressed: Bool = false
-    
+    let product: Product
+
+    private var formattedDate: String {
+        let calendar = Calendar.current
+        let now = Date()
+        let date = product.createdDate
+
+        let sameYear = calendar.isDate(date, equalTo: now, toGranularity: .year)
+        let sameMonth = calendar.isDate(date, equalTo: now, toGranularity: .month)
+        let sameWeek = calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear)
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+
+        if sameWeek {
+            formatter.dateFormat = "EEEE"
+        } else if sameMonth {
+            formatter.dateFormat = "d일"
+        } else if sameYear {
+            formatter.dateFormat = "M월 d일"
+        } else {
+            formatter.dateFormat = "yyyy년 M월 d일"
+        }
+
+        return formatter.string(from: date)
+    }
+
+    private var displayText: String {
+        if product.name.isEmpty {
+            return formattedDate
+        } else {
+            return "\(product.name) \(formattedDate)"
+        }
+    }
+
     var body: some View {
-        Text("Item at \(Date(), format: Date.FormatStyle(date: .numeric, time: .standard))")
+        Text(displayText)
             .frame(maxWidth: .infinity)
             .frame(height: 55)
             .glassEffect(.regular.interactive(), in: Capsule())
@@ -20,7 +54,7 @@ struct MainDateListLabel: View {
 
 #Preview {
     ScrollView {
-        MainDateListLabel()
+        MainDateListLabel(product: Product(id: 1))
     }
     .background(Color.black)
 }
