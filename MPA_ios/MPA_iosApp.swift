@@ -10,12 +10,29 @@ import SwiftData
 
 @main
 struct MPA_iosApp: App {
+    @State private var isLaunchProcessing: Bool = true
+    
     let persistence = Persistence()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .productRepository(ProductRepository(persistence: persistence))
+            if isLaunchProcessing {
+                Image("LaunchScreenAfter")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                            self.isLaunchProcessing = false
+                        }
+                    }
+            } else {
+                ContentView()
+                    .productRepository(ProductRepository(persistence: persistence))
+                    .transition(.opacity)
+            }
         }
         .modelContainer(persistence.container)
     }
