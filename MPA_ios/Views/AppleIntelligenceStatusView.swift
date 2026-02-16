@@ -10,7 +10,7 @@ import FoundationModels
 
 struct AppleIntelligenceStatusView: View {
     private let model = SystemLanguageModel.default
-
+    
     @ViewBuilder
     var body: some View {
         switch model.availability {
@@ -36,7 +36,7 @@ private struct AvailableView: View {
             Image(systemName: "apple.intelligence")
                 .font(.system(size: 28))
                 .foregroundStyle(.green)
-
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text("Apple Intelligence")
                     .font(.headline)
@@ -44,27 +44,29 @@ private struct AvailableView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-
+            
             Spacer()
-
+            
             Image(systemName: "checkmark.circle.fill")
                 .font(.title2)
                 .foregroundStyle(.green)
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .glassEffect()
+        .glassEffect(.regular.interactive())
     }
 }
 
 // MARK: - Device Not Supported View
 private struct DeviceNotSupportedView: View {
+    @Environment(\.showModal) var modalState: ModalState
+    
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "apple.intelligence")
                 .font(.system(size: 28))
                 .foregroundStyle(.gray)
-
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text("Apple Intelligence")
                     .font(.headline)
@@ -72,30 +74,37 @@ private struct DeviceNotSupportedView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-
+            
             Spacer()
-
+            
             Image(systemName: "xmark.circle.fill")
                 .font(.title2)
                 .foregroundStyle(.gray)
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .glassEffect()
+        .glassEffect(.regular.interactive())
+        .onTapGesture {
+            modalState.modalType = .common(.init(
+                title: "Apple Intelligence 를 사용할 수 없는 기기에요.",
+                message: "이 앱은 애플의 AI 기능인 Foundations Model 을 사용합니다. 이는 Apple Intelligence 를 사용할 수 있는 기기만이 사용할 수 있습니다.\n\n하지만 일기를 작성하는 것은 가능합니다. 다른 기능을 시도해 보세요.",
+                onConfirm: nil,
+                onCancel: nil))
+        }
     }
 }
 
 // MARK: - Not Enabled View
 private struct NotEnabledView: View {
     @Environment(\.openURL) private var openURL
-
+    
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 12) {
                 Image(systemName: "apple.intelligence")
                     .font(.system(size: 28))
                     .foregroundStyle(.orange)
-
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Apple Intelligence")
                         .font(.headline)
@@ -103,14 +112,14 @@ private struct NotEnabledView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-
+                
                 Spacer()
-
+                
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.title2)
                     .foregroundStyle(.orange)
             }
-
+            
             Button {
                 if let url = URL(string: "App-prefs:APPLE_INTELLIGENCE") {
                     openURL(url)
@@ -130,7 +139,7 @@ private struct NotEnabledView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .glassEffect()
+        .glassEffect(.regular.interactive())
     }
 }
 
