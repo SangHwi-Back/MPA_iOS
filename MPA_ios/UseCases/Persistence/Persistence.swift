@@ -28,17 +28,14 @@ class Persistence {
     }
 }
 
-class ProductRepository: @MainActor ProductRepositoryProtocol {
-    
-    private var persistence: Persistence
-    
-    @MainActor
-    private var mainContext: ModelContext {
-        persistence.container.mainContext
-    }
-    
-    required init(persistence: Persistence) {
-        self.persistence = persistence
+@MainActor
+class ProductRepository: ProductRepositoryProtocol {
+
+    /// 앱 루트에서 주입받은 메인 컨텍스트
+    private let mainContext: ModelContext
+
+    init(context: ModelContext) {
+        self.mainContext = context
     }
     
     @MainActor func save(_ product: Product) throws {
@@ -106,13 +103,13 @@ class ProductRepository: @MainActor ProductRepositoryProtocol {
 #if DEBUG
         do {
             _isExist = try isExist(product)
-            _isExist ? try save(product) : try update(product)
+            _isExist ? try update(product) : try save(product)
         } catch {
             fatalError(error.localizedDescription)
         }
 #else
         _isExist = (try? isExist(product)) ?? false
-        _isExist ? try? save(product) : try? update(product)
+        _isExist ? try? update(product) : try? save(product)
 #endif
     }
     

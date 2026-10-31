@@ -9,7 +9,6 @@ import Foundation
 
 @MainActor
 protocol ProductRepositoryProtocol {
-    init(persistence: Persistence)
     func save(_ product: Product) throws
     func update(_ product: Product) throws
     func delete(_ product: Product) throws

@@ -30,7 +30,7 @@ struct MPA_iosApp: App {
                     }
             } else {
                 ContentView()
-                    .productRepository(ProductRepository(persistence: persistence))
+                    .productRepository(ProductRepository(context: persistence.container.mainContext))
                     .transition(.opacity)
             }
         }

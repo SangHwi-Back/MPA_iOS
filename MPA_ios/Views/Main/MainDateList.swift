@@ -19,48 +19,163 @@ struct MainDateList: View {
         _model = StateObject(wrappedValue: MainDateListViewModel(repository: repository))
     }
     
-    private var ListContentsForEach: some View {
-        ForEach(model.items, id: \.id) { item in
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                MainDateListLabel(product: item)
-                    .listModifier(id: item.id, tappedItemId: $tappedItemId) {
-                        self.tappedItem(item)
-                    }
-                    .padding(.horizontal)
-            } else {
-                MainDateListSwipeableItem(product: item) {
-                    withAnimation {
-                        if let index = model.items.firstIndex(of: item) {
-                            model.deleteItems(at: IndexSet(integer: index))
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .listModifier(id: item.id, tappedItemId: $tappedItemId) {
-                    self.tappedItem(item)
-                }
-            }
-        }
-        .onDelete(perform: model.deleteItems)
-    }
-    
     var body: some View {
         Group {
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                if model.items.isEmpty {
-                    Color.clear
-                } else {
-                    List { ListContentsForEach }
-                }
+            if model.items.isEmpty {
+                EmptyView
             } else {
-                VStack { ListContentsForEach }
+                ListContentsForEach
             }
         }
-        .addToolbar(model, path: $path)
         .onChange(of: path.count) { oldValue, newValue in
             if oldValue > newValue {
                 model.fetchItems()
             }
+        }
+    }
+    
+    // MARK: - Empty State
+    
+    private var EmptyView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Text(Date().formatted(date: .abbreviated, time: .omitted))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.subheadline)
+                    .fontWeight(.light)
+                
+                Text("반가워요")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                Image("empty-logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 160)
+                
+                Text("첫 일기를 써보세요")
+                    .font(.title3.bold())
+                
+                Text("몇 줄이면 충분해요. 일기가 쌓이면\n그 안에서 나만의 원칙을 찾아드릴게요.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                
+                Button {
+                    let item = model.tappedToolbarAddItem()
+                    path.append(item)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "pencil.tip")
+                        Text("첫 일기 쓰기")
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .fill(Color.blue)
+                    )
+                }
+                
+                Spacer()
+                
+                Text("이런 질문으로 시작해 보세요")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                VStack(spacing: 10) {
+                    ForEach(Self.sampleQuestions, id: \.self) { question in
+                        QuestionChip(text: question)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                let item = model.tappedToolbarAddItem()
+                                path.append(item)
+                            }
+                    }
+                }
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "scale")
+                        .font(.caption)
+                    Text("모든 분석은 이 기기 안에서 이루어져요")
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    // MARK: - 질문 데이터
+    
+    private static let sampleQuestions: [String] = [
+        "오늘 가장 오래 머무른 생각은 무엇이었나요?",
+        "최근 누군가에게 고마웠던 순간이 있나요?",
+        "내일의 나에게 한마디 한다면?"
+    ]
+    
+    // MARK: - 질문 칩
+    
+    private struct QuestionChip: View {
+        let text: String
+        
+        var body: some View {
+            HStack {
+                Text(text)
+                    .font(.body)
+                    
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color(.systemGray5), lineWidth: 0.5)
+            )
+        }
+    }
+    
+    // MARK: - List Contents
+    
+    private var ListContentsForEach: some View {
+        List {
+            ForEach(model.items, id: \.id) { item in
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    MainDateListLabel(product: item)
+                        .listModifier(id: item.id, tappedItemId: $tappedItemId) {
+                            self.tappedItem(item)
+                        }
+                        .padding(.horizontal)
+                } else {
+                    MainDateListSwipeableItem(product: item) {
+                        withAnimation {
+                            if let index = model.items.firstIndex(of: item) {
+                                model.deleteItems(at: IndexSet(integer: index))
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .listModifier(id: item.id, tappedItemId: $tappedItemId) {
+                        self.tappedItem(item)
+                    }
+                }
+            }
+            .onDelete(perform: model.deleteItems)
         }
     }
     
@@ -75,7 +190,9 @@ struct MainDateList: View {
     }
 }
 
-private extension View {
+// MARK: - View Extensions
+
+extension View {
     func addToolbar(_ model: MainDateListViewModel, path: Binding<[Product]>) -> some View {
         return modifier(ToolBar(model, path: path))
     }
@@ -84,6 +201,8 @@ private extension View {
         return modifier(ListModifier(tappedItemId: tappedItemId, id: id, animationHandler: animationHandler))
     }
 }
+
+// MARK: - View Modifiers
 
 private struct ToolBar: ViewModifier {
     private var model: MainDateListViewModel
@@ -202,13 +321,17 @@ struct UIViewLifeCycleHandler: UIViewControllerRepresentable {
     }
 }
 
-//#Preview("데이터 없음") {
-//    ContentView()
-//        .productRepository(MockProductRepository(withSampleData: false))
-//}
+// MARK: - Previews
+
+#Preview("데이터 없음") {
+    MainDateList(
+        repository: EmptyProductRepositoryForPreview(),
+        Binding.constant([Product]())
+    )
+}
 
 #Preview("데이터 있음") {
-    MainDateList.init(
+    MainDateList(
         repository: MockProductRepository(withSampleData: true),
         Binding.constant([Product]())
     )

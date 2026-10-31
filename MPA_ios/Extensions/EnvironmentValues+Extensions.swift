@@ -7,25 +7,14 @@
 
 import SwiftUI
 
-private struct ProductRepositoryKey: EnvironmentKey {
-    @MainActor
-    static let defaultValue: any ProductRepositoryProtocol = ProductRepository(persistence: Persistence())
-}
-
-private struct JournalPathsKey: EnvironmentKey {
-    static let defaultValue: Binding<[Product]> = .constant([])
-}
-
 extension EnvironmentValues {
-    var productRepository: any ProductRepositoryProtocol {
-        get { self[ProductRepositoryKey.self] }
-        set { self[ProductRepositoryKey.self] = newValue }
+    // @Entry의 기본값은 nonisolated 컨텍스트에서 평가되므로, 메인 액터에서 호출됨을 명시해 생성합니다.
+    // 실제 저장소는 MPA_iosApp 에서 `.productRepository(_:)` 로 주입합니다.
+    @Entry var productRepository: any ProductRepositoryProtocol = MainActor.assumeIsolated { () -> any ProductRepositoryProtocol in
+        MockProductRepository()
     }
-
-    var journalPaths: Binding<[Product]> {
-        get { self[JournalPathsKey.self] }
-        set { self[JournalPathsKey.self] = newValue }
-    }
+    @Entry var journalPaths: Binding<[Product]> = .constant([])
+    @Entry var contentsEnvironment: ContentsEnvironment = .generalVertical
 }
 
 extension View {

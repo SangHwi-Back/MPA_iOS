@@ -9,17 +9,12 @@ import Foundation
 import SwiftData
 
 @MainActor
-class MockProductRepository: ProductRepositoryProtocol {
+class SuperProductRepository: ProductRepositoryProtocol {
     private var products: [Product] = []
 
-    required init(persistence: Persistence) {
-        // Preview용이므로 persistence는 사용하지 않음
-    }
-
-    convenience init(withSampleData: Bool = false) {
-        self.init(persistence: Persistence())
+    init(withSampleData: Bool = false, products: [Product]) {
         if withSampleData {
-            self.products = Self.sampleProducts
+            self.products = products
         }
     }
 
@@ -55,6 +50,14 @@ class MockProductRepository: ProductRepositoryProtocol {
 
     func fetchAll() throws -> [Product] {
         products
+    }
+}
+
+
+@MainActor
+final class MockProductRepository: SuperProductRepository {
+    init(withSampleData: Bool = false) {
+        super.init(withSampleData: withSampleData, products: Self.sampleProducts)
     }
 
     static var sampleProducts: [Product] {
@@ -105,5 +108,11 @@ class MockProductRepository: ProductRepositoryProtocol {
                 createdAt: formatter.string(from: yearAgo), updatedAt: nil
             )
         ]
+    }
+}
+@MainActor
+final class EmptyProductRepositoryForPreview: SuperProductRepository {
+    init(withSampleData: Bool = false) {
+        super.init(products: [])
     }
 }
