@@ -7,22 +7,6 @@
 
 import SwiftUI
 
-enum ContentsEnvironment {
-    case navigationSplit
-    /// iPhone Duo Split + 가로
-    case horizontalDuoSplit
-    /// iPhone Duo 오버레이 + 세로
-    case verticalDuoOverlay
-    /// iPhone 세로 형태 기준
-    case generalVertical
-}
-
-enum DeviceHingeStatus {
-    case closed
-    case partiallyOpen
-    case fullyOpen
-}
-
 enum ContentTab: String, CaseIterable, Identifiable, Hashable {
     case today = "tab_today"
     case journal = "tab_journal"
@@ -35,7 +19,31 @@ enum ContentTab: String, CaseIterable, Identifiable, Hashable {
 struct ContentView: View {
     @State private var modalState = ModalState()
     @State private var selectedTab: ContentTab = .today
-
+    
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+    @Environment(\.isDeviceiPhoneDuo)
+    private var isDeviceiPhoneDuo
+    
+    var contentsEnvironment: ContentsEnvironment {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return .navigationSplit
+        } else if isDeviceiPhoneDuo {
+            if horizontalSizeClass == .compact && verticalSizeClass == .compact {
+                return .navigationSplit
+            }
+            if horizontalSizeClass == .regular && verticalSizeClass == .regular {
+                return .horizontalDuoSplit
+            } else {
+                return .generalVertical
+            }
+        } else {
+            return .generalVertical
+        }
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("오늘", image: iconName(for: .today), value: ContentTab.today) {
@@ -53,6 +61,7 @@ struct ContentView: View {
             }
         }
         .environment(\.showModal, modalState)
+        .environment(\.contentsEnvironment, contentsEnvironment)
         .onTapGesture {
             self.modalState.modalType = .none
         }

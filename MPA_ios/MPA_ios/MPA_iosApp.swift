@@ -11,9 +11,18 @@ import SwiftData
 @main
 struct MPA_iosApp: App {
     @State private var isLaunchProcessing: Bool = true
+    @State private var hingeStatus: DeviceHingeStatus?
     
     let persistence = Persistence()
-
+    
+    var isDeviceiPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+    var isDeviceiPhoneDuo: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+        && UIDevice.current.name.contains("Duo")
+    }
+    
     var body: some Scene {
         WindowGroup {
             if isLaunchProcessing {
@@ -28,12 +37,34 @@ struct MPA_iosApp: App {
                             self.isLaunchProcessing = false
                         }
                     }
+            } else if #available(anyAppleOS 27.1, *) {
+                contents
+                    .onHingeChange { _, newContext in
+                        self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
+                    }
             } else {
-                ContentView()
-                    .productRepository(ProductRepository(context: persistence.container.mainContext))
-                    .transition(.opacity)
+                contents
             }
         }
         .modelContainer(persistence.container)
+    }
+    
+    var contents: some View {
+        ContentView()
+            .productRepository(ProductRepository(context: persistence.container.mainContext))
+            .environment(\.isDeviceiPad, isDeviceiPad)
+            .environment(\.isDeviceiPhoneDuo, isDeviceiPhoneDuo)
+            .environment(\.hingeStatus, hingeStatus)
+            .transition(.opacity)
+    }
+    
+    @available(anyAppleOS 27.1, *)
+    private func getHingeStatus(from status: DeviceHinge.Status?) -> DeviceHingeStatus? {
+        switch status {
+        case .closed: return .closed
+        case .fullyOpen: return .fullyOpen
+        case .partiallyOpen: return .partiallyOpen
+        default: return nil
+        }
     }
 }

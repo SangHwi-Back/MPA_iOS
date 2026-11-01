@@ -8,39 +8,16 @@
 import SwiftUI
 
 struct TodayHomeView: View {
-    @Environment(\.productRepository) private var repository
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.productRepository)
+    private var repository
+    @Environment(\.contentsEnvironment)
+    private var contentsEnvironment
+    
     @State private var path: [Product] = []
-    @State private var hingeStatus: DeviceHingeStatus?
-
-    var isDeviceiPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
-    var isDeviceiPhoneDuo: Bool {
-        UIDevice.current.userInterfaceIdiom == .phone
-        && UIDevice.current.name.contains("Duo")
-    }
-    var contentEnvironment: ContentsEnvironment {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return .navigationSplit
-        } else if isDeviceiPhoneDuo {
-            if horizontalSizeClass == .compact && verticalSizeClass == .compact {
-                return .navigationSplit
-            }
-            if horizontalSizeClass == .regular && verticalSizeClass == .regular {
-                return .horizontalDuoSplit
-            } else {
-                return .generalVertical
-            }
-        } else {
-            return .generalVertical
-        }
-    }
 
     @ViewBuilder
     var body: some View {
-        switch contentEnvironment {
+        switch contentsEnvironment {
         case .horizontalDuoSplit:
             iphoneDuoSplitView
         case .verticalDuoOverlay:
@@ -62,9 +39,6 @@ struct TodayHomeView: View {
                 navigationStackWithDestination
             }
             .arrangementViewStyle(.split)
-            .onHingeChange { _, newContext in
-                self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
-            }
         } else {
             navigationContentView
         }
@@ -80,9 +54,6 @@ struct TodayHomeView: View {
                     .modelContainer(for: Product.self, inMemory: true)
             }
             .arrangementViewStyle(.overlay)
-            .onHingeChange { _, newContext in
-                self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
-            }
         } else {
             navigationContentView
         }
@@ -123,16 +94,6 @@ struct TodayHomeView: View {
                 DailyJournalView(repository: repository, entry: product)
                     .environment(\.journalPaths, $path)
             }
-        }
-    }
-
-    @available(anyAppleOS 27.1, *)
-    private func getHingeStatus(from status: DeviceHinge.Status?) -> DeviceHingeStatus? {
-        switch status {
-        case .closed: return .closed
-        case .fullyOpen: return .fullyOpen
-        case .partiallyOpen: return .partiallyOpen
-        default: return nil
         }
     }
 }
