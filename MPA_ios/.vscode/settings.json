@@ -1,0 +1,7 @@
+{
+  "sourcekit-lsp.serverPath": "/usr/bin/sourcekit-lsp",
+  "[swift]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "sswg.swift-lang"
+  }
+}
