@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		1B33ECF13066228A0093A570 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1B33ECF03066228A0093A570 /* Config.xcconfig */; };
+		A55C19CA3096ED1D005B641E /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = A55C19C93096ED1D005B641E /* .gitignore */; };
 		A59519162DEF9754005A4D55 /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = A59519122DEF9754005A4D55 /* .swiftlint.yml */; };
 		A59519172DEF9754005A4D55 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = A59519132DEF9754005A4D55 /* README.md */; };
-		A59519182DEF9754005A4D55 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = A59519142DEF9754005A4D55 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,12 +32,12 @@
 
 /* Begin PBXFileReference section */
 		1B33ECF03066228A0093A570 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		A55C19C93096ED1D005B641E /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		A59518AB2DEF213A005A4D55 /* MPA_ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MPA_ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A59518BA2DEF213B005A4D55 /* MPA_iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MPA_iosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A59518C42DEF213B005A4D55 /* MPA_iosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MPA_iosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A59519122DEF9754005A4D55 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		A59519132DEF9754005A4D55 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		A59519142DEF9754005A4D55 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -89,7 +89,7 @@
 				1B33ECF03066228A0093A570 /* Config.xcconfig */,
 				A59519122DEF9754005A4D55 /* .swiftlint.yml */,
 				A59519132DEF9754005A4D55 /* README.md */,
-				A59519142DEF9754005A4D55 /* .gitignore */,
+				A55C19C93096ED1D005B641E /* .gitignore */,
 				A59518AD2DEF213A005A4D55 /* MPA_ios */,
 				A59518BD2DEF213B005A4D55 /* MPA_iosTests */,
 				A59518C72DEF213B005A4D55 /* MPA_iosUITests */,
@@ -232,9 +232,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A59519162DEF9754005A4D55 /* .swiftlint.yml in Resources */,
+				A55C19CA3096ED1D005B641E /* .gitignore in Resources */,
 				A59519172DEF9754005A4D55 /* README.md in Resources */,
 				1B33ECF13066228A0093A570 /* Config.xcconfig in Resources */,
-				A59519182DEF9754005A4D55 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

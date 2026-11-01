@@ -33,52 +33,13 @@ enum ContentTab: String, CaseIterable, Identifiable, Hashable {
 }
 
 struct ContentView: View {
-    @Environment(\.productRepository) private var repository
-    
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-    
-    @State private var path: [Product] = []
     @State private var modalState = ModalState()
-    @State private var hingeStatus: DeviceHingeStatus?
     @State private var selectedTab: ContentTab = .today
-    
-    var isDeviceiPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
-    var isDeviceiPhoneDuo: Bool {
-        UIDevice.current.userInterfaceIdiom == .phone
-        && UIDevice.current.name.contains("Duo")
-    }
-    
-    var contentEnvironment: ContentsEnvironment {
-        // iPad 일 경우
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return .navigationSplit
-        }
-        // iPhone Duo 일 경우
-        else if isDeviceiPhoneDuo {
-            if horizontalSizeClass == .compact && verticalSizeClass == .compact {
-                return .navigationSplit
-            }
-            if horizontalSizeClass == .regular && verticalSizeClass == .regular {
-                return .horizontalDuoSplit
-            }
-            else {
-                return .generalVertical
-            }
-        }
-        // iPhone 일 경우
-        else {
-            return .generalVertical
-        }
-    }
-    
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("오늘", image: iconName(for: .today), value: ContentTab.today) {
-                todayTabContent
+                TodayHomeView()
             }
 
             Tab("기록", image: iconName(for: .journal), value: ContentTab.journal) {
@@ -109,108 +70,8 @@ struct ContentView: View {
         modalState.modalType == .none ? Color.clear : Color.black.opacity(0.5)
     }
 
-    @ViewBuilder
-    private var todayTabContent: some View {
-        switch contentEnvironment {
-        case .horizontalDuoSplit:
-            iphoneDuoSplitView
-        case .verticalDuoOverlay:
-            iphoneDuoOverlayView
-        case .navigationSplit:
-            navigationSplitView
-        case .generalVertical:
-            navigationContentView
-        }
-    }
-
     private func iconName(for tab: ContentTab) -> String {
         tab.rawValue + (selectedTab == tab ? "_selected" : "")
-    }
-    
-    @ViewBuilder
-    private var iphoneDuoSplitView: some View {
-        if #available(anyAppleOS 27.1, *) {
-            ArrangementView {
-                MainDateList(repository: repository, $path)
-                    .modelContainer(for: Product.self, inMemory: true)
-            } secondary: {
-                navigationStackWithDestination
-            }
-            .arrangementViewStyle(.split)
-            .onHingeChange { _, newContext in
-                self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
-            }
-        } else {
-            navigationContentView
-        }
-    }
-    
-    @ViewBuilder
-    private var iphoneDuoOverlayView: some View {
-        if #available(anyAppleOS 27.1, *) {
-            ArrangementView {
-                navigationStackWithDestination
-            } secondary: {
-                MainDateList(repository: repository, $path)
-                    .modelContainer(for: Product.self, inMemory: true)
-            }
-            .arrangementViewStyle(.overlay)
-            .onHingeChange { _, newContext in
-                self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
-            }
-        } else {
-            navigationContentView
-        }
-    }
-    
-    /// - Contents
-    private var navigationStackWithDestination: some View {
-        NavigationStack(path: $path) {
-            MainView()
-                .addToolbar(MainDateListViewModel(repository: repository), path: $path)
-                .padding(.horizontal, 20)
-        }
-        .navigationDestination(for: Product.self) { product in
-            DailyJournalView(repository: repository, entry: product)
-                .environment(\.journalPaths, $path)
-        }
-    }
-    
-    @ViewBuilder
-    private var navigationSplitView: some View {
-        NavigationSplitView {
-            MainDateList(repository: repository, $path)
-                .modelContainer(for: Product.self, inMemory: true)
-        } detail: {
-            navigationStackWithDestination
-                .addToolbar(MainDateListViewModel(repository: repository), path: $path)
-        }
-    }
-    
-    @ViewBuilder
-    private var navigationContentView: some View {
-        NavigationStack(path: $path) {
-            ScrollView { VStack(spacing: 0) {
-                MainView()
-                MainDateList(repository: repository, $path)
-                    .modelContainer(for: Product.self, inMemory: true)
-                    .addToolbar(MainDateListViewModel(repository: repository), path: $path)
-            }}
-            .navigationDestination(for: Product.self) { product in
-                DailyJournalView(repository: repository, entry: product)
-                    .environment(\.journalPaths, $path)
-            }
-        }
-    }
-    
-    @available(anyAppleOS 27.1, *)
-    private func getHingeStatus(from status: DeviceHinge.Status?) -> DeviceHingeStatus? {
-        switch status {
-        case .closed: return .closed
-        case .fullyOpen: return .fullyOpen
-        case .partiallyOpen: return .partiallyOpen
-        default: return nil
-        }
     }
     
     @ViewBuilder
