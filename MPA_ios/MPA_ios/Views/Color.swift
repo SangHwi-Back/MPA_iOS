@@ -7,90 +7,6 @@
 
 import SwiftUI
 
-enum MPAColor {
-    case canvas
-    case surface
-    case sunken
-    case container
-    case hairline
-    case textPrimary
-    case textSecondary
-    case textTertiary
-    case brandPrimary
-    case brandOnPrimary
-    case brandContainer
-    case brandOnContainer
-    case aiTint
-    case aiAccent
-    case warning
-    case warningText
-    case danger
-    case highlightSearch
-    case scrim
-    case principle1
-    case principle2
-    case principle3
-    case principle4
-    case principle5
-    case onPrinciple
-    
-    var colorHex: String {
-        let scheme = Environment(\.colorScheme).wrappedValue
-        switch self {
-        case .canvas:
-            return scheme == .dark ? DarkColorHex.canvas : LightColorHex.canvas
-        case .surface:
-            return scheme == .dark ? DarkColorHex.surface : LightColorHex.surface
-        case .sunken:
-            return scheme == .dark ? DarkColorHex.sunken : LightColorHex.sunken
-        case .container:
-            return scheme == .dark ? DarkColorHex.container : LightColorHex.container
-        case .hairline:
-            return scheme == .dark ? DarkColorHex.hairline : LightColorHex.hairline
-        case .textPrimary:
-            return scheme == .dark ? DarkColorHex.textPrimary : LightColorHex.textPrimary
-        case .textSecondary:
-            return scheme == .dark ? DarkColorHex.textSecondary : LightColorHex.textSecondary
-        case .textTertiary:
-            return scheme == .dark ? DarkColorHex.textTertiary : LightColorHex.textTertiary
-        case .brandPrimary:
-            return scheme == .dark ? DarkColorHex.brandPrimary : LightColorHex.brandPrimary
-        case .brandOnPrimary:
-            return scheme == .dark ? DarkColorHex.brandOnPrimary : LightColorHex.brandOnPrimary
-        case .brandContainer:
-            return scheme == .dark ? DarkColorHex.brandContainer : LightColorHex.brandContainer
-        case .brandOnContainer:
-            return scheme == .dark ? DarkColorHex.brandOnContainer : LightColorHex.brandOnContainer
-        case .aiTint:
-            return scheme == .dark ? DarkColorHex.aiTint : LightColorHex.aiTint
-        case .aiAccent:
-            return scheme == .dark ? DarkColorHex.aiAccent : LightColorHex.aiAccent
-        case .warning:
-            return scheme == .dark ? DarkColorHex.warning : LightColorHex.warning
-        case .warningText:
-            return scheme == .dark ? DarkColorHex.warningText : LightColorHex.warningText
-        case .danger:
-            return scheme == .dark ? DarkColorHex.danger : LightColorHex.danger
-        case .highlightSearch:
-            return scheme == .dark ? DarkColorHex.highlightSearch : LightColorHex.highlightSearch
-        case .scrim:
-            return scheme == .dark ? DarkColorHex.scrim : LightColorHex.scrim
-        case .principle1:
-            return scheme == .dark ? DarkColorHex.principle1 : LightColorHex.principle1
-        case .principle2:
-            return scheme == .dark ? DarkColorHex.principle2 : LightColorHex.principle2
-        case .principle3:
-            return scheme == .dark ? DarkColorHex.principle3 : LightColorHex.principle3
-        case .principle4:
-            return scheme == .dark ? DarkColorHex.principle4 : LightColorHex.principle4
-        case .principle5:
-            return scheme == .dark ? DarkColorHex.principle5 : LightColorHex.principle5
-        case .onPrinciple:
-            return scheme == .dark ? DarkColorHex.onPrinciple : LightColorHex.onPrinciple
-        }
-    }
-}
-
 // MARK: Light
 enum LightColorHex {
     // Background
@@ -209,4 +125,30 @@ extension Color {
         return Color(hex: light)
         #endif
     }
+    
+    static let CANVAS = Color.mpa(LightColorHex.canvas, dark: DarkColorHex.canvas)
+    static let SURFACE = Color.mpa(LightColorHex.surface, dark: DarkColorHex.surface)
+    static let SUNKEN = Color.mpa(LightColorHex.sunken, dark: DarkColorHex.sunken)
+    static let CONTAINER = Color.mpa(LightColorHex.container, dark: DarkColorHex.container)
+    static let HAIRLINE = Color.mpa(LightColorHex.hairline, dark: DarkColorHex.hairline)
+    static let TEXT_PRIMARY = Color.mpa(LightColorHex.textPrimary, dark: DarkColorHex.textPrimary)
+    static let TEXT_SECONDARY = Color.mpa(LightColorHex.textSecondary, dark: DarkColorHex.textSecondary)
+    static let TEXT_TERTIARY = Color.mpa(LightColorHex.textTertiary, dark: DarkColorHex.textTertiary)
+    static let BRAND_PRIMARY = Color.mpa(LightColorHex.brandPrimary, dark: DarkColorHex.brandPrimary)
+    static let BRAND_ON_PRIMARY = Color.mpa(LightColorHex.brandOnPrimary, dark: DarkColorHex.brandOnPrimary)
+    static let BRAND_CONTAINER = Color.mpa(LightColorHex.brandContainer, dark: DarkColorHex.brandContainer)
+    static let BRAND_ON_CONTAINER = Color.mpa(LightColorHex.brandOnContainer, dark: DarkColorHex.brandOnContainer)
+    static let AI_TINT = Color.mpa(LightColorHex.aiTint, dark: DarkColorHex.aiTint)
+    static let AI_ACCENT = Color.mpa(LightColorHex.aiAccent, dark: DarkColorHex.aiAccent)
+    static let WARNING = Color.mpa(LightColorHex.warning, dark: DarkColorHex.warning)
+    static let WARNING_TEXT = Color.mpa(LightColorHex.warningText, dark: DarkColorHex.warningText)
+    static let DANGER = Color.mpa(LightColorHex.danger, dark: DarkColorHex.danger)
+    static let HIGHLIGHT_SEARCH = Color.mpa(LightColorHex.highlightSearch, dark: DarkColorHex.highlightSearch)
+    static let SCRIM = Color.mpa(LightColorHex.scrim, dark: DarkColorHex.scrim)
+    static let PRINCIPLE1 = Color.mpa(LightColorHex.principle1, dark: DarkColorHex.principle1)
+    static let PRINCIPLE2 = Color.mpa(LightColorHex.principle2, dark: DarkColorHex.principle2)
+    static let PRINCIPLE3 = Color.mpa(LightColorHex.principle3, dark: DarkColorHex.principle3)
+    static let PRINCIPLE4 = Color.mpa(LightColorHex.principle4, dark: DarkColorHex.principle4)
+    static let PRINCIPLE5 = Color.mpa(LightColorHex.principle5, dark: DarkColorHex.principle5)
+    static let ON_PRINCIPLE = Color.mpa(LightColorHex.onPrinciple, dark: DarkColorHex.onPrinciple)
 }
