@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,47 +55,93 @@ fun TodayHomeView() {
         modifier = Modifier
             .fillMaxSize()
             .background(MPAColor.CANVAS.color())
-            .verticalScroll(scrollviewState)
-            .padding(16.dp),
     ) {
-        GreetingHeader()
+        HeaderButtons()
         Spacer(Modifier.height(16.dp))
-        JournalQuestionCard()
-        Spacer(Modifier.height(8.dp))
-        JournalReflectionCard()
-        Spacer(Modifier.height(20.dp))
-        MyWishSection()
-        Spacer(Modifier.height(16.dp))
-        NextWeeksSummaryCard()
-        Spacer(Modifier.height(16.dp))
-        TodayJournalPromptCard()
-        Spacer(Modifier.height(16.dp))
-        ThisWeekCalendarStrip(
-            days = listOf(
-                WeekDayCell("월", "26", hasJournal = true),
-                WeekDayCell("화", "27", hasJournal = true),
-                WeekDayCell("수", "28"),
-                WeekDayCell("목", "29", hasJournal = true),
-                WeekDayCell("금", "30", isSelected = true),
-                WeekDayCell("토", "31", isCurrentWeek = false),
-                WeekDayCell("일", "1", isCurrentWeek = false),
-            ),
-            onOpenCalendar = {}
-        )
-        Spacer(Modifier.height(16.dp))
-        RecentJournalSection(
-            items = listOf(
-                RecentJournalItem("29", "목", "퇴근길 산책",
-                    "한 정거장 먼저 내려서 걸었다. 바람이 차가워서 오히려 머리가 맑아졌다.",
-                    hasPhoto = true),
-                RecentJournalItem("27", "화", "회의에서 말을 끊지 않기",
-                    "끝까지 듣고 나니 내가 하려던 질문이 달라졌다."),
-            ),
-        )
+        Column(
+            modifier = Modifier
+                .verticalScroll(scrollviewState)
+                .padding(16.dp),
+        ) {
+            GreetingHeader()
+            Spacer(Modifier.height(16.dp))
+            JournalQuestionCard()
+            Spacer(Modifier.height(8.dp))
+            JournalReflectionCard()
+            Spacer(Modifier.height(20.dp))
+            MyWishSection()
+            Spacer(Modifier.height(16.dp))
+            NextWeeksSummaryCard()
+            Spacer(Modifier.height(16.dp))
+            TodayJournalPromptCard()
+            Spacer(Modifier.height(16.dp))
+            ThisWeekCalendarStrip(
+                days = listOf(
+                    WeekDayCell("월", "26", hasJournal = true),
+                    WeekDayCell("화", "27", hasJournal = true),
+                    WeekDayCell("수", "28"),
+                    WeekDayCell("목", "29", hasJournal = true),
+                    WeekDayCell("금", "30", isSelected = true),
+                    WeekDayCell("토", "31", isCurrentWeek = false),
+                    WeekDayCell("일", "1", isCurrentWeek = false),
+                ),
+                onOpenCalendar = {}
+            )
+            Spacer(Modifier.height(16.dp))
+            RecentJournalSection(
+                items = listOf(
+                    RecentJournalItem(
+                        "29", "목", "퇴근길 산책",
+                        "한 정거장 먼저 내려서 걸었다. 바람이 차가워서 오히려 머리가 맑아졌다.",
+                        hasPhoto = true
+                    ),
+                    RecentJournalItem(
+                        "27", "화", "회의에서 말을 끊지 않기",
+                        "끝까지 듣고 나니 내가 하려던 질문이 달라졌다."
+                    ),
+                ),
+            )
+            Spacer(Modifier.height(36.dp))
+        }
     }
 }
 
 // ── Greeting ──────────────────────────────────────────────────────────
+@Composable
+private fun HeaderButtons() {
+    val shadow = Shadow(
+        radius = 0.15.dp,
+        color = MPAColor.TEXT_PRIMARY.color().copy(alpha = 0.08f),
+    )
+    val modifier = Modifier
+        .padding(end = 16.dp)
+        .size(44.dp)
+        .dropShadow(CircleShape, shadow)
+    Row {
+        Spacer(Modifier.weight(1f))
+        IconButton(
+            onClick = { },
+            modifier,
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_alert_button),
+                contentDescription = "AI Alert",
+                tint = Color.Unspecified,
+            )
+        }
+        IconButton(
+            onClick = {},
+            modifier
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_add),
+                contentDescription = "AI Alert",
+                tint = MPAColor.TEXT_PRIMARY.color(),
+            )
+        }
+    }
+}
+
 @Composable
 private fun GreetingHeader() {
     Column {
