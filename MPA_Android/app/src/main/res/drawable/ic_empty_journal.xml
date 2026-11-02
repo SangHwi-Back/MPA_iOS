@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MPA 기록 화면 아이콘 (디자인 색 포함). Use tint = Color.Unspecified to keep the color. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="170dp"
+    android:height="130dp"
+    android:viewportWidth="170"
+    android:viewportHeight="130">
+    <path
+        android:pathData="M40,22h90a12,12 0 0,1 12,12v72a12,12 0 0,1 -12,12H40a12,12 0 0,1 -12,-12V34a12,12 0 0,1 12,-12z"
+        android:fillColor="#00000000"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M28,46h114M56,14v16M114,14v16"
+        android:fillColor="#00000000"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M53,66a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"
+        android:fillColor="#7A736B"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M82,66a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M111,66a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M53,92a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M111,92a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#7A736B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M76,92a9,9 0 1,0 18,0a9,9 0 1,0 -18,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#EE937B"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+</vector>
