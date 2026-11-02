@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MPA 설정 · AI 연결 아이콘 (디자인 색 포함). Use tint = Color.Unspecified to keep the color. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <path
+        android:pathData="M0,18a18,18 0 1,0 36,0a18,18 0 1,0 -36,0"
+        android:fillColor="#D97A1E" />
+    <group
+        android:translateX="8.0"
+        android:translateY="8.0"
+        android:scaleX="0.833333"
+        android:scaleY="0.833333">
+        <path
+            android:pathData="M12,3.5L21.5,20h-19z"
+            android:fillColor="#FFFFFF"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="1.5"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M12,9.5v4.5M12,16.8v0.1"
+            android:fillColor="#00000000"
+            android:strokeColor="#D97A1E"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

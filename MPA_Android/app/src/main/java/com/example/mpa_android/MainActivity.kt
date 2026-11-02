@@ -29,6 +29,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
+import com.example.mpa_android.ui.view.JournalHomeView
+import com.example.mpa_android.ui.view.PrincipalHomeView
+import com.example.mpa_android.ui.view.SettingsHomeView
 import com.example.mpa_android.ui.view.TodayHomeView
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
 
@@ -145,9 +148,9 @@ fun App() {
                         CompositionLocalProvider(InnerPadding provides innerPadding) {
                             when (destination) {
                                 TabDestinations.TODAY -> TodayHomeView()
-                                TabDestinations.JOURNAL -> Text("JOURNAL")
-                                TabDestinations.PRINCIPAL -> Text("PRINCIPAL")
-                                TabDestinations.SETTINGS -> Text("SETTINGS")
+                                TabDestinations.JOURNAL -> JournalHomeView()
+                                TabDestinations.PRINCIPAL -> PrincipalHomeView()
+                                TabDestinations.SETTINGS -> SettingsHomeView()
                             }
                         }
                     }
