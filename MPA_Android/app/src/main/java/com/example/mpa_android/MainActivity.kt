@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -12,7 +13,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -26,6 +29,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
+import com.example.mpa_android.ui.view.TodayHomeView
+import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
+
+val InnerPadding = staticCompositionLocalOf {
+    PaddingValues()
+}
+val TestValue = staticCompositionLocalOf {
+    1
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,6 +131,9 @@ fun App() {
                 }
             }
         },
+        floatingActionButton = {
+            WriteJournalFloatingActionButton()
+        },
         content = { innerPadding ->
             NavHost(
                 navController,
@@ -127,11 +142,13 @@ fun App() {
             ) {
                 TabDestinations.entries.forEach { destination ->
                     composable(destination.route) {
-                        when (destination) {
-                            TabDestinations.TODAY -> Text("TODAY")
-                            TabDestinations.JOURNAL -> Text("JOURNAL")
-                            TabDestinations.PRINCIPAL -> Text("PRINCIPAL")
-                            TabDestinations.SETTINGS -> Text("SETTINGS")
+                        CompositionLocalProvider(InnerPadding provides innerPadding) {
+                            when (destination) {
+                                TabDestinations.TODAY -> TodayHomeView()
+                                TabDestinations.JOURNAL -> Text("JOURNAL")
+                                TabDestinations.PRINCIPAL -> Text("PRINCIPAL")
+                                TabDestinations.SETTINGS -> Text("SETTINGS")
+                            }
                         }
                     }
                 }
