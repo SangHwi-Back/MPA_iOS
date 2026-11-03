@@ -27,6 +27,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,8 +48,9 @@ import com.example.mpa_android.model.Journal
 import com.example.mpa_android.model.JournalKeyword
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.viewmodel.JournalViewModel
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.Month
 
 private val DAY_ORDER = listOf(
     DayOfWeek.SUNDAY,
@@ -72,7 +74,7 @@ private val KOREAN_WEEKDAYS = listOf(
     "토요일",
 )
 
-private val TODAY = LocalDate(2026, 10, 27)
+private val TODAY = LocalDate.now()
 
 private fun isLeapYear(year: Int): Boolean =
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
@@ -96,20 +98,19 @@ fun JournalHomeView() {
     val journals = viewModel.journals
 
     var isCalendar by remember { mutableStateOf(false) }
-    var viewYear by remember { mutableStateOf(2026) }
-    var viewMonth by remember { mutableStateOf(10) }
-    var selectedDay by remember { mutableStateOf(30) }
+    var viewYear by remember { mutableIntStateOf(TODAY.year) }
+    var viewMonth by remember { mutableStateOf(TODAY.month) }
+    var selectedDay by remember { mutableIntStateOf(TODAY.dayOfMonth) }
 
-    val selectedDate = LocalDate(viewYear, viewMonth, selectedDay)
-    val monthStart = LocalDate(viewYear, viewMonth, 1)
-    val nextMonthStart = LocalDate(
-        if (viewMonth == 12) viewYear + 1 else viewYear,
-        if (viewMonth == 12) 1 else viewMonth + 1,
+    val monthStart = LocalDate.of(viewYear, viewMonth, 1)
+    val nextMonthStart = LocalDate.of(
+        if (viewMonth.value == 12) viewYear + 1 else viewYear,
+        if (viewMonth.value == 12) 1 else viewMonth.value + 1,
         1,
     )
     val monthEntries = journals
         .filter { journal ->
-            journal.day.compareTo(monthStart) >= 0 && journal.day.compareTo(nextMonthStart) < 0
+            journal.day in monthStart..<nextMonthStart
         }
         .sortedByDescending { it.day }
 
@@ -135,23 +136,23 @@ fun JournalHomeView() {
         if (isCalendar) {
             JournalCalendar(
                 viewYear = viewYear,
-                viewMonth = viewMonth,
+                viewMonth = viewMonth.value,
                 selectedDay = selectedDay,
                 entries = monthEntries,
                 onPreviousMonth = {
-                    if (viewMonth == 1) {
-                        viewYear = viewYear - 1
-                        viewMonth = 12
+                    if (viewMonth.value == 1) {
+                        viewYear -= 1
+                        viewMonth = Month.of(12)
                     } else {
-                        viewMonth = viewMonth - 1
+                        viewMonth = Month.of(viewMonth.value - 1)
                     }
                 },
                 onNextMonth = {
-                    if (viewMonth == 12) {
-                        viewYear = viewYear + 1
-                        viewMonth = 1
+                    if (viewMonth.value == 12) {
+                        viewYear += 1
+                        viewMonth = Month.of(1)
                     } else {
-                        viewMonth = viewMonth + 1
+                        viewMonth = Month.of(viewMonth.value + 1)
                     }
                 },
                 onSelectDay = { day -> selectedDay = day },
@@ -164,7 +165,7 @@ fun JournalHomeView() {
             JournalEntryList(
                 entries = monthEntries,
                 viewYear = viewYear,
-                viewMonth = viewMonth,
+                viewMonth = viewMonth.value,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -343,7 +344,7 @@ private fun JournalEntryRow(entry: Journal, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(end = 12.dp),
         ) {
             Text(
-                text = entry.day.day.toString(),
+                text = entry.day.toString(),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MPAColor.TEXT_PRIMARY.color(),
@@ -438,7 +439,7 @@ private fun JournalCalendar(
     onSelectDay: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val firstOfMonth = LocalDate(viewYear, viewMonth, 1)
+    val firstOfMonth = LocalDate.of(viewYear, viewMonth, 1)
     val leading = DAY_ORDER.indexOf(firstOfMonth.dayOfWeek)
     val currentMonthDays = daysInMonth(viewYear, viewMonth)
     val prevYear = if (viewMonth == 1) viewYear - 1 else viewYear
@@ -451,15 +452,15 @@ private fun JournalCalendar(
         val list = mutableListOf<Pair<LocalDate, Boolean>>()
         if (leading > 0) {
             for (d in (prevMonthDays - leading + 1)..prevMonthDays) {
-                list.add(LocalDate(prevYear, prevMonthNumber, d) to false)
+                list.add(LocalDate.of(prevYear, prevMonthNumber, d) to false)
             }
         }
         for (d in 1..currentMonthDays) {
-            list.add(LocalDate(viewYear, viewMonth, d) to true)
+            list.add(LocalDate.of(viewYear, viewMonth, d) to true)
         }
         var padDay = 1
         while (list.size % 7 != 0) {
-            list.add(LocalDate(nextYear, nextMonthNumber, padDay) to false)
+            list.add(LocalDate.of(nextYear, nextMonthNumber, padDay) to false)
             padDay += 1
         }
         list
@@ -528,14 +529,14 @@ private fun JournalCalendar(
             Row(modifier = Modifier.fillMaxWidth()) {
                 week.forEach { (date, isCurrentMonth) ->
                     CalendarDayCell(
-                        dayOfMonth = date.day,
+                        dayOfMonth = date.dayOfMonth,
                         isCurrentMonth = isCurrentMonth,
                         hasEntry = isCurrentMonth && entries.any { entry ->
-                            entry.day.compareTo(LocalDate(viewYear, viewMonth, date.day)) == 0
+                            entry.day.compareTo(LocalDate.of(viewYear, viewMonth, date.dayOfMonth)) == 0
                         },
                         isToday = date == TODAY,
-                        isSelected = isCurrentMonth && date.day == selectedDay,
-                        onClick = { onSelectDay(date.day) },
+                        isSelected = isCurrentMonth && date.dayOfMonth == selectedDay,
+                        onClick = { onSelectDay(date.dayOfMonth) },
                     )
                 }
             }
@@ -634,9 +635,9 @@ private fun JournalSelectedDateCard(
     modifier: Modifier = Modifier,
 ) {
     val selectedEntry = entries.firstOrNull { entry ->
-        entry.day.compareTo(LocalDate(viewYear, viewMonth, selectedDay)) == 0
+        entry.day.compareTo(LocalDate.of(viewYear, viewMonth, selectedDay)) == 0
     }
-    val dateLabel = "${viewMonth}월 ${selectedDay}일 ${LocalDate(viewYear, viewMonth, selectedDay).dayOfWeek.koreanFullName()}"
+    val dateLabel = "${viewMonth}월 ${selectedDay}일 ${LocalDate.of(viewYear, viewMonth, selectedDay).dayOfWeek.koreanFullName()}"
     val bodyPreview = selectedEntry?.body?.lineSequence()?.firstOrNull() ?: ""
 
     Column(
@@ -659,7 +660,7 @@ private fun JournalSelectedDateCard(
             color = MPAColor.TEXT_PRIMARY.color(),
         )
         Text(
-            text = LocalDate(viewYear, viewMonth, selectedDay).dayOfWeek.koreanShortName(),
+            text = LocalDate.of(viewYear, viewMonth, selectedDay).dayOfWeek.koreanShortName(),
             style = MaterialTheme.typography.bodySmall,
             color = MPAColor.TEXT_TERTIARY.color(),
         )

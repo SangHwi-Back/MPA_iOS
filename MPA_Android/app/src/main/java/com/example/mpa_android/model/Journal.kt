@@ -3,10 +3,9 @@
 package com.example.mpa_android.model
 
 import com.android.identity.util.UUID
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
+import java.time.LocalDate
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -134,9 +133,9 @@ data class Journal(
         val sample: Journal by lazy {
             val created = Instant.parse("2026-10-27T12:40:00Z") // 21:40 KST
             Journal(
-                day = LocalDate(2026, 10, 27),
+                day = LocalDate.of(2026, 10, 27),
                 createdAt = created,
-                editedAt = created.plus(12 * 60, DateTimeUnit.SECOND),
+                editedAt = created.plus(Duration.parse("1h")),
                 title = "회의에서 말을 끊지 않기",
                 body = """
                     오늘 주간 회의에서 끝까지 들어 보기로 마음먹었다. 민지 씨가 일정 이야기를 꺼냈을 때, 평소 같았으면 중간에 끼어들어 해결책부터 말했을 거다.
@@ -154,7 +153,7 @@ data class Journal(
                     JournalKeyword("경청", KeywordSource.AI, influence = 0.92),
                     JournalKeyword("솔직함", KeywordSource.AI, influence = 0.61),
                 ),
-                analysisState = AnalysisState.Analyzed(created.plus(60, DateTimeUnit.SECOND)),
+                analysisState = AnalysisState.Analyzed(created.plus(Duration.parse("1h"))),
             )
         }
     }
