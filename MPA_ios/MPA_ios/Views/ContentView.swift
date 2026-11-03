@@ -27,6 +27,8 @@ struct ContentView: View {
     @Environment(\.isDeviceiPhoneDuo)
     private var isDeviceiPhoneDuo
     
+    @StateObject private var journalViewModel = JournalViewModel()
+    
     var contentsEnvironment: ContentsEnvironment {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return .navigationSplit
@@ -51,13 +53,13 @@ struct ContentView: View {
             }
 
             Tab("기록", image: iconName(for: .journal), value: ContentTab.journal) {
-                Text("기록")
+                JournalHomeView(viewModel: journalViewModel)
             }
             Tab("원칙", image: iconName(for: .principles), value: ContentTab.principles) {
-                Text("원칙")
+                PrincipalHomeView()
             }
             Tab("설정", image: iconName(for: .settings), value: ContentTab.settings) {
-                Text("설정")
+                SettingsHomeView()
             }
         }
         .environment(\.showModal, modalState)
