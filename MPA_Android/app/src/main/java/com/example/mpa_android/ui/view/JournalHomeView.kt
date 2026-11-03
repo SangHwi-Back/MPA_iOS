@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -98,7 +97,7 @@ private fun DayOfWeek.koreanFullName(): String =
 @Composable
 fun JournalHomeView() {
     val viewModel: JournalViewModel = viewModel()
-    val journals = viewModel.journals
+    val journals = viewModel.journals.collectAsState()
 
     var isCalendar by remember { mutableStateOf(false) }
     var viewYear by remember { mutableIntStateOf(TODAY.year) }
@@ -111,7 +110,7 @@ fun JournalHomeView() {
         if (viewMonth.value == 12) 1 else viewMonth.value + 1,
         1,
     )
-    val monthEntries = journals
+    val monthEntries = journals.value
         .filter { journal ->
             journal.day in monthStart..<nextMonthStart
         }
@@ -160,7 +159,7 @@ fun JournalHomeView() {
                 },
                 onSelectDay = { day -> selectedDay = day },
             )
-        } else if (journals.isEmpty()) {
+        } else if (journals.value.isEmpty()) {
             JournalEmptyState(
                 modifier = Modifier.fillMaxSize(),
             )
