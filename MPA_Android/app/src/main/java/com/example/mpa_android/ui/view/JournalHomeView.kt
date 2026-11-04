@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
 import com.example.mpa_android.model.Journal
 import com.example.mpa_android.model.JournalKeyword
@@ -95,8 +95,7 @@ private fun DayOfWeek.koreanFullName(): String =
     KOREAN_WEEKDAYS[DAY_ORDER.indexOf(this)]
 
 @Composable
-fun JournalHomeView() {
-    val viewModel: JournalViewModel = viewModel()
+fun JournalHomeView(viewModel: JournalViewModel = hiltViewModel()) {
     val journals = viewModel.journals.collectAsState()
 
     var isCalendar by remember { mutableStateOf(false) }

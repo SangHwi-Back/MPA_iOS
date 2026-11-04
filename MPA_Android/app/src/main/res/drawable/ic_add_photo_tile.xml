@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MPA 일기 에디터 아이콘 (디자인 색 포함). Use tint = Color.Unspecified to keep the color. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="88dp"
+    android:height="88dp"
+    android:viewportWidth="88"
+    android:viewportHeight="88">
+    <path
+        android:pathData="M12.75,0.75l5.00,0.00M21.75,0.75l5.00,0.00M30.75,0.75l5.00,0.00M39.75,0.75l5.00,0.00M48.75,0.75l5.00,0.00M57.75,0.75l5.00,0.00M66.75,0.75l5.00,0.00M87.25,12.75l0.00,5.00M87.25,21.75l0.00,5.00M87.25,30.75l0.00,5.00M87.25,39.75l0.00,5.00M87.25,48.75l0.00,5.00M87.25,57.75l0.00,5.00M87.25,66.75l0.00,5.00M75.25,87.25l-5.00,0.00M66.25,87.25l-5.00,0.00M57.25,87.25l-5.00,0.00M48.25,87.25l-5.00,0.00M39.25,87.25l-5.00,0.00M30.25,87.25l-5.00,0.00M21.25,87.25l-5.00,0.00M0.75,75.25l0.00,-5.00M0.75,66.25l0.00,-5.00M0.75,57.25l0.00,-5.00M0.75,48.25l0.00,-5.00M0.75,39.25l0.00,-5.00M0.75,30.25l0.00,-5.00M0.75,21.25l0.00,-5.00M75.25,0.75a12,12 0 0,1 12,12M87.25,75.25a12,12 0 0,1 -12,12M12.75,87.25a12,12 0 0,1 -12,-12M0.75,12.75a12,12 0 0,1 12,-12"
+        android:fillColor="#00000000"
+        android:strokeColor="#C9C2B8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M44,33v22M33,44h22"
+        android:fillColor="#00000000"
+        android:strokeColor="#8A837B"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

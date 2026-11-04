@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MPA 일기 에디터 아이콘 (디자인 색 포함). Use tint = Color.Unspecified to keep the color. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M3.2,12a1.8,1.8 0 1,0 3.6,0a1.8,1.8 0 1,0 -3.6,0"
+        android:fillColor="#1C1B1A" />
+    <path
+        android:pathData="M10.2,12a1.8,1.8 0 1,0 3.6,0a1.8,1.8 0 1,0 -3.6,0"
+        android:fillColor="#1C1B1A" />
+    <path
+        android:pathData="M17.2,12a1.8,1.8 0 1,0 3.6,0a1.8,1.8 0 1,0 -3.6,0"
+        android:fillColor="#1C1B1A" />
+</vector>

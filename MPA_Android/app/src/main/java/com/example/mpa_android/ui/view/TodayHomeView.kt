@@ -41,22 +41,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mpa_android.R
 import com.example.mpa_android.ui.theme.MPAColor
-import com.example.mpa_android.viewmodel.JournalViewModel
 
 // ── Root ──────────────────────────────────────────────────────────────
 @Composable
-fun TodayHomeView() {
+fun TodayHomeView(onAddJournal: () -> Unit = {}) {
     val scrollviewState = rememberScrollState()
-    val viewModel = viewModel<JournalViewModel>()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MPAColor.CANVAS.color())
     ) {
-        HeaderButtons()
+        HeaderButtons(onAddClick = onAddJournal)
         Spacer(Modifier.height(16.dp))
         Column(
             modifier = Modifier
@@ -108,7 +105,7 @@ fun TodayHomeView() {
 
 // ── Greeting ──────────────────────────────────────────────────────────
 @Composable
-private fun HeaderButtons() {
+private fun HeaderButtons(onAddClick: () -> Unit = {}) {
     val shadow = Shadow(
         radius = 0.15.dp,
         color = MPAColor.TEXT_PRIMARY.color().copy(alpha = 0.08f),
@@ -130,12 +127,12 @@ private fun HeaderButtons() {
             )
         }
         IconButton(
-            onClick = {},
+            onClick = onAddClick,
             modifier
         ) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_add),
-                contentDescription = "AI Alert",
+                contentDescription = "일기 추가",
                 tint = MPAColor.TEXT_PRIMARY.color(),
             )
         }

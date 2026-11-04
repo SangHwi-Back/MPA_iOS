@@ -23,25 +23,29 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
+import com.example.mpa_android.ui.view.JournalEditorScreen
 import com.example.mpa_android.ui.view.JournalHomeView
 import com.example.mpa_android.ui.view.PrincipalHomeView
 import com.example.mpa_android.ui.view.SettingsHomeView
 import com.example.mpa_android.ui.view.TodayHomeView
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
+import com.example.mpa_android.viewmodel.JournalViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
-val InnerPadding = staticCompositionLocalOf {
+private const val JOURNAL_EDITOR_ROUTE = "journal-editor"
+
+val LocalInnerPadding = staticCompositionLocalOf {
     PaddingValues()
 }
-val TestValue = staticCompositionLocalOf {
-    1
-}
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,12 +98,14 @@ fun TabDestinations.icon(isSelected: Boolean): ImageVector = ImageVector.vectorR
     }
 )
 
-
 @Composable
 fun App() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val startDestination = TabDestinations.TODAY
+    // Shared across tabs and the editor so a journal added from the editor shows up
+    // in the Journal tab immediately (there is no server/DB yet to re-fetch from).
+    val journalViewModel: JournalViewModel = hiltViewModel()
 
     Scaffold(
         bottomBar = {
@@ -145,15 +151,23 @@ fun App() {
             ) {
                 TabDestinations.entries.forEach { destination ->
                     composable(destination.route) {
-                        CompositionLocalProvider(InnerPadding provides innerPadding) {
+                        CompositionLocalProvider(LocalInnerPadding provides innerPadding) {
                             when (destination) {
-                                TabDestinations.TODAY -> TodayHomeView()
-                                TabDestinations.JOURNAL -> JournalHomeView()
+                                TabDestinations.TODAY -> TodayHomeView(
+                                    onAddJournal = { navController.navigate(JOURNAL_EDITOR_ROUTE) },
+                                )
+                                TabDestinations.JOURNAL -> JournalHomeView(viewModel = journalViewModel)
                                 TabDestinations.PRINCIPAL -> PrincipalHomeView()
                                 TabDestinations.SETTINGS -> SettingsHomeView()
                             }
                         }
                     }
+                }
+                composable(JOURNAL_EDITOR_ROUTE) {
+                    JournalEditorScreen(
+                        viewModel = journalViewModel,
+                        onClose = { navController.popBackStack() },
+                    )
                 }
             }
         }
