@@ -2,6 +2,7 @@
 
 package com.example.mpa_android.ui.view
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
@@ -35,7 +37,7 @@ import java.time.Instant as JavaInstant
 /**
  * 일기 작성/저장 화면. 디자인 시안(1.png = 새 일기, 2.png = 저장됨, 3.png = 날짜 선택)을 따른다.
  * 저장 전에는 "완료" 버튼으로 [JournalViewModel.addJournal]을 1회 호출해 저장하고,
- * 저장 후에는 저장 시각을 보여주는 상태로 전환된다 (서버/DB가 없어 이후 수정은 반영되지 않음).
+ * 저장 후에는 저장 시각을 보여주는 상태로 전환된다 (저장 후 재편집은 아직 지원하지 않음).
  */
 @Composable
 fun JournalEditorScreen(

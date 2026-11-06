@@ -3,20 +3,30 @@
 package com.example.mpa_android.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.mpa_android.data.JournalRepository
 import com.example.mpa_android.model.Journal
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalTime::class)
 @HiltViewModel
-class JournalViewModel @Inject constructor() : ViewModel() {
-    private val _journals = MutableStateFlow<List<Journal>>(emptyList())
-    val journals: StateFlow<List<Journal>> = _journals.asStateFlow()
+class JournalViewModel @Inject constructor(
+    private val repository: JournalRepository,
+) : ViewModel() {
+
+    val journals: StateFlow<List<Journal>> = repository.journals.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList(),
+    )
 
     fun addJournal(
         day: LocalDate = LocalDate.now(),
@@ -31,7 +41,7 @@ class JournalViewModel @Inject constructor() : ViewModel() {
             body = body,
             prompt = prompt,
         )
-        _journals.value += newJournal
+        viewModelScope.launch { repository.save(newJournal) }
         return newJournal
     }
 }
