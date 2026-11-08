@@ -13,9 +13,10 @@ class Persistence {
     
     init() {
         let schema = Schema([
-            Product.self
+            Product.self,
+            Journal.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         
         do {
             self.container = try ModelContainer(

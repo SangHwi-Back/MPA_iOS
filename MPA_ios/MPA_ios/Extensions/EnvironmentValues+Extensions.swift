@@ -17,7 +17,6 @@ extension EnvironmentValues {
     @Entry var contentsEnvironment: ContentsEnvironment = .generalVertical
     @Entry var isDeviceiPad: Bool = false
     @Entry var isDeviceiPhoneDuo: Bool = false
-    @Entry var contentEnvironment: ContentsEnvironment = .generalVertical
     @Entry var hingeStatus: DeviceHingeStatus? = nil
 }
 

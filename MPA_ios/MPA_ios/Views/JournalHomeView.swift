@@ -21,6 +21,7 @@ enum JournalViewMode: String, CaseIterable {
 
 struct JournalHomeView: View {
     @ObservedObject var viewModel: JournalViewModel
+    @Environment(\.productRepository) var productRepository
     
     var body: some View {
         VStack {

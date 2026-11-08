@@ -6,40 +6,31 @@
 //
 
 import Foundation
+import SwiftData
 
-struct Journal: Identifiable, Codable, Hashable {
-
-    let id: UUID
-
+@Model
+final class Journal {
+    private(set) var id: UUID
     /// The day this entry belongs to (start of day, local calendar).
     /// Users can change it from the editor's date button. Several entries per day are allowed.
     var day: Date
-
     /// When the entry was first saved (shown as "오후 9:40" in detail).
-    let createdAt: Date
-
+    private(set) var createdAt: Date
     /// Set only after the entry is edited post-creation ("마지막 수정 …" is shown only when non-nil).
     var editedAt: Date?
-
     /// Optional. Empty means "use the first line of the body" (see `displayTitle`).
     var title: String
-
     var body: String
-
     /// The "글감" question the entry was started from. Stored, not shown in detail.
     var prompt: String?
-
     /// Ordered as shown in the editor grid (drag to reorder). Max `Journal.maxPhotos`.
     var photos: [JournalPhoto]
-
     /// AI-extracted plus user-added keywords, including ones the user excluded.
     var keywords: [JournalKeyword]
-
     var analysisState: AnalysisState
-
     /// Cached "이 일기에 대한 AI 한마디". Generated on first expand, cleared when the entry is edited.
     var aiComment: AIText?
-
+    
     init(
         id: UUID = UUID(),
         day: Date = Calendar.current.startOfDay(for: .now),
@@ -82,7 +73,6 @@ extension Journal {
 // MARK: - Derived values
 
 extension Journal {
-
     /// Title, or the first non-empty line of the body when the title is empty.
     var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -92,7 +82,7 @@ extension Journal {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .first { !$0.isEmpty } ?? ""
     }
-
+    
     /// Body text for the 2-line list preview (line breaks collapsed).
     /// When the title came from the body, the first line is skipped.
     var previewText: String {
@@ -105,19 +95,19 @@ extension Journal {
         }
         return lines.joined(separator: " ")
     }
-
+    
     /// An entry with no title, body, or photos is discarded when the editor closes.
     var isEmpty: Bool {
         title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && photos.isEmpty
+        && body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && photos.isEmpty
     }
-
+    
     var isEdited: Bool { editedAt != nil }
-
+    
     /// First photo, used as the list thumbnail ("+N" badge = `photos.count - 1`).
     var thumbnail: JournalPhoto? { photos.first }
-
+    
     /// Keywords to display: not excluded, most influential first.
     var visibleKeywords: [JournalKeyword] {
         keywords
@@ -129,23 +119,22 @@ extension Journal {
 // MARK: - Mutations
 
 extension Journal {
-
     /// Apply an edit to the text. Invalidates AI output so it is regenerated.
-    mutating func edit(title: String? = nil, body: String? = nil, at date: Date = .now) {
+    func edit(title: String? = nil, body: String? = nil, at date: Date = .now) {
         if let title { self.title = title }
         if let body { self.body = body }
         editedAt = date
         aiComment = nil
         analysisState = .notAnalyzed
     }
-
+    
     /// Replace AI keywords after (re)analysis while keeping the user's choices:
     /// user-added keywords stay, and keywords the user excluded stay excluded.
-    mutating func applyAnalysis(_ extracted: [JournalKeyword], at date: Date = .now) {
+    func applyAnalysis(_ extracted: [JournalKeyword], at date: Date = .now) {
         let excludedNames = Set(keywords.filter(\.isExcluded).map(\.name))
         let userAdded = keywords.filter { $0.source == .user }
         let userNames = Set(userAdded.map(\.name))
-
+        
         let ai = extracted
             .filter { !userNames.contains($0.name) }
             .map { keyword -> JournalKeyword in
@@ -156,9 +145,9 @@ extension Journal {
         keywords = userAdded + ai
         analysisState = .analyzed(at: date)
     }
-
+    
     /// "✕" on a keyword chip in the editor.
-    mutating func excludeKeyword(named name: String) {
+    func excludeKeyword(named name: String) {
         guard let i = keywords.firstIndex(where: { $0.name == name }) else { return }
         if keywords[i].source == .user {
             keywords.remove(at: i)
@@ -166,9 +155,9 @@ extension Journal {
             keywords[i].isExcluded = true
         }
     }
-
+    
     /// "+ 추가" in the editor.
-    mutating func addKeyword(_ name: String) {
+    func addKeyword(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         if let i = keywords.firstIndex(where: { $0.name == trimmed }) {
@@ -187,7 +176,7 @@ struct JournalPhoto: Identifiable, Codable, Hashable {
     var fileName: String
     /// Edited from photo detail. Not shown on thumbnails. Never sent to an external API.
     var caption: String
-
+    
     init(id: UUID = UUID(), fileName: String, caption: String = "") {
         self.id = id
         self.fileName = fileName
@@ -248,7 +237,7 @@ enum AIEngine: String, Codable, Hashable {
     case geminiNano
     case geminiAPIKey
     case openAIAPIKey
-
+    
     /// Source label shown under AI content.
     var sourceLabel: String {
         switch self {
@@ -258,7 +247,7 @@ enum AIEngine: String, Codable, Hashable {
         case .openAIAPIKey:      return "✦ OpenAI (내 API 키)"
         }
     }
-
+    
     var isOnDevice: Bool {
         self == .appleIntelligence || self == .geminiNano
     }
@@ -278,9 +267,9 @@ extension Journal {
             title: "회의에서 말을 끊지 않기",
             body: """
             오늘 주간 회의에서 끝까지 들어 보기로 마음먹었다. 민지 씨가 일정 이야기를 꺼냈을 때, 평소 같았으면 중간에 끼어들어 해결책부터 말했을 거다.
-
+            
             이번에는 말이 끝날 때까지 기다렸다. 그랬더니 문제는 일정이 아니라 리뷰가 한 사람에게 몰려 있다는 데 있었다.
-
+            
             내가 하려던 질문이 달라졌다. 다음 회의에도 먼저 묻고, 그다음에 말해야겠다.
             """,
             prompt: "오늘 누군가의 말을 끝까지 들었던 순간이 있었나요?",

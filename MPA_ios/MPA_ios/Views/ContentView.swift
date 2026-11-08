@@ -12,7 +12,7 @@ enum ContentTab: String, CaseIterable, Identifiable, Hashable {
     case journal = "tab_journal"
     case principles = "tab_principles"
     case settings = "tab_settings"
-
+    
     var id: String { rawValue }
 }
 
@@ -26,6 +26,8 @@ struct ContentView: View {
     private var verticalSizeClass
     @Environment(\.isDeviceiPhoneDuo)
     private var isDeviceiPhoneDuo
+    @Environment(\.productRepository)
+    private var productRepository
     
     @StateObject private var journalViewModel = JournalViewModel()
     
@@ -49,9 +51,9 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("오늘", image: iconName(for: .today), value: ContentTab.today) {
-                TodayHomeView()
+                TodayHomeView(viewModel: journalViewModel)
+                    .environment(\.contentsEnvironment, contentsEnvironment)
             }
-
             Tab("기록", image: iconName(for: .journal), value: ContentTab.journal) {
                 JournalHomeView(viewModel: journalViewModel)
             }
@@ -63,24 +65,17 @@ struct ContentView: View {
             }
         }
         .environment(\.showModal, modalState)
-        .environment(\.contentsEnvironment, contentsEnvironment)
         .onTapGesture {
             self.modalState.modalType = .none
         }
         .overlay {
             getModalView()
         }
-        .background {
-            ConcentricRectangle()
-                .fill(dimColor)
-                .ignoresSafeArea()
+        .onAppear {
+            journalViewModel.productRepository = productRepository
         }
     }
-
-    private var dimColor: Color {
-        modalState.modalType == .none ? Color.clear : Color.black.opacity(0.5)
-    }
-
+    
     private func iconName(for tab: ContentTab) -> String {
         tab.rawValue + (selectedTab == tab ? "_selected" : "")
     }
@@ -93,6 +88,11 @@ struct ContentView: View {
         case .common(let model):
             CommonModalView(model) {
                 self.modalState.modalType = .none
+            }
+            .background {
+                ConcentricRectangle()
+                    .fill(Color.black.opacity(0.5))
+                    .ignoresSafeArea()
             }
         }
     }

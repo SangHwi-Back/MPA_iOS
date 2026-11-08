@@ -28,7 +28,7 @@ struct PrincipalHomeView: View {
                     PrincipleDetailView(
                         principle: p,
                         relatedJournals: relatedJournals
-                            .filter { p.relatedJournalIDs.contains($0.id) }
+                            .filter { _ in p.relatedJournalIDs.contains(where: {$0 == p.id}) }
                     )
                 }
         }

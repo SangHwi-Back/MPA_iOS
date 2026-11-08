@@ -193,11 +193,19 @@ struct MainDateList: View {
 // MARK: - View Extensions
 
 extension View {
-    func addToolbar(_ model: MainDateListViewModel, path: Binding<[Product]>) -> some View {
-        return modifier(ToolBar(model, path: path))
+    func addToolbar(
+        _ model: MainDateListViewModel,
+        showEditor: Binding<Bool>,
+        path: Binding<[Product]>
+    ) -> some View {
+        return modifier(ToolBar(model, showEditor: showEditor, path: path))
     }
     
-    func listModifier(id: Int, tappedItemId: Binding<Int?>, animationHandler: @escaping () -> Void) -> some View {
+    func listModifier(
+        id: Int,
+        tappedItemId: Binding<Int?>,
+        animationHandler: @escaping () -> Void
+    ) -> some View {
         return modifier(ListModifier(tappedItemId: tappedItemId, id: id, animationHandler: animationHandler))
     }
 }
@@ -206,10 +214,16 @@ extension View {
 
 private struct ToolBar: ViewModifier {
     private var model: MainDateListViewModel
-    @Binding private var path: [Product]
+    @Binding
+    private var path: [Product]
+    @Binding
+    private var showEditor: Bool
     
-    init(_ model: MainDateListViewModel, path: Binding<[Product]>) {
+    @Environment(\.contentsEnvironment) private var contentsEnvironment
+    
+    init(_ model: MainDateListViewModel, showEditor: Binding<Bool>, path: Binding<[Product]>) {
         self.model = model
+        self._showEditor = showEditor
         self._path = path
     }
     
@@ -223,31 +237,43 @@ private struct ToolBar: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
-                if UIDevice.current.userInterfaceIdiom == .phone {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Image(systemName: "calendar")
-                            .tint(.blue)
-                            .contextMenu(showCalendar)
-                    }
+                if #available(anyAppleOS 27.1, *) {
+                    ButtonWarningAIFunctionality
+                        .axisBehavior(.verticalPreferred)
+                } else {
+                    ButtonWarningAIFunctionality
                 }
                 
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    ToolbarItem(placement: .topBarLeading) {
-                        EditButton()
-                            .glassEffect()
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    ButtonWithAnimate {
-                        let item = model.tappedToolbarAddItem()
-                        path.append(item)
-                    } label: {
-                        Image(systemName: "plus")
-                            .frame(width: 24, height: 24)
-                    }
+                if #available(anyAppleOS 27.1, *) {
+                    ButtonPlus
+                        .axisBehavior(.verticalPreferred)
+                } else {
+                    ButtonPlus
                 }
             }
+    }
+    private var ButtonWarningAIFunctionality: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            ButtonWithAnimate {
+                print("asdf")
+            } label: {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .frame(width: 22, height: 22)
+                    .clipShape(Circle())
+            }
+        }
+    }
+    private var ButtonPlus: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            ButtonWithAnimate {
+                showEditor = true
+            } label: {
+                Image(systemName: "plus")
+                    .frame(width: 24, height: 24)
+            }
+        }
     }
 }
 
