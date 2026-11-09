@@ -1,9 +1,12 @@
 package com.example.mpa_android.di
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.room.Room
+import com.example.mpa_android.data.JournalPreferences
 import com.example.mpa_android.data.JournalRepository
 import com.example.mpa_android.data.JournalRepositoryImpl
+import com.example.mpa_android.data.SharedJournalPreferences
 import com.example.mpa_android.data.local.JournalDao
 import com.example.mpa_android.data.local.MPADatabase
 import dagger.Binds
@@ -25,6 +28,11 @@ object DatabaseModule {
 
     @Provides
     fun provideJournalDao(database: MPADatabase): JournalDao = database.journalDao()
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences =
+        context.getSharedPreferences("mpa.preferences", Context.MODE_PRIVATE)
 }
 
 @Module
@@ -34,4 +42,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindJournalRepository(impl: JournalRepositoryImpl): JournalRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindJournalPreferences(impl: SharedJournalPreferences): JournalPreferences
 }

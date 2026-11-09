@@ -109,4 +109,67 @@ class JournalViewModelTest {
         assertEquals("First", journals[0].title)
         assertEquals("Second", journals[1].title)
     }
+
+    @Test
+    fun deleteJournalHidesEntryButKeepsItInRepository() = runTest {
+        val journal = viewModel.addJournal(day = LocalDate.of(2024, 1, 1), title = "First")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.deleteJournal(journal)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.visibleJournals.value.isEmpty())
+        assertEquals(1, viewModel.journals.value.size)
+        assertEquals(journal.id, viewModel.pendingDeletion.value?.id)
+    }
+
+    @Test
+    fun undoDeletionRestoresEntry() = runTest {
+        val journal = viewModel.addJournal(day = LocalDate.of(2024, 1, 1), title = "First")
+        dispatcher.scheduler.advanceUntilIdle()
+        viewModel.deleteJournal(journal)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.undoDeletion()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.visibleJournals.value.size)
+        assertEquals(null, viewModel.pendingDeletion.value)
+        assertEquals(1, repository.state.value.size)
+    }
+
+    @Test
+    fun commitDeletionRemovesEntryFromRepository() = runTest {
+        val journal = viewModel.addJournal(day = LocalDate.of(2024, 1, 1), title = "First")
+        dispatcher.scheduler.advanceUntilIdle()
+        viewModel.deleteJournal(journal)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.commitDeletion()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(repository.state.value.isEmpty())
+        assertTrue(viewModel.visibleJournals.value.isEmpty())
+        assertEquals(null, viewModel.pendingDeletion.value)
+    }
+
+    @Test
+    fun secondDeletionCommitsFirstAndKeepsOnlyLatestPending() = runTest {
+        val first = viewModel.addJournal(day = LocalDate.of(2024, 1, 1), title = "First")
+        val second = viewModel.addJournal(day = LocalDate.of(2024, 1, 2), title = "Second")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.deleteJournal(first)
+        dispatcher.scheduler.advanceUntilIdle()
+        viewModel.deleteJournal(second)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(listOf(second.id), repository.state.value.map { it.id })
+        assertEquals(second.id, viewModel.pendingDeletion.value?.id)
+
+        viewModel.undoDeletion()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(listOf(second.id), viewModel.visibleJournals.value.map { it.id })
+    }
 }

@@ -1,5 +1,5 @@
 //
-//  PrincipalHomeView.swift
+//  PrincipleView.swift
 //  MPA_ios
 //
 //  Created by 백상휘 on 11/3/26.
@@ -9,7 +9,7 @@ import SwiftUI
 
 // MARK: - Root
 
-struct PrincipalHomeView: View {
+struct PrincipleView: View {
     
     @State private var currentPrinciples: [Principle] = []
     @State private var pastPrinciples: [Principle] = []
@@ -242,6 +242,6 @@ private struct PastPrincipleRowView: View {
 
 #Preview("원칙 – 리스트") {
     NavigationStack {
-        PrincipalHomeView()
+        PrincipleView()
     }
 }

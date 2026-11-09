@@ -43,9 +43,10 @@ import java.time.Instant as JavaInstant
 fun JournalEditorScreen(
     onClose: () -> Unit,
     initialPrompt: String? = null,
+    initialDate: LocalDate? = null,
     viewModel: JournalViewModel = hiltViewModel(),
 ) {
-    var day by remember { mutableStateOf(LocalDate.now()) }
+    var day by remember { mutableStateOf(initialDate ?: LocalDate.now()) }
     var title by rememberSaveable { mutableStateOf("") }
     var body by rememberSaveable { mutableStateOf("") }
     var prompt by remember { mutableStateOf(initialPrompt) }

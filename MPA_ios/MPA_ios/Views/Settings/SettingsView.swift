@@ -1,5 +1,5 @@
 //
-//  SettingsHomeView.swift
+//  SettingsView.swift
 //  MPA_ios
 //
 //  Created by 백상휘 on 11/3/26.
@@ -42,7 +42,7 @@ enum AIConnectionState {
 
 // MARK: - Root
 
-struct SettingsHomeView: View {
+struct SettingsView: View {
 
     @State private var viewModel = SettingsViewModel()
     @State private var path: [SettingsDestination] = []
@@ -268,7 +268,7 @@ enum SettingsDestination: Hashable {
 // MARK: - Preview
 
 #Preview("설정") {
-    SettingsHomeView()
+    SettingsView()
 }
 
 #Preview("AI 연결 – connected") {

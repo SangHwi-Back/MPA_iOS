@@ -1,4 +1,4 @@
-package com.example.mpa_android.ui.view.principal
+package com.example.mpa_android.ui.view.principle
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.example.mpa_android.ui.theme.MPAColor
 
 @Composable
-fun PrincipalHomeView() {
+fun PrincipleView() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -284,12 +284,12 @@ private fun PastPrincipalTimelineItem(model: PastPrincipalModel, isLast: Boolean
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun DarkPreviewPrincipalHomeView() {
-    PrincipalHomeView()
+private fun DarkPreviewPrincipleView() {
+    PrincipleView()
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
-private fun LightPreviewPrincipalHomeView() {
-    PrincipalHomeView()
+private fun LightPreviewPrincipleView() {
+    PrincipleView()
 }

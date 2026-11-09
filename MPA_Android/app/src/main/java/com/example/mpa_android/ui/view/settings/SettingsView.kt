@@ -35,7 +35,7 @@ import com.example.mpa_android.R
 import com.example.mpa_android.ui.theme.MPAColor
 
 @Composable
-fun SettingsHomeView() {
+fun SettingsView() {
     var biometricLock by remember { mutableStateOf(true) }
 
     Column(

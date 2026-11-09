@@ -20,12 +20,12 @@ struct JournalEditorScreen: View {
     @State private var showDatePicker = false
     @State private var savedJournal: Journal?
     
-    init(viewModel: JournalViewModel, initialPrompt: String? = nil, onClose: @escaping () -> Void) {
+    init(viewModel: JournalViewModel, initialDate: Date? = nil, initialPrompt: String? = nil, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
         self.onClose = onClose
-        let today = Calendar.current.startOfDay(for: .now)
-        _day = State(initialValue: today)
-        _pendingDate = State(initialValue: today)
+        let startDay = Calendar.current.startOfDay(for: initialDate ?? .now)
+        _day = State(initialValue: startDay)
+        _pendingDate = State(initialValue: startDay)
         _prompt = State(initialValue: initialPrompt)
     }
     
