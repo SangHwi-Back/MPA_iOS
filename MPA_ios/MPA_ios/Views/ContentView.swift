@@ -51,7 +51,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("오늘", image: iconName(for: .today), value: ContentTab.today) {
-                TodayHomeView(viewModel: journalViewModel)
+                HomeView(viewModel: journalViewModel)
                     .environment(\.contentsEnvironment, contentsEnvironment)
             }
             Tab("기록", image: iconName(for: .journal), value: ContentTab.journal) {

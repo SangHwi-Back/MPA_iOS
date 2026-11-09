@@ -1,11 +1,11 @@
 //
-//  TodayHomeView.swift
+//  HomeView.swift
 //  MPA_ios
 //
 
 import SwiftUI
 
-struct TodayHomeView: View {
+struct HomeView: View {
     @ObservedObject var viewModel: JournalViewModel
     
     @Environment(\.productRepository) private var repository
@@ -537,5 +537,5 @@ private struct RecentJournalRow: View {
 }
 
 //#Preview {
-//    TodayHomeView(viewModel: JournalViewModel(productRepository: MockProductRepository()))
+//    HomeView(viewModel: JournalViewModel(productRepository: MockProductRepository()))
 //}

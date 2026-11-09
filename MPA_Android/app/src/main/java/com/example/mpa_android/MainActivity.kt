@@ -30,11 +30,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
-import com.example.mpa_android.ui.view.JournalEditorScreen
-import com.example.mpa_android.ui.view.JournalHomeView
-import com.example.mpa_android.ui.view.PrincipalHomeView
-import com.example.mpa_android.ui.view.SettingsHomeView
-import com.example.mpa_android.ui.view.TodayHomeView
+import com.example.mpa_android.ui.view.journal.JournalEditorScreen
+import com.example.mpa_android.ui.view.journal.JournalHomeView
+import com.example.mpa_android.ui.view.principal.PrincipalHomeView
+import com.example.mpa_android.ui.view.settings.SettingsHomeView
+import com.example.mpa_android.ui.view.home.HomeView
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
 import com.example.mpa_android.viewmodel.JournalViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -153,7 +153,7 @@ fun App() {
                     composable(destination.route) {
                         CompositionLocalProvider(LocalInnerPadding provides innerPadding) {
                             when (destination) {
-                                TabDestinations.TODAY -> TodayHomeView(
+                                TabDestinations.TODAY -> HomeView(
                                     onAddJournal = { navController.navigate(JOURNAL_EDITOR_ROUTE) },
                                 )
                                 TabDestinations.JOURNAL -> JournalHomeView(viewModel = journalViewModel)

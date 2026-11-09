@@ -1,6 +1,5 @@
-package com.example.mpa_android.ui.view
+package com.example.mpa_android.ui.view.principal
 
-import android.R
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

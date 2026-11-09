@@ -1,8 +1,7 @@
 @file:OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class)
 
-package com.example.mpa_android.ui.view
+package com.example.mpa_android.ui.view.journal
 
-import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,10 +14,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
@@ -26,6 +25,7 @@ import com.example.mpa_android.model.Journal
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.viewmodel.JournalViewModel
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -155,7 +155,7 @@ private fun EditorTopBar(
             )
         } else {
             val savedTime = savedJournal.createdAt.toJavaInstant()
-                .atZone(java.time.ZoneId.systemDefault())
+                .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -244,10 +244,10 @@ private fun PromptChip(text: String, onDismiss: () -> Unit) {
 // ── Title & body ─────────────────────────────────────────────────────
 private val transparentFieldColors
     @Composable get() = TextFieldDefaults.colors(
-        unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-        focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-        unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-        focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        focusedContainerColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        focusedIndicatorColor = Color.Transparent,
     )
 
 @Composable

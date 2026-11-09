@@ -1,4 +1,4 @@
-package com.example.mpa_android.ui.view
+package com.example.mpa_android.ui.view.home
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -40,13 +40,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.mpa_android.R
 import com.example.mpa_android.ui.theme.MPAColor
 
 // ── Root ──────────────────────────────────────────────────────────────
 @Composable
-fun TodayHomeView(onAddJournal: () -> Unit = {}) {
+fun HomeView(onAddJournal: () -> Unit = {}) {
     val scrollviewState = rememberScrollState()
     Column(
         modifier = Modifier
@@ -437,7 +438,7 @@ private fun PillButton(text: String, filled: Boolean) {
 @Composable
 private fun PrincipleBubble(
     label: String,
-    size: androidx.compose.ui.unit.Dp,
+    size: Dp,
     color: Color,
 ) {
     Box(
@@ -725,11 +726,11 @@ private fun RecentJournalRow(
 
 @Preview
 @Composable
-private fun PreviewLightTodayHomeView() {
-    TodayHomeView()
+private fun PreviewLightHomeView() {
+    HomeView()
 }
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun PreviewDarkTodayHomeView() {
-    TodayHomeView()
+private fun PreviewDarkHomeView() {
+    HomeView()
 }

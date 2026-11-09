@@ -1,4 +1,4 @@
-package com.example.mpa_android.ui.view
+package com.example.mpa_android.ui.view.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -1,4 +1,4 @@
-package com.example.mpa_android.ui.view
+package com.example.mpa_android.ui.view.journal
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background

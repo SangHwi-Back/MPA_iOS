@@ -4,6 +4,13 @@
 - 로컬 LLM(ask_coder, ask_vision): 1차 초안과 1차 분석을 맡는다.
 - Claude: 설계 판단, 디버깅, 최종 수정, 그리고 로컬 LLM 결과의 교차 검증을 맡는다.
 
+## 화면 작업 규칙
+- 화면 이름이 XxxView 라면 기준 문서는 specs/Xxx/SCREEN_SPEC.md 다.
+  - 예: TodayHomeView.swift -> specs/TodayHome/SCREEN_SPEC.md
+- View 와 Screen 은 동의어다. TodayHomeView 도 specs/TodayHome 경로를 참고하고 TodayHomeScreen 도 specs/TodayHome 을 참고한다.
+- 화면을 구현하는 파일의 확장자는 swift, kt 이다.
+- 이 규칙을 SCREEN_SPEC.md 를 찾지 못할 경우 이 규칙은 무시한다.
+
 ## 이미지
 - 이미지가 주어지면 먼저 ask_vision으로 분석한다.
 - Claude가 같은 이미지를 직접 보고 ask_vision 결과 중 레이아웃, 색상, 뷰 속성이 정확한지 검증한다.
