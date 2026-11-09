@@ -123,33 +123,19 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            tabPage(.today) {
+        TabView(selection: $selectedTab) {
+            Tab(ContentTab.today.title, image: iconName(for: .today), value: .today) {
                 HomeView(viewModel: journalViewModel)
                     .environment(\.contentsEnvironment, contentsEnvironment)
             }
-            tabPage(.journal) {
+            Tab(ContentTab.journal.title, image: iconName(for: .journal), value: .journal) {
                 JournalView(viewModel: journalViewModel)
             }
-            tabPage(.principles) {
+            Tab(ContentTab.principles.title, image: iconName(for: .principles), value: .principles) {
                 PrincipleView()
             }
-            tabPage(.settings) {
-                SettingsView()
-            }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if isTabBarVisible && horizontalSizeClass != .regular {
-                MPATabBar(selectedTab: $selectedTab, isVertical: false, onReselect: reselect)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, -10)
-            }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            if isTabBarVisible && horizontalSizeClass == .regular {
-                MPATabBar(selectedTab: $selectedTab, isVertical: true, onReselect: reselect)
-                    .padding(19)
-                    .ignoresSafeArea(.container, edges: .bottom)
+            Tab(ContentTab.settings.title, image: iconName(for: .settings), value: .settings) {
+                SettingsView(viewModel: settingsViewModel, isDetailPresented: $isSettingsDetailPresented)
             }
         }
         .environment(\.showModal, modalState)
@@ -178,6 +164,20 @@ struct ContentView: View {
                     .fill(Color.black.opacity(0.5))
                     .ignoresSafeArea()
             }
+        }
+    }
+    
+    func iconName(for tab: ContentTab) -> String {
+        let suffix = selectedTab == tab ? "_selected" : ""
+        switch tab {
+        case .today:
+            return "tab_today" + suffix
+        case .journal:
+            return "tab_journal" + suffix
+        case .principles:
+            return "tab_principles" + suffix
+        case .settings:
+            return "tab_settings" + suffix
         }
     }
 }
