@@ -1,4 +1,6 @@
 //
+//  [NO AC] Spec: specs/journal/SCREEN_SPEC.md
+//
 //  JournalViewModel.swift
 //  MPA_ios
 //

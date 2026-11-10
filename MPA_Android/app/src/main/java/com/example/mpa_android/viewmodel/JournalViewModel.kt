@@ -1,3 +1,4 @@
+// [NO AC] Spec: specs/journal/SCREEN_SPEC.md
 @file:OptIn(ExperimentalTime::class)
 
 package com.example.mpa_android.viewmodel

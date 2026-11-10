@@ -1,4 +1,6 @@
 //
+//  [NO AC] Spec: specs/settings/SCREEN_SPEC.md
+//
 //  SettingsView.swift
 //  MPA_ios
 //
@@ -7,295 +9,377 @@
 
 import SwiftUI
 
-// MARK: - Model
-
-enum AIProvider: String, CaseIterable, Identifiable {
-    case gemini
-    case openAI
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .gemini: return "Gemini"
-        case .openAI: return "OpenAI"
-        }
-    }
-
-    var iconSystemName: String {
-        switch self {
-        case .gemini: return "sparkles"
-        case .openAI: return "circle.grid.cross.fill"
-        }
-    }
+enum SettingsDestination: Hashable {
+    case aiConnection
 }
 
-enum AIConnectionState {
-    case notConnected
-    case connected(
-        provider: AIProvider,
-        maskedKey: String,
-        lastTestedAt: Date,
-        consentGrantedAt: Date?
-    )
+enum SettingsLayout {
+    static let gutter: CGFloat = 20
+    static let phoneCardRadius: CGFloat = 24
+    static let tabletCardRadius: CGFloat = 16
+    static let rowHeight: CGFloat = 50
+    static let tileSize: CGFloat = 30
+    static let tabletSidebarWidth: CGFloat = 381
 }
-
-// MARK: - Root
 
 struct SettingsView: View {
 
-    @State private var viewModel = SettingsViewModel()
-    @State private var path: [SettingsDestination] = []
+    var viewModel: SettingsViewModel
+    /// True while a pushed detail screen should hide the phone tab bar.
+    @Binding var isDetailPresented: Bool
 
-    var body: some View {
-        NavigationStack(path: $path) {
-            settingsList
-                .navigationDestination(for: SettingsDestination.self) { destination in
-                    switch destination {
-                    case .aiConnection:
-                        AIConnectionDetailView(viewModel: viewModel)
-                    }
-                }
-        }
-        .background(Color.CANVAS.ignoresSafeArea())
+    @State private var path: [SettingsDestination] = []
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    init(viewModel: SettingsViewModel, isDetailPresented: Binding<Bool> = .constant(false)) {
+        self.viewModel = viewModel
+        self._isDetailPresented = isDetailPresented
     }
 
-    // MARK: - List
+    var body: some View {
+        if horizontalSizeClass == .regular {
+            tabletLayout
+        } else {
+            phoneLayout
+        }
+    }
 
-    private var settingsList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-
-                settingsHeader
-
-                // ─── AI ───
-                SettingsSection(title: "AI") {
-                    SettingsRow(
-                        icon: "sparkles",
-                        iconBackground: Color.AI_ACCENT.opacity(0.15),
-                        iconForeground: Color.AI_ACCENT,
-                        title: "AI 연결"
-                    ) {
-                        HStack(spacing: 4) {
-                            Text(connectionSubtitle)
-                                .font(.caption)
-                                .foregroundStyle(Color.TEXT_SECONDARY)
-                            Image(systemName: "chevron.right")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(Color.TEXT_TERTIARY)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        path.append(.aiConnection)
-                    }
-                }
-
-                // ─── 개인정보 ───
-                SettingsSection(title: "개인정보") {
-                    SettingsRow(
-                        icon: "lock.shield.fill",
-                        iconBackground: Color.BRAND_PRIMARY.opacity(0.12),
-                        iconForeground: Color.BRAND_PRIMARY,
-                        title: "Face ID로 잠금"
-                    ) {
-                        Toggle("", isOn: $viewModel.faceIDLocked)
-                            .labelsHidden()
-                            .tint(Color.BRAND_PRIMARY)
-                    }
-
-                    SettingsRow(
-                        icon: "globe",
-                        iconBackground: Color.SUNKEN,
-                        iconForeground: Color.TEXT_SECONDARY,
-                        title: "데이터는 어디에 저장되나요?"
-                    ) {
-                        chevron
-                    }
-                }
-
-                // ─── 기록 ───
-                SettingsSection(title: "기록") {
-                    SettingsRow(
-                        icon: "bell.fill",
-                        iconBackground: Color.WARNING.opacity(0.15),
-                        iconForeground: Color.WARNING,
-                        title: "매일 쓰기 알람"
-                    ) {
-                        HStack(spacing: 4) {
-                            Text(viewModel.dailyReminderTime)
-                                .font(.caption)
-                                .foregroundStyle(Color.TEXT_SECONDARY)
-                            chevron
-                        }
-                    }
-
-                    SettingsRow(
-                        icon: "square.and.arrow.up",
-                        iconBackground: Color.SUNKEN,
-                        iconForeground: Color.TEXT_SECONDARY,
-                        title: "기록 내보내기"
-                    ) {
-                        chevron
-                    }
-                }
-
-                // ─── 도움말 ───
-                SettingsSection(title: "도움말") {
-                    SettingsRow(
-                        icon: "questionmark.circle.fill",
-                        iconBackground: Color.SUNKEN,
-                        iconForeground: Color.TEXT_SECONDARY,
-                        title: "도움이 필요할 때"
-                    ) {
-                        chevron
-                    }
-
-                    SettingsRow(
-                        icon: "info.circle.fill",
-                        iconBackground: Color.SUNKEN,
-                        iconForeground: Color.TEXT_SECONDARY,
-                        title: "앱 정보"
-                    ) {
-                        Text(viewModel.appVersion)
-                            .font(.caption)
-                            .foregroundStyle(Color.TEXT_TERTIARY)
-                    }
-                }
-
-                // ─── Footer ───
-                Text("AI와 분석 요약과 초안은 원칙적인 상점에서 일기로 원칙을 업데이트 합니다. 원치 않으시면 설정에서 끄세요.")
-                    .font(.caption2)
-                    .foregroundStyle(Color.TEXT_TERTIARY)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 4)
+    private var phoneLayout: some View {
+        NavigationStack(path: $path) {
+            SettingsListContent(viewModel: viewModel, isRegular: false) {
+                path.append(.aiConnection)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .background(Color.SUNKEN.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: SettingsDestination.self) { destination in
+                switch destination {
+                case .aiConnection:
+                    SettingsAIConnectionDetailView(viewModel: viewModel)
+                }
+            }
+        }
+        .onChange(of: path) { _, newPath in
+            isDetailPresented = !newPath.isEmpty
+        }
+    }
+
+    private var tabletLayout: some View {
+        HStack(spacing: 0) {
+            SettingsListContent(viewModel: viewModel, isRegular: true) {}
+                .frame(width: SettingsLayout.tabletSidebarWidth)
+                .background(Color.SUNKEN.ignoresSafeArea())
+
+            Rectangle()
+                .fill(Color.HAIRLINE)
+                .frame(width: 1)
+                .ignoresSafeArea()
+
+            NavigationStack {
+                SettingsAIConnectionDetailView(viewModel: viewModel)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+// MARK: - List
+
+private struct SettingsListContent: View {
+
+    @Bindable var viewModel: SettingsViewModel
+    let isRegular: Bool
+    let onOpenAIConnection: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("설정")
+                    .font(.system(size: 30, weight: .semibold, design: .serif))
+                    .foregroundStyle(Color.TEXT_PRIMARY)
+                    .padding(.bottom, isRegular ? 4 : 0)
+                    .accessibilityAddTraits(.isHeader)
+
+                aiSection
+                privacySection
+                recordSection
+                helpSection
+            }
+            .padding(.horizontal, SettingsLayout.gutter)
+            .padding(.top, isRegular ? 12 : 36)
             .padding(.bottom, 32)
         }
     }
 
-    // MARK: - Header
-
-    private var settingsHeader: some View {
-        Text("설정")
-            .font(.system(size: 32, weight: .bold, design: .rounded))
-            .foregroundStyle(Color.TEXT_PRIMARY)
-    }
-
-    private var connectionSubtitle: String {
-        switch viewModel.aiConnection {
-        case .connected(let provider, _, _, _):
-            return "\(provider.displayName) 연결됨"
-        case .notConnected:
-            return "기기 내경 AI"
+    private var aiSection: some View {
+        SettingsSection(title: "AI", isRegular: isRegular, fill: isRegular ? Color.BRAND_CONTAINER : Color.SURFACE) {
+            SettingsRow(
+                tile: isRegular ? nil : "settings_tile_ai",
+                title: "AI 연결",
+                isSelected: isRegular,
+                action: onOpenAIConnection
+            ) {
+                SettingsRowValue(text: connectionValue, color: connectionValueColor)
+                SettingsChevron(isSelected: isRegular)
+            }
         }
     }
 
-    private var chevron: some View {
-        Image(systemName: "chevron.right")
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(Color.TEXT_TERTIARY)
+    private var privacySection: some View {
+        SettingsSection(title: "개인정보", isRegular: isRegular) {
+            SettingsRow(tile: tile("settings_tile_lock"), title: viewModel.biometricLockTitle) {
+                Toggle(viewModel.biometricLockTitle, isOn: $viewModel.faceIDLocked)
+                    .labelsHidden()
+                    .tint(Color.BRAND_PRIMARY)
+            }
+            SettingsRowDivider(isRegular: isRegular)
+            SettingsRow(tile: tile("settings_tile_data"), title: "데이터는 어디에 저장되나요?", action: {}) {
+                SettingsChevron()
+            }
+        }
+    }
+
+    private var recordSection: some View {
+        SettingsSection(title: "기록", isRegular: isRegular) {
+            SettingsRow(tile: tile("settings_tile_reminder"), title: "매일 쓰기 알림", action: {}) {
+                SettingsRowValue(text: viewModel.dailyReminderTime)
+                SettingsChevron()
+            }
+            SettingsRowDivider(isRegular: isRegular)
+            SettingsRow(tile: tile("settings_tile_export"), title: "기록 내보내기", action: {}) {
+                SettingsChevron()
+            }
+        }
+    }
+
+    private var helpSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSection(title: "도움말", isRegular: isRegular) {
+                SettingsRow(tile: tile("settings_tile_help"), title: "도움이 필요할 때", action: {}) {
+                    SettingsChevron()
+                }
+                SettingsRowDivider(isRegular: isRegular)
+                SettingsRow(tile: tile("settings_tile_about"), title: "앱 정보", action: {}) {
+                    SettingsRowValue(text: viewModel.appVersion)
+                    if isRegular {
+                        SettingsChevron()
+                    }
+                }
+            }
+
+            SettingsFootnote("AI가 만든 조언과 요약은 전문적인 상담이나 의료 조언을 대신하지 않아요.")
+                .padding(.top, isRegular ? 12 : 0)
+        }
+    }
+
+    private func tile(_ name: String) -> String? {
+        isRegular ? nil : name
+    }
+
+    private var connectionValue: String {
+        switch viewModel.aiConnection {
+        case .notConnected: return "연결 안 됨"
+        case .deviceAI: return "기기 내장 AI"
+        case .connected(let connection), .keyError(let connection):
+            return "\(connection.provider.displayName) (내 키)"
+        }
+    }
+
+    private var connectionValueColor: Color {
+        if case .notConnected = viewModel.aiConnection { return Color.WARNING_TEXT }
+        return Color.TEXT_SECONDARY
     }
 }
 
 // MARK: - Reusable sub-views
 
-/// A single row inside a settings section card.
+/// A label above a white rounded group, shared by the list and the AI connection screen.
+struct SettingsSection<Content: View>: View {
+
+    var title: String?
+    let isRegular: Bool
+    var fill: Color = .SURFACE
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .font(.system(size: 13, weight: isRegular ? .semibold : .regular))
+                    .foregroundStyle(Color.TEXT_SECONDARY)
+                    .padding(.leading, isRegular ? 8 : 16)
+                    .accessibilityAddTraits(.isHeader)
+            }
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(fill, in: .rect(cornerRadius: isRegular ? SettingsLayout.tabletCardRadius : SettingsLayout.phoneCardRadius))
+        }
+    }
+}
+
 struct SettingsRow<Trailing: View>: View {
 
-    let icon: String
-    let iconBackground: Color
-    let iconForeground: Color
+    var tile: String?
     let title: String
+    var isSelected = false
+    var titleColor: Color = .TEXT_PRIMARY
+    var action: (() -> Void)?
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
+        if let action {
+            Button {
+                action()
+            } label: {
+                rowContent
+            }
+            .buttonStyle(.plain)
+        } else {
+            rowContent
+        }
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(iconBackground)
-                    .frame(width: 36, height: 36)
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(iconForeground)
+            if let tile {
+                Image(tile)
+                    .resizable()
+                    .frame(width: SettingsLayout.tileSize, height: SettingsLayout.tileSize)
+                    .accessibilityHidden(true)
             }
 
             Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.TEXT_PRIMARY)
+                .font(.system(size: 16, weight: isSelected ? .bold : .regular))
+                .foregroundStyle(isSelected ? Color.BRAND_ON_CONTAINER : titleColor)
 
             Spacer(minLength: 8)
 
             trailing()
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .frame(minHeight: SettingsLayout.rowHeight)
+        .contentShape(.rect)
     }
 }
 
-/// A titled section wrapper with a card background for its content.
-struct SettingsSection<Content: View>: View {
-
+/// A text-only tappable row, such as "키 변경" or "연결 해제".
+struct SettingsActionRow: View {
     let title: String
-    @ViewBuilder var content: () -> Content
+    let color: Color
+    let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.TEXT_TERTIARY)
-
-            VStack(spacing: 0) {
-                content()
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.SURFACE)
-                    .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
-            )
+        SettingsRow(title: title, titleColor: color, action: action) {
+            EmptyView()
         }
     }
 }
 
-// MARK: - Navigation destination
+struct SettingsRowValue: View {
+    let text: String
+    var color: Color = .TEXT_SECONDARY
 
-enum SettingsDestination: Hashable {
-    case aiConnection
+    var body: some View {
+        Text(text)
+            .font(.system(size: 15))
+            .foregroundStyle(color)
+    }
+}
+
+struct SettingsChevron: View {
+    var isSelected = false
+
+    var body: some View {
+        Image(isSelected ? "chevron_right" : "disclosure")
+            .resizable()
+            .frame(width: 20, height: 20)
+            .accessibilityHidden(true)
+    }
+}
+
+struct SettingsRowDivider: View {
+    let isRegular: Bool
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.HAIRLINE)
+            .frame(height: 1)
+            .padding(.leading, isRegular ? 0 : 56)
+    }
+}
+
+struct SettingsFootnote: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 13))
+            .lineSpacing(3)
+            .foregroundStyle(Color.TEXT_SECONDARY)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 16)
+    }
 }
 
 // MARK: - Preview
 
-#Preview("설정") {
-    SettingsView()
-}
-
-#Preview("AI 연결 – connected") {
-    NavigationStack {
-        AIConnectionDetailView(
-            viewModel: {
-                let vm = SettingsViewModel()
-                vm.aiConnection = .connected(
-                    provider: .gemini,
-                    maskedKey: "A12a••••••••3f9",
-                    lastTestedAt: .now,
-                    consentGrantedAt: .now
-                )
-                return vm
-            }()
+#if DEBUG
+extension SettingsViewModel {
+    static func preview(
+        state: AIConnectionState,
+        key: String = ""
+    ) -> SettingsViewModel {
+        let viewModel = SettingsViewModel(
+            deviceState: { state },
+            biometricLockTitle: "Face ID로 잠금"
         )
-        .navigationTitle("AI 연결")
-        .navigationBarTitleDisplayMode(.inline)
+        viewModel.apiKeyInput = key
+        return viewModel
     }
-    .background(Color.CANVAS)
+
+    static let previewConnection = AIKeyConnection(
+        provider: .gemini,
+        maskedKey: "AIza••••••3f9",
+        lastTestedAt: .now,
+        consentGrantedAt: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 30)) ?? .now
+    )
+}
+#endif
+
+private struct SettingsDetailPreview: View {
+    let viewModel: SettingsViewModel
+
+    var body: some View {
+        NavigationStack {
+            SettingsAIConnectionDetailView(viewModel: viewModel)
+        }
+    }
 }
 
-#Preview("AI 연결 – not connected") {
-    NavigationStack {
-        AIConnectionDetailView(viewModel: SettingsViewModel())
-            .navigationTitle("AI 연결")
-            .navigationBarTitleDisplayMode(.inline)
-    }
-    .background(Color.CANVAS)
+private let previewKey = "AIzaSyD00000000"
+
+#Preview("settings") {
+    SettingsView(viewModel: .preview(state: .deviceAI(hasStandbyKey: false)))
+}
+
+#Preview("aiConnectionDetail") {
+    SettingsDetailPreview(viewModel: .preview(state: .notConnected(.unsupported), key: previewKey))
+}
+
+#Preview("beforeConfirm") {
+    SettingsAIConsentSheet(provider: .gemini, onAgree: {}, onCancel: {})
+}
+
+#Preview("afterConfirm") {
+    SettingsDetailPreview(viewModel: .preview(state: .connected(SettingsViewModel.previewConnection)))
+}
+
+#Preview("tablet-settings", traits: .fixedLayout(width: 1194, height: 834)) {
+    SettingsView(viewModel: .preview(state: .notConnected(.unsupported)))
+        .environment(\.horizontalSizeClass, .regular)
 }

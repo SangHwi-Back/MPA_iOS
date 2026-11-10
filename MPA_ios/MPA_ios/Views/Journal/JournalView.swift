@@ -1,4 +1,5 @@
-// Spec: specs/journal/SCREEN_SPEC.md
+//
+//  [NO AC] Spec: specs/journal/SCREEN_SPEC.md
 //
 //  JournalView.swift
 //  MPA_ios
@@ -142,7 +143,7 @@ struct JournalView: View {
         .onAppear { openSwipeRowID = initialOpenSwipeRowID }
         .animation(.easeInOut(duration: 0.2), value: viewModel.pendingDeletion?.journal.id)
         .fullScreenCover(item: $editorRequest) { request in
-            JournalEditorScreen(
+            JournalEditorView(
                 viewModel: viewModel,
                 initialDate: request.day,
                 onClose: { editorRequest = nil }

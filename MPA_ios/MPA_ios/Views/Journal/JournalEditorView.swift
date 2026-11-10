@@ -1,5 +1,7 @@
 //
-//  JournalEditorScreen.swift
+//  [NO AC] Spec: specs/journal/SCREEN_SPEC.md
+//
+//  JournalEditorView.swift
 //  MPA_ios
 //
 
@@ -8,7 +10,7 @@ import SwiftUI
 /// 일기 작성/저장 화면. 디자인 시안(1.png = 새 일기, 2.png = 저장됨, 3.png = 날짜 선택)을 따른다.
 /// 저장 전에는 "완료" 버튼으로 `JournalViewModel.addJournal`을 1회 호출해 저장하고,
 /// 저장 후에는 저장 시각을 보여주는 상태로 전환된다 (서버/DB가 없어 이후 수정은 반영되지 않음).
-struct JournalEditorScreen: View {
+struct JournalEditorView: View {
     @ObservedObject var viewModel: JournalViewModel
     var onClose: () -> Void
     
@@ -276,5 +278,5 @@ struct JournalEditorScreen: View {
 }
 
 #Preview {
-    JournalEditorScreen(viewModel: JournalViewModel(), onClose: {})
+    JournalEditorView(viewModel: JournalViewModel(), onClose: {})
 }

@@ -42,12 +42,15 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android]
 
 ## 1. 구현 (build)
 
-- 모든 화면 파일 첫 줄에 `// Spec: specs/<화면 종류>/SCREEN_SPEC.md` 주석을 넣는다
+- 모든 작업 파일 첫 줄에 `// [NO AC] Spec: specs/<화면 종류>/SCREEN_SPEC.md` 주석을 넣는다
+  - spec 에 해당되지 않는 파일일 경우엔 `// [NO AC]` 주석을 넣는다
 - iOS
   - 빌드한다 (Xcode MCP `BuildProject` 또는 XcodeBuildMCP). 실패하면 고쳐서 다시 빌드하되 최대 3회까지만 시도하고, 그래도 실패하면 멈추고 에러를 보고한다
   - iPhone, iPad `#Preview` 를 만들고 `RenderPreview` 로 1차 확인한다
+  - iOS 에서 SwiftUI 로 뷰를 만든 파일들은 모두 View 로 끝나도록 한다.
 - Android
   - `gradlew assembleDebug` 로 빌드한다. 실패 시 규칙은 iOS와 같다
+  - Android 에서 Jetpack Compose 로 뷰를 만든 파일들은 모두 Screen 으로 끝나도록 한다.
 - 모델 파일이 필요할 경우 iOS 와 Android 에 대해 각각의 경로를 참고하고 없다면 임의의 모델 타입을 생성한다.
   - iOS : `MPA_ios/MPA_ios/Model/`
   - Android : `MPA_Android/app/src/main/java/com/example/mpa_android/model/`
@@ -71,8 +74,8 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android]
 
 | 플랫폼 | 기기 | 상태 | 기준 이미지 |
 |---|---|---|---|
-| iOS | iPhone | 세로 | `specs/<화면 종류>/ios` 폴더 내 이미지 |
-| iOS | iPad | 가로 | `specs/<화면 종류>/tablet` 폴더 내 이미지 |
+| iOS | iPhone Duo 가 아닌 iPhone 시뮬레이터 | 세로 | `specs/<화면 종류>/ios` 폴더 내 이미지 |
+| iOS | iPad 시뮬레이터 | 가로 | `specs/<화면 종류>/tablet` 폴더 내 이미지 |
 | Android | 에뮬레이터 | 세로 | `specs/<화면 종류>/android` 폴더 내 이미지 |
 
 - 기준 이미지가 없는 항목은 SCREEN_SPEC.md 기준으로만 판단한다

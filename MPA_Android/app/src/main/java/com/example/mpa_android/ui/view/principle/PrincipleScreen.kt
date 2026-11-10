@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.example.mpa_android.ui.theme.MPAColor
 
 @Composable
-fun PrincipleView() {
+fun PrincipleScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -284,12 +284,12 @@ private fun PastPrincipalTimelineItem(model: PastPrincipalModel, isLast: Boolean
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun DarkPreviewPrincipleView() {
-    PrincipleView()
+private fun DarkPreviewPrincipleScreen() {
+    PrincipleScreen()
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
-private fun LightPreviewPrincipleView() {
-    PrincipleView()
+private fun LightPreviewPrincipleScreen() {
+    PrincipleScreen()
 }

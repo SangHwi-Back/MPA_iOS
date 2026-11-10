@@ -5,7 +5,6 @@
 //  Created by 백상휘 on 11/3/26.
 //
 
-
 import SwiftUI
 
 struct PrincipleDetailView: View {

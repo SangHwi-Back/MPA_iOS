@@ -1,4 +1,6 @@
 //
+//  [NO AC]
+//
 //  ContentView.swift
 //  MPA_ios
 //
@@ -89,7 +91,9 @@ struct ContentView: View {
     private var productRepository
     
     @StateObject private var journalViewModel = JournalViewModel()
-    
+    @State private var settingsViewModel = SettingsViewModel()
+    @State private var isSettingsDetailPresented = false
+
     var contentsEnvironment: ContentsEnvironment {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return .navigationSplit
@@ -105,10 +109,6 @@ struct ContentView: View {
         } else {
             return .generalVertical
         }
-    }
-    
-    private var isTabBarVisible: Bool {
-        !(selectedTab == .journal && journalViewModel.isSearchActive)
     }
 
     private func reselect(_ tab: ContentTab) {

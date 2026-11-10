@@ -1,3 +1,4 @@
+// [NO AC]
 package com.example.mpa_android
 
 import android.os.Bundle
@@ -40,17 +41,20 @@ import androidx.navigation.navArgument
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
 import com.example.mpa_android.ui.view.journal.JournalEditorScreen
-import com.example.mpa_android.ui.view.journal.JournalView
-import com.example.mpa_android.ui.view.principle.PrincipleView
-import com.example.mpa_android.ui.view.settings.SettingsView
-import com.example.mpa_android.ui.view.home.HomeView
+import com.example.mpa_android.ui.view.journal.JournalScreen
+import com.example.mpa_android.ui.view.principle.PrincipleScreen
+import com.example.mpa_android.ui.view.settings.SettingsAIConnectionDetailScreen
+import com.example.mpa_android.ui.view.settings.SettingsScreen
+import com.example.mpa_android.ui.view.home.HomeScreen
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
 import com.example.mpa_android.viewmodel.JournalViewModel
+import com.example.mpa_android.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 
 private const val JOURNAL_EDITOR_ROUTE = "journal-editor"
 private const val JOURNAL_EDITOR_DATE_ARG = "date"
+private const val SETTINGS_AI_CONNECTION_ROUTE = "settings-ai-connection"
 
 val LocalInnerPadding = staticCompositionLocalOf {
     PaddingValues()
@@ -117,6 +121,8 @@ fun App() {
     // Shared across tabs and the editor so a journal added from the editor shows up
     // in the Journal tab immediately (there is no server/DB yet to re-fetch from).
     val journalViewModel: JournalViewModel = hiltViewModel()
+    // Shared by the settings list and the AI connection screen.
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
     val currentRoute = navBackStackEntry?.destination?.route
     var isJournalSearchActive by remember { mutableStateOf(false) }
     var journalScrollToTopSignal by remember { mutableIntStateOf(0) }
@@ -125,7 +131,7 @@ fun App() {
         // The expanded search screen extends its background under the status bar.
         containerColor = if (isJournalSearchActive) MPAColor.CONTAINER.color() else MPAColor.CANVAS.color(),
         bottomBar = {
-            if (!isJournalSearchActive) {
+            if (!isJournalSearchActive && currentRoute != SETTINGS_AI_CONNECTION_ROUTE) {
                 NavigationBar(
                     containerColor = MPAColor.CONTAINER.color(),
                     tonalElevation = 0.dp,
@@ -172,7 +178,11 @@ fun App() {
         },
         floatingActionButton = {
             // The 기록 tab places its own FAB so it can sit above the undo snackbar.
-            if (currentRoute != TabDestinations.JOURNAL.route) {
+            if (
+                currentRoute != TabDestinations.JOURNAL.route &&
+                currentRoute != TabDestinations.SETTINGS.route &&
+                currentRoute != SETTINGS_AI_CONNECTION_ROUTE
+            ) {
                 WriteJournalFloatingActionButton()
             }
         },
@@ -186,20 +196,29 @@ fun App() {
                     composable(destination.route) {
                         CompositionLocalProvider(LocalInnerPadding provides innerPadding) {
                             when (destination) {
-                                TabDestinations.TODAY -> HomeView(
+                                TabDestinations.TODAY -> HomeScreen(
                                     onAddJournal = { navController.navigate(JOURNAL_EDITOR_ROUTE) },
                                 )
-                                TabDestinations.JOURNAL -> JournalView(
+                                TabDestinations.JOURNAL -> JournalScreen(
                                     viewModel = journalViewModel,
                                     onWrite = { date -> navController.navigate("$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG=$date") },
                                     onSearchActiveChange = { isJournalSearchActive = it },
                                     scrollToTopSignal = journalScrollToTopSignal,
                                 )
-                                TabDestinations.PRINCIPAL -> PrincipleView()
-                                TabDestinations.SETTINGS -> SettingsView()
+                                TabDestinations.PRINCIPAL -> PrincipleScreen()
+                                TabDestinations.SETTINGS -> SettingsScreen(
+                                    viewModel = settingsViewModel,
+                                    onOpenAIConnection = { navController.navigate(SETTINGS_AI_CONNECTION_ROUTE) },
+                                )
                             }
                         }
                     }
+                }
+                composable(SETTINGS_AI_CONNECTION_ROUTE) {
+                    SettingsAIConnectionDetailScreen(
+                        viewModel = settingsViewModel,
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable(
                     route = "$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG={$JOURNAL_EDITOR_DATE_ARG}",

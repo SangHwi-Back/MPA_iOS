@@ -30,7 +30,7 @@ struct HomeView: View {
             }
         }
         .fullScreenCover(isPresented: $showEditor) {
-            JournalEditorScreen(viewModel: viewModel, onClose: { showEditor = false })
+            JournalEditorView(viewModel: viewModel, onClose: { showEditor = false })
         }
     }
     

@@ -1,4 +1,4 @@
-// Spec: specs/journal/SCREEN_SPEC.md
+// [NO AC] Spec: specs/journal/SCREEN_SPEC.md
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 
 package com.example.mpa_android.ui.view.journal
@@ -171,7 +171,7 @@ private data class JournalActions(
 )
 
 @Composable
-fun JournalView(
+fun JournalScreen(
     viewModel: JournalViewModel = hiltViewModel(),
     onWrite: (LocalDate) -> Unit = {},
     onOpenEntry: (Journal) -> Unit = {},

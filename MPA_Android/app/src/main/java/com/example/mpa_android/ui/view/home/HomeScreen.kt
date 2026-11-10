@@ -47,7 +47,7 @@ import com.example.mpa_android.ui.theme.MPAColor
 
 // ── Root ──────────────────────────────────────────────────────────────
 @Composable
-fun HomeView(onAddJournal: () -> Unit = {}) {
+fun HomeScreen(onAddJournal: () -> Unit = {}) {
     val scrollviewState = rememberScrollState()
     Column(
         modifier = Modifier
@@ -726,11 +726,11 @@ private fun RecentJournalRow(
 
 @Preview
 @Composable
-private fun PreviewLightHomeView() {
-    HomeView()
+private fun PreviewLightHomeScreen() {
+    HomeScreen()
 }
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun PreviewDarkHomeView() {
-    HomeView()
+private fun PreviewDarkHomeScreen() {
+    HomeScreen()
 }
