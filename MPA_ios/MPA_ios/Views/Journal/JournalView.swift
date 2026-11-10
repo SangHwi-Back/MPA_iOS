@@ -101,8 +101,8 @@ private struct JournalEditorRequest: Identifiable {
 
 struct JournalView: View {
     @ObservedObject var viewModel: JournalViewModel
-    /// Opens the entry detail (Part B).
-    var onOpenEntry: (Journal) -> Void = { _ in }
+    /// Opens the entry detail (Part B). When nil, the detail is pushed inside this tab.
+    var onOpenEntry: ((Journal) -> Void)? = nil
     /// Opens the editor for an existing entry (Part C).
     var onEditEntry: (Journal) -> Void = { _ in }
     /// Opens the list of entries for a keyword.
@@ -114,16 +114,46 @@ struct JournalView: View {
     @State private var editorRequest: JournalEditorRequest?
     @State private var openSwipeRowID: UUID?
     @State private var scrollPosition = ScrollPosition(edge: .top)
+    /// Pushed entry details, by id. The keyword sheet can push another entry on top.
+    @State private var detailPath: [UUID] = []
 
     private var isRegular: Bool { horizontalSizeClass == .regular }
+
+    private func openEntry(_ entry: Journal) {
+        if let onOpenEntry {
+            onOpenEntry(entry)
+        } else {
+            detailPath.append(entry.id)
+        }
+    }
+
+    @ViewBuilder
+    private func detailDestination(_ id: UUID) -> some View {
+        if let entry = viewModel.entries.first(where: { $0.id == id }) {
+            JournalDetailView(
+                journal: entry,
+                journalViewModel: viewModel,
+                onOpenEntry: { detailPath.append($0.id) },
+                onEdit: onEditEntry,
+                onDelete: { deleted in
+                    // Back to the list first, then the undo toast (Part A 3.8).
+                    detailPath.removeAll()
+                    delete(deleted)
+                }
+            )
+        }
+    }
     /// The tablet draws its own title row, and search takes over the top of the phone screen.
     private var isNavigationBarHidden: Bool { isRegular || viewModel.isSearchActive }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $detailPath) {
             content
                 .background(Color.CANVAS)
                 .navigationTitle("기록")
+                .navigationDestination(for: UUID.self) { id in
+                    detailDestination(id)
+                }
                 .toolbar {
                     if !isNavigationBarHidden {
                         ToolbarItem(placement: .topBarTrailing) {
@@ -215,7 +245,7 @@ struct JournalView: View {
                         JournalCalendarSection(
                             viewModel: viewModel,
                             keywordStages: keywordStages,
-                            onOpenEntry: onOpenEntry,
+                            onOpenEntry: openEntry,
                             onWrite: openEditor(on:)
                         )
                         .padding(.horizontal, JournalLayout.phoneGutter)
@@ -288,7 +318,7 @@ struct JournalView: View {
         if openSwipeRowID != nil {
             openSwipeRowID = nil
         } else {
-            onOpenEntry(entry)
+            openEntry(entry)
         }
     }
 
@@ -313,7 +343,7 @@ struct JournalView: View {
         JournalSearchContent(
             viewModel: viewModel,
             keywordStages: keywordStages,
-            onOpenEntry: onOpenEntry,
+            onOpenEntry: openEntry,
             onOpenKeyword: onOpenKeyword
         )
     }
@@ -346,7 +376,7 @@ struct JournalView: View {
                         JournalTabletCalendar(
                             viewModel: viewModel,
                             keywordStages: keywordStages,
-                            onOpenEntry: onOpenEntry,
+                            onOpenEntry: openEntry,
                             onWrite: openEditor(on:)
                         )
                         .padding(.top, -12)
@@ -413,7 +443,7 @@ struct JournalView: View {
                             .frame(maxWidth: .infinity, minHeight: 137, alignment: .topLeading)
                             .journalCard()
                             .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                            .onTapGesture { onOpenEntry(entry) }
+                            .onTapGesture { openEntry(entry) }
                             .contextMenu { entryMenu(entry) }
                         }
                     }

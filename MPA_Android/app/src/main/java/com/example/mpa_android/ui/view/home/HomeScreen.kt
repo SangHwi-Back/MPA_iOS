@@ -21,13 +21,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,19 +47,62 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.mpa_android.R
+import com.example.mpa_android.TopAppBarModel
 import com.example.mpa_android.ui.theme.MPAColor
 
 // ── Root ──────────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onAddJournal: () -> Unit = {}) {
+fun HomeScreen(
+    onAddJournal: () -> Unit = {},
+    dynamicTopAppBar: (model: TopAppBarModel) -> Unit,
+) {
     val scrollviewState = rememberScrollState()
+
+    LaunchedEffect(Unit) {
+        dynamicTopAppBar(TopAppBarModel(
+            title = "",
+            scrollBehavior = { TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()) },
+            leadingSection = {},
+            trailingSection = {
+                val shadow = Shadow(
+                    radius = 0.15.dp,
+                    color = MPAColor.TEXT_PRIMARY.color().copy(alpha = 0.08f),
+                )
+                val modifier = Modifier
+                    .padding(end = 16.dp)
+                    .size(44.dp)
+                    .dropShadow(CircleShape, shadow)
+                Spacer(Modifier.weight(1f))
+                IconButton(
+                    onClick = { },
+                    modifier,
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_alert_button),
+                        contentDescription = "AI Alert",
+                        tint = Color.Unspecified,
+                    )
+                }
+                IconButton(
+                    onClick = onAddJournal,
+                    modifier
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_add),
+                        contentDescription = "일기 추가",
+                        tint = MPAColor.TEXT_PRIMARY.color(),
+                    )
+                } },
+            )
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MPAColor.CANVAS.color())
     ) {
-        HeaderButtons(onAddClick = onAddJournal)
-        Spacer(Modifier.height(16.dp))
         Column(
             modifier = Modifier
                 .verticalScroll(scrollviewState)
@@ -105,40 +152,40 @@ fun HomeScreen(onAddJournal: () -> Unit = {}) {
 }
 
 // ── Greeting ──────────────────────────────────────────────────────────
-@Composable
-private fun HeaderButtons(onAddClick: () -> Unit = {}) {
-    val shadow = Shadow(
-        radius = 0.15.dp,
-        color = MPAColor.TEXT_PRIMARY.color().copy(alpha = 0.08f),
-    )
-    val modifier = Modifier
-        .padding(end = 16.dp)
-        .size(44.dp)
-        .dropShadow(CircleShape, shadow)
-    Row {
-        Spacer(Modifier.weight(1f))
-        IconButton(
-            onClick = { },
-            modifier,
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_alert_button),
-                contentDescription = "AI Alert",
-                tint = Color.Unspecified,
-            )
-        }
-        IconButton(
-            onClick = onAddClick,
-            modifier
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_add),
-                contentDescription = "일기 추가",
-                tint = MPAColor.TEXT_PRIMARY.color(),
-            )
-        }
-    }
-}
+//@Composable
+//private fun HeaderButtons(onAddClick: () -> Unit = {}) {
+//    val shadow = Shadow(
+//        radius = 0.15.dp,
+//        color = MPAColor.TEXT_PRIMARY.color().copy(alpha = 0.08f),
+//    )
+//    val modifier = Modifier
+//        .padding(end = 16.dp)
+//        .size(44.dp)
+//        .dropShadow(CircleShape, shadow)
+//    Row {
+//        Spacer(Modifier.weight(1f))
+//        IconButton(
+//            onClick = { },
+//            modifier,
+//        ) {
+//            Icon(
+//                imageVector = ImageVector.vectorResource(R.drawable.ic_alert_button),
+//                contentDescription = "AI Alert",
+//                tint = Color.Unspecified,
+//            )
+//        }
+//        IconButton(
+//            onClick = onAddClick,
+//            modifier
+//        ) {
+//            Icon(
+//                imageVector = ImageVector.vectorResource(R.drawable.ic_add),
+//                contentDescription = "일기 추가",
+//                tint = MPAColor.TEXT_PRIMARY.color(),
+//            )
+//        }
+//    }
+//}
 
 @Composable
 private fun GreetingHeader() {
@@ -727,10 +774,10 @@ private fun RecentJournalRow(
 @Preview
 @Composable
 private fun PreviewLightHomeScreen() {
-    HomeScreen()
+    HomeScreen(dynamicTopAppBar = {})
 }
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun PreviewDarkHomeScreen() {
-    HomeScreen()
+    HomeScreen(dynamicTopAppBar = {})
 }

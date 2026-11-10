@@ -20,53 +20,62 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mpa_android.R
+import com.example.mpa_android.TopAppBarModel
+import com.example.mpa_android.TopAppBarStyle
 import com.example.mpa_android.ui.theme.MPAColor
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PrincipleScreen() {
+fun PrincipleScreen(
+    dynamicTopAppBar: (TopAppBarModel) -> Unit
+) {
+    LaunchedEffect(Unit) {
+        dynamicTopAppBar(TopAppBarModel(
+            title = "원칙",
+            subTitle = "일기 12개에서 찾았어요 · 10월 30일 갱신",
+            style = TopAppBarStyle.LARGE,
+            scrollBehavior = { TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState()) },
+            leadingSection = {},
+            trailingSection = { IconButton(onClick = {}) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_more_horiz),
+                    contentDescription = "원칙 더보기",
+                    tint = MPAColor.TEXT_PRIMARY.color(),
+                )
+            } },
+        ))
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MPAColor.CANVAS.color())
     ) {
-        Header(Modifier.padding(16.dp))
-        Spacer(Modifier.height(8.dp))
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             PrincipalList()
             Spacer(Modifier.height(32.dp))
             PrincipalAlreadyLeft()
         }
         Spacer(Modifier.height(24.dp))
-
-    }
-}
-
-@Composable
-private fun Header(modifier: Modifier) {
-    Column(modifier) {
-        Text(
-            text = "원칙",
-            fontWeight = FontWeight.Bold,
-            fontSize = 30.sp,
-            color = MPAColor.TEXT_PRIMARY.color(),
-            modifier = Modifier.padding(bottom = 2.dp)
-        )
-        Text(
-            text = "일기 12개에서 찾았어요 · 10월 30일 갱신",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            color = MPAColor.TEXT_SECONDARY.color(),
-        )
     }
 }
 
@@ -285,11 +294,11 @@ private fun PastPrincipalTimelineItem(model: PastPrincipalModel, isLast: Boolean
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun DarkPreviewPrincipleScreen() {
-    PrincipleScreen()
+    PrincipleScreen(dynamicTopAppBar = {})
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 private fun LightPreviewPrincipleScreen() {
-    PrincipleScreen()
+    PrincipleScreen(dynamicTopAppBar = {})
 }

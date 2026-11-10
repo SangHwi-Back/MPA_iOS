@@ -5,18 +5,19 @@
 
 import Foundation
 
-private func sampleDay(_ day: Int) -> Date {
-    Calendar(identifier: .gregorian).date(from: DateComponents(year: 2026, month: 10, day: day))!
+private func sampleDay(_ day: Int, month: Int = 10) -> Date {
+    Calendar(identifier: .gregorian).date(from: DateComponents(year: 2026, month: month, day: day))!
 }
 
 private func sampleEntry(
+    month: Int = 10,
     day: Int,
     title: String,
     body: String,
     keywords: [String],
     hasPhoto: Bool
 ) -> Journal {
-    let date = sampleDay(day)
+    let date = sampleDay(day, month: month)
     return Journal(
         day: date,
         createdAt: date,
@@ -49,6 +50,35 @@ extension Journal {
         listSamples + [2, 5, 8, 13, 15].map { day in
             sampleEntry(day: day, title: "기록 \(day)일", body: "샘플 본문", keywords: ["휴식"], hasPhoto: false)
         }
+    }
+
+    /// A fresh copy of `Journal.sample`, so a preview can change it without affecting the others.
+    static func detailSample(aiComment: AIText? = nil) -> Journal {
+        let sample = Journal.sample
+        return Journal(
+            day: sample.day,
+            createdAt: sample.createdAt,
+            editedAt: sample.editedAt,
+            title: sample.title,
+            body: sample.body,
+            prompt: sample.prompt,
+            photos: sample.photos,
+            keywords: sample.keywords,
+            analysisState: sample.analysisState,
+            aiComment: aiComment
+        )
+    }
+
+    /// Other entries with "경청", shown in the keyword sheet of the detail previews.
+    static var detailKeywordSamples: [Journal] {
+        [
+            sampleEntry(day: 20, title: "엄마와의 긴 통화", body: "한 시간 넘게 이야기를 들었다.", keywords: ["경청"], hasPhoto: false),
+            sampleEntry(day: 12, title: "팀 회고에서 먼저 묻기", body: "잘 안 된 일을 먼저 물었다.", keywords: ["경청", "솔직함"], hasPhoto: false),
+            sampleEntry(day: 5, title: "후배의 고민을 끝까지 듣다", body: "조언보다 질문을 먼저 했다.", keywords: ["경청"], hasPhoto: false),
+            sampleEntry(month: 9, day: 30, title: "독서 모임에서 질문만 하기", body: "내 생각은 아껴 두었다.", keywords: ["경청"], hasPhoto: false),
+            sampleEntry(month: 9, day: 21, title: "주말 가족 저녁", body: "동생 이야기를 오래 들었다.", keywords: ["경청"], hasPhoto: false),
+            sampleEntry(month: 9, day: 14, title: "첫 1:1 면담", body: "말을 줄이고 메모를 했다.", keywords: ["경청"], hasPhoto: false),
+        ]
     }
 
     static var searchSamples: [Journal] {

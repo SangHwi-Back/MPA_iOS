@@ -11,8 +11,6 @@ struct PrincipleDetailView: View {
     let principle: Principle
     let relatedJournals: [Journal]
     
-    @Environment(\.dismiss) private var dismiss
-    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -142,15 +140,6 @@ struct PrincipleDetailView: View {
     
     @ToolbarContentBuilder
     private var detailToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-            }
-        }
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
                 // share

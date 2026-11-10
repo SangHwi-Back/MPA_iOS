@@ -1,4 +1,3 @@
-// [NO AC] Spec: specs/journal/SCREEN_SPEC.md
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 
 package com.example.mpa_android.ui.view.journal
@@ -59,7 +58,9 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -100,9 +101,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
+import com.example.mpa_android.TopAppBarModel
 import com.example.mpa_android.model.AnalysisState
 import com.example.mpa_android.model.Journal
 import com.example.mpa_android.model.JournalSamples
+import com.example.mpa_android.model.PRINCIPLE_STAGE_COUNT
+import com.example.mpa_android.model.keywordStages
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
 import com.example.mpa_android.viewmodel.JournalViewModel
@@ -122,7 +126,6 @@ private val SNACKBAR_ACTION = Color(0xFFAEB8F0)
 private const val SEARCH_DEBOUNCE_MILLIS = 250L
 private const val SNIPPET_VISIBLE_LENGTH = 40
 private const val MAX_KEYWORD_SUGGESTIONS = 3
-private const val PRINCIPLE_STAGE_COUNT = 5
 private const val SWIPE_DELETE_THRESHOLD = 0.4f
 
 private fun DayOfWeek.korean(): String = KOREAN_WEEKDAYS[value - 1]
@@ -141,19 +144,6 @@ private fun Journal.searchSnippet(query: String): String {
     if (match <= SNIPPET_VISIBLE_LENGTH) return text
     val sentenceBreak = text.lastIndexOf(". ", match)
     return "…" + text.substring(if (sentenceBreak >= 0) sentenceBreak + 2 else match)
-}
-
-/** Principle color stage (0 = most recent … 4 = oldest) per keyword, in quintiles of last appearance. */
-private fun computeKeywordStages(journals: List<Journal>): Map<String, Int> {
-    val lastSeen = mutableMapOf<String, LocalDate>()
-    journals.forEach { journal ->
-        journal.visibleKeywords.forEach { keyword ->
-            val current = lastSeen[keyword.name]
-            if (current == null || journal.day > current) lastSeen[keyword.name] = journal.day
-        }
-    }
-    val ordered = lastSeen.entries.sortedWith(compareByDescending<Map.Entry<String, LocalDate>> { it.value }.thenBy { it.key })
-    return ordered.withIndex().associate { (index, entry) -> entry.key to index * PRINCIPLE_STAGE_COUNT / ordered.size }
 }
 
 private data class JournalActions(
@@ -179,6 +169,7 @@ fun JournalScreen(
     onOpenKeyword: (String) -> Unit = {},
     onSearchActiveChange: (Boolean) -> Unit = {},
     scrollToTopSignal: Int = 0,
+    dynamicTopAppBar: (model: TopAppBarModel) -> Unit,
 ) {
     val journals by viewModel.visibleJournals.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -192,13 +183,30 @@ fun JournalScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        dynamicTopAppBar(TopAppBarModel(
+            title = "기록",
+            scrollBehavior = { TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()) },
+            leadingSection = {},
+            trailingSection = { IconButton(onClick = {
+                onWrite(LocalDate.now())
+            }) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_add),
+                    contentDescription = "기록 추가",
+                    tint = MPAColor.TEXT_PRIMARY.color(),
+                )
+            } },
+        ))
+    }
+
     JournalContent(
         journals = journals,
         viewMode = viewMode,
         recentSearches = recentSearches,
         pendingDeletion = pendingDeletion,
         today = LocalDate.now(),
-        keywordStages = remember(journals) { computeKeywordStages(journals) },
+        keywordStages = remember(journals) { journals.keywordStages() },
         scrollToTopSignal = scrollToTopSignal,
         actions = JournalActions(
             onSetViewMode = viewModel::setViewMode,
@@ -278,7 +286,9 @@ private fun JournalContent(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MPAColor.CANVAS.color())) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(MPAColor.CANVAS.color())) {
         Column(modifier = Modifier.fillMaxSize()) {
             JournalSearchBar(
                 enabled = !isEmpty,
@@ -287,7 +297,12 @@ private fun JournalContent(
             )
 
             if (isEmpty) {
-                JournalEmptyState(modifier = Modifier.weight(1f))
+                JournalEmptyState(
+                    modifier = Modifier.weight(1f),
+                    viewMode = viewMode,
+                    listState = listState,
+                    addAction = { actions.onWrite(today) }
+                )
             } else {
                 JournalBody(
                     journals = journals,
@@ -316,19 +331,22 @@ private fun JournalContent(
         }
 
         // The FAB sits above the snackbar, and the snackbar stays directly above the navigation bar.
-        Column(
-            modifier = Modifier.align(Alignment.BottomEnd).fillMaxWidth(),
-            horizontalAlignment = Alignment.End,
-        ) {
-            JournalFab(
-                isEmpty = isEmpty,
-                isCalendar = viewMode == JournalViewMode.CALENDAR,
-                isScrollingDown = listState.lastScrolledForward,
-                onClick = { actions.onWrite(today) },
-                modifier = Modifier.padding(end = 16.dp, bottom = 16.dp),
-            )
-            SnackbarHost(snackbarHostState) { data ->
-                JournalUndoSnackbar(data)
+        if (!isEmpty) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.End,
+            ) {
+                JournalFab(
+                    isCalendar = viewMode == JournalViewMode.CALENDAR,
+                    isScrollingDown = listState.lastScrolledForward,
+                    onClick = { actions.onWrite(today) },
+                    modifier = Modifier.padding(end = 16.dp, bottom = 16.dp),
+                )
+                SnackbarHost(snackbarHostState) { data ->
+                    JournalUndoSnackbar(data)
+                }
             }
         }
     }
@@ -368,18 +386,15 @@ private fun JournalUndoSnackbar(data: SnackbarData) {
 
 @Composable
 private fun JournalFab(
-    isEmpty: Boolean,
     isCalendar: Boolean,
     isScrollingDown: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor = if (isEmpty) MPAColor.BRAND_PRIMARY.color() else MPAColor.BRAND_CONTAINER.color()
-    val contentColor = if (isEmpty) MPAColor.BRAND_ON_PRIMARY.color() else MPAColor.BRAND_ON_CONTAINER.color()
     ExtendedFloatingActionButton(
         text = {
             Text(
-                text = if (isEmpty) "첫 일기 쓰기" else "쓰기",
+                text = "첫 일기 쓰기",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -388,14 +403,14 @@ private fun JournalFab(
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_edit),
                 contentDescription = if (isCalendar) "쓰기" else null,
-                tint = contentColor,
+                tint = MPAColor.BRAND_ON_PRIMARY.color(),
             )
         },
-        expanded = isEmpty || (!isCalendar && !isScrollingDown),
+        expanded = (!isCalendar && !isScrollingDown),
         onClick = onClick,
         modifier = modifier,
-        containerColor = containerColor,
-        contentColor = contentColor,
+        containerColor =  MPAColor.BRAND_PRIMARY.color(),
+        contentColor = MPAColor.BRAND_ON_PRIMARY.color(),
     )
 }
 
@@ -439,9 +454,14 @@ private fun JournalSearchScreen(
     BackHandler(onBack = onClose)
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Column(modifier = Modifier.fillMaxSize().background(MPAColor.CONTAINER.color())) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(MPAColor.CONTAINER.color())) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onClose) {
@@ -450,7 +470,10 @@ private fun JournalSearchScreen(
             BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f).padding(start = 8.dp).focusRequester(focusRequester),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp)
+                    .focusRequester(focusRequester),
                 singleLine = true,
                 textStyle = TextStyle(fontSize = 18.sp, color = textColor),
                 cursorBrush = SolidColor(MPAColor.BRAND_PRIMARY.color()),
@@ -580,7 +603,9 @@ private fun LazyListScope.journalListItems(
 
 @Composable
 private fun JournalMonthHeader(month: YearMonth, count: Int) {
-    Column(modifier = Modifier.fillMaxWidth().background(MPAColor.CANVAS.color())) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .background(MPAColor.CANVAS.color())) {
         Row(
             modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 10.dp),
             verticalAlignment = Alignment.Bottom,
@@ -825,7 +850,10 @@ private fun JournalKeywordChip(name: String, stage: Int, isEmphasized: Boolean) 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(principleColor(stage)))
+        Box(Modifier
+            .size(7.dp)
+            .clip(CircleShape)
+            .background(principleColor(stage)))
         Text(
             text = name,
             fontSize = 13.sp,
@@ -903,7 +931,9 @@ private fun JournalSearchContent(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().imeNestedScroll(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imeNestedScroll(),
         contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
     ) {
         when {
@@ -989,7 +1019,10 @@ private fun JournalKeywordSuggestionRow(name: String, count: Int, stage: Int, on
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.size(24.dp).clip(CircleShape).background(principleColor(stage)))
+        Box(Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(principleColor(stage)))
         Text(
             text = buildAnnotatedString {
                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(name) }
@@ -1009,7 +1042,9 @@ private fun JournalKeywordSuggestionRow(name: String, count: Int, stage: Int, on
 @Composable
 private fun JournalNoResults(query: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -1121,7 +1156,9 @@ private fun JournalCalendar(
 private fun JournalCalendarMessage(text: String) {
     Text(
         text = text,
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
         fontSize = 15.sp,
         color = MPAColor.TEXT_SECONDARY.color(),
         textAlign = TextAlign.Center,
@@ -1255,7 +1292,9 @@ private fun JournalMonthGrid(
             weekdays.forEach { day ->
                 Text(
                     text = day.korean(),
-                    modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = 4.dp),
                     fontSize = 13.sp,
                     color = MPAColor.TEXT_SECONDARY.color(),
                     textAlign = TextAlign.Center,
@@ -1289,7 +1328,9 @@ private fun RowScope.JournalCalendarDayCell(
     onTap: (LocalDate) -> Unit,
 ) {
     if (date == null) {
-        Spacer(Modifier.weight(1f).height(48.dp))
+        Spacer(Modifier
+            .weight(1f)
+            .height(48.dp))
         return
     }
     val brand = MPAColor.BRAND_PRIMARY.color()
@@ -1329,16 +1370,26 @@ private fun RowScope.JournalCalendarDayCell(
             )
         }
         Spacer(Modifier.height(3.dp))
-        Box(Modifier.size(5.dp).clip(CircleShape).background(if (hasEntry) brand else Color.Transparent))
+        Box(Modifier
+            .size(5.dp)
+            .clip(CircleShape)
+            .background(if (hasEntry) brand else Color.Transparent))
     }
 }
 
 // ---- Empty ----
 
 @Composable
-private fun JournalEmptyState(modifier: Modifier = Modifier) {
+private fun JournalEmptyState(
+    modifier: Modifier = Modifier,
+    viewMode: JournalViewMode,
+    listState: LazyListState,
+    addAction: () -> Unit
+) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(bottom = 168.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 168.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -1362,6 +1413,12 @@ private fun JournalEmptyState(modifier: Modifier = Modifier) {
             lineHeight = 24.sp,
             color = MPAColor.TEXT_SECONDARY.color(),
             textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
+        JournalFab(
+            isCalendar = viewMode == JournalViewMode.CALENDAR,
+            isScrollingDown = listState.lastScrolledForward,
+            onClick = addAction,
         )
     }
 }

@@ -1,29 +1,12 @@
-// [NO AC] Spec: specs/settings/SCREEN_SPEC.md
 package com.example.mpa_android.ui.view.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,12 +14,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mpa_android.R
+import com.example.mpa_android.TopAppBarModel
 import com.example.mpa_android.model.AIConnectionState
 import com.example.mpa_android.model.AIKeyConnection
 import com.example.mpa_android.model.AIUnavailableReason
@@ -50,6 +33,7 @@ internal val SettingsGutter = 20.dp
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onOpenAIConnection: () -> Unit,
+    dynamicTopAppBar: (TopAppBarModel) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -57,15 +41,27 @@ fun SettingsScreen(
         state = state,
         onOpenAIConnection = onOpenAIConnection,
         onBiometricLockChange = viewModel::setBiometricLock,
+        dynamicTopAppBar
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsContent(
     state: SettingsUiState,
     onOpenAIConnection: () -> Unit,
     onBiometricLockChange: (Boolean) -> Unit,
+    dynamicTopAppBar: (TopAppBarModel) -> Unit,
 ) {
+    LaunchedEffect(Unit) {
+        dynamicTopAppBar(TopAppBarModel(
+            title = "설정",
+            scrollBehavior = { TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState()) },
+            leadingSection = {},
+            trailingSection = {},
+        ))
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -73,17 +69,17 @@ private fun SettingsContent(
             .verticalScroll(rememberScrollState())
             .padding(top = 36.dp, bottom = 32.dp),
     ) {
-        Text(
-            text = "설정",
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 30.sp,
-            color = MPAColor.TEXT_PRIMARY.color(),
-            modifier = Modifier
-                .padding(horizontal = SettingsGutter)
-                .semantics { heading() },
-        )
-        Spacer(Modifier.height(16.dp))
+//        Text(
+//            text = "설정",
+//            fontFamily = FontFamily.Serif,
+//            fontWeight = FontWeight.SemiBold,
+//            fontSize = 30.sp,
+//            color = MPAColor.TEXT_PRIMARY.color(),
+//            modifier = Modifier
+//                .padding(horizontal = SettingsGutter)
+//                .semantics { heading() },
+//        )
+//        Spacer(Modifier.height(16.dp))
 
         SettingsSectionHeader("AI")
         SettingsRow(
@@ -247,5 +243,5 @@ internal val PreviewKeyConnection = AIKeyConnection(
 @Composable
 private fun SettingsPreview() {
     val viewModel = remember { previewSettingsViewModel(AIConnectionState.DeviceAI(false)) }
-    SettingsScreen(viewModel = viewModel, onOpenAIConnection = {})
+    SettingsScreen(viewModel = viewModel, onOpenAIConnection = {}, dynamicTopAppBar = {})
 }

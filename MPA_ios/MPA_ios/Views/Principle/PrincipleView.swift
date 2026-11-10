@@ -20,9 +20,7 @@ struct PrincipleView: View {
     var body: some View {
         NavigationStack {
             principalListView
-                .background(content: {
-                    Color.CANVAS
-                })
+                .background(Color.CANVAS)
                 .task { loadSampleData() }
                 .navigationDestination(for: Principle.self) { p in
                     PrincipleDetailView(
@@ -39,7 +37,6 @@ struct PrincipleView: View {
     private var principalListView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                principalHeader
                 currentPrinciplesSection
                 pastPrinciplesSection
             }
@@ -47,58 +44,46 @@ struct PrincipleView: View {
             .padding(.top, 16)
             .padding(.bottom, 24)
         }
+        .navigationTitle("원칙")
+        .navigationSubtitle(metaSubtitle)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    // overflow menu – sheet / popover
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color.TEXT_SECONDARY)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
     
     // MARK: - Header
     
-    private var principalHeader: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("원칙")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                
-                Text(metaSubtitle)
-                    .font(.caption)
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-            }
-            
-            Spacer()
-            
-            Button {
-                // overflow menu – sheet / popover
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-    
     private var metaSubtitle: String {
         let total = currentPrinciples.count + pastPrinciples.count
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.dateFormat = "M월 d일"
+        let formatter: DateFormatter = {
+            let result = DateFormatter()
+            result.locale = Locale(identifier: "ko_KR")
+            result.dateFormat = "M월 d일"
+            return result
+        }()
         let latest = currentPrinciples
             .map({$0.lastSeenDate})
             .max() ?? .now
-        return "일기 \(total)개에서 발췄어요 · \(f.string(from: latest)) 갱신"
+        return "일기 \(total)개에서 발췄어요 · \(formatter.string(from: latest)) 갱신"
     }
     
     // MARK: - Current principles
     
     private var currentPrinciplesSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("지금은 원칙")
-            
-            ForEach(currentPrinciples) { p in
-                NavigationLink(value: p) {
-                    PrincipleRowView(principle: p, rank: p.rank ?? 0)
-                }
-                .buttonStyle(.plain)
+        ForEach(currentPrinciples) { p in
+            NavigationLink(value: p) {
+                PrincipleRowView(principle: p, rank: p.rank ?? 0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -107,7 +92,7 @@ struct PrincipleView: View {
     
     private var pastPrinciplesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionLabel("지난년 원칙")
+            sectionLabel("지난 원칙")
             
             ForEach(pastPrinciples) { p in
                 PastPrincipleRowView(principle: p)
@@ -176,7 +161,6 @@ private struct PrincipleRowView: View {
             // Mini progress bar
             miniProgress
         }
-        .padding(.vertical, 10)
         .contentShape(Rectangle())
     }
     

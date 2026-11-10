@@ -22,6 +22,16 @@ object JournalSamples {
         entry(day, "기록 ${day}일", "샘플 본문", listOf("휴식"), hasPhoto = false)
     } + entry(15, "9월의 기록", "샘플 본문", listOf("휴식"), hasPhoto = false, month = 9)
 
+    /** Other entries with "경청", shown in the keyword sheet of the detail previews. */
+    val detailKeyword: List<Journal> = listOf(
+        entry(20, "엄마와의 긴 통화", "한 시간 넘게 이야기를 들었다.", listOf("경청"), hasPhoto = false),
+        entry(12, "팀 회고에서 먼저 묻기", "잘 안 된 일을 먼저 물었다.", listOf("경청", "솔직함"), hasPhoto = false),
+        entry(5, "후배의 고민을 끝까지 듣다", "조언보다 질문을 먼저 했다.", listOf("경청"), hasPhoto = false),
+        entry(30, "독서 모임에서 질문만 하기", "내 생각은 아껴 두었다.", listOf("경청"), hasPhoto = false, month = 9),
+        entry(21, "주말 가족 저녁", "동생 이야기를 오래 들었다.", listOf("경청"), hasPhoto = false, month = 9),
+        entry(14, "첫 1:1 면담", "말을 줄이고 메모를 했다.", listOf("경청"), hasPhoto = false, month = 9),
+    )
+
     val search: List<Journal> = listOf(
         entry(27, "회의에서 말을 끊지 않기", "오늘은 경청해 보기로 했다. 끝까지 듣고 나니 내가 하려던 질문이 달라졌다.", listOf("경청", "솔직함"), hasPhoto = false),
         entry(20, "엄마와의 긴 통화", "저녁을 먹고 오랜만에 엄마에게 전화를 걸었다. 안부만 묻고 끊으려 했는데 이야기가 길어졌다. 별일 아니라고 하시면서도 목소리가 평소와 달랐다. 한 시간 넘게 이야기를 들었다. 경청이라는 말이 이런 거구나 싶었다.", listOf("경청"), hasPhoto = false),
