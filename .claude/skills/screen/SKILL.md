@@ -2,7 +2,7 @@
 name: screen
 description: specs/<화면 종류>/SCREEN_SPEC.md를 기준으로 iOS·Android 화면을 구현하고, 아이폰·아이패드에서 디자인과 일치하는지 검증한다.
 disable-model-invocation: true
-argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android]
+argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android] [-- 추가 지시]
 ---
 
 # 화면 구현 + 검증
@@ -18,6 +18,11 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android]
   - `build` : 구현만
   - `verify` : 검증만
 - `플랫폼 이름` (생략하면 둘 다): `ios`, `android`
+- `--` 뒤의 문장은 인자가 아니라 이번 실행에만 적용할 `추가 지시`이다
+  - 위의 인자 규칙은 `--` 앞부분에만 적용한다. `--` 뒤의 단어는 화면 이름, 모드, 플랫폼으로 해석하지 않는다
+  - 예: `/screen Journal verify ios -- 다크 모드도 확인` → 화면 종류 Journal, 모드 verify, 플랫폼 ios, 추가 지시 "다크 모드도 확인"
+  - spec 과 충돌하면 추가 지시를 따르고, 보고할 때 그 사실을 적는다
+  - 검증을 서브에이전트에게 맡길 때 추가 지시 중 검증에 관한 내용은 함께 넘긴다
 
 ## 프로젝트 설정 (프로젝트에 맞게 수정)
 
@@ -64,6 +69,7 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android]
 
 서브에이전트에게는 아래만 넘긴다.
 - 화면 이름, spec 경로, images 경로, 검사할 기기·상태 목록
+- `추가 지시` 중 검증에 관한 내용 (있을 때만)
 - 구현 과정이나 내가 내린 판단은 넘기지 않는다
 
 서브에이전트 규칙
