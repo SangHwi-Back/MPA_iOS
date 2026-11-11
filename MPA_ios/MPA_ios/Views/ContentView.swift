@@ -94,6 +94,10 @@ struct ContentView: View {
     @State private var settingsViewModel = SettingsViewModel()
     @State private var isSettingsDetailPresented = false
 
+    private var isAIAvailable: Bool {
+        HomeAIStatus(connection: settingsViewModel.aiConnection).isAvailable
+    }
+
     var contentsEnvironment: ContentsEnvironment {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return .navigationSplit
@@ -125,14 +129,22 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(ContentTab.today.title, image: iconName(for: .today), value: .today) {
-                HomeView(viewModel: journalViewModel)
+                HomeView(
+                    viewModel: journalViewModel,
+                    settingsViewModel: settingsViewModel,
+                    selectedTab: $selectedTab,
+                    isSettingsDetailPresented: $isSettingsDetailPresented
+                )
                     .environment(\.contentsEnvironment, contentsEnvironment)
             }
             Tab(ContentTab.journal.title, image: iconName(for: .journal), value: .journal) {
                 JournalView(viewModel: journalViewModel)
             }
-            Tab(ContentTab.principles.title, image: iconName(for: .principles), value: .principles) {
-                PrincipleView()
+            // No AI: the 원칙 tab is hidden and the app becomes a plain diary (3 tabs, Part A 3.15).
+            if isAIAvailable {
+                Tab(ContentTab.principles.title, image: iconName(for: .principles), value: .principles) {
+                    PrincipleView()
+                }
             }
             Tab(ContentTab.settings.title, image: iconName(for: .settings), value: .settings) {
                 SettingsView(viewModel: settingsViewModel, isDetailPresented: $isSettingsDetailPresented)

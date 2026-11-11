@@ -364,22 +364,37 @@ private struct SettingsDetailPreview: View {
 private let previewKey = "AIzaSyD00000000"
 
 #Preview("settings") {
-    SettingsView(viewModel: .preview(state: .deviceAI(hasStandbyKey: false)))
+    SettingsView(viewModel: SettingsViewModel.preview(
+        state: AIConnectionState.deviceAI(
+            hasStandbyKey: false
+        )
+    ))
 }
 
 #Preview("aiConnectionDetail") {
-    SettingsDetailPreview(viewModel: .preview(state: .notConnected(.unsupported), key: previewKey))
+    SettingsDetailPreview(viewModel: SettingsViewModel.preview(
+        state: AIConnectionState.notConnected(AIUnavailableReason.unsupported),
+        key: previewKey
+    ))
 }
 
 #Preview("beforeConfirm") {
-    SettingsAIConsentSheet(provider: .gemini, onAgree: {}, onCancel: {})
+    SettingsAIConsentSheet(
+        provider: AIProvider.gemini,
+        onAgree: {},
+        onCancel: {}
+    )
 }
 
 #Preview("afterConfirm") {
-    SettingsDetailPreview(viewModel: .preview(state: .connected(SettingsViewModel.previewConnection)))
+    SettingsDetailPreview(viewModel: SettingsViewModel.preview(
+        state: AIConnectionState.connected(SettingsViewModel.previewConnection)
+    ))
 }
 
 #Preview("tablet-settings", traits: .fixedLayout(width: 1194, height: 834)) {
-    SettingsView(viewModel: .preview(state: .notConnected(.unsupported)))
-        .environment(\.horizontalSizeClass, .regular)
+    SettingsView(viewModel: SettingsViewModel.preview(
+        state: AIConnectionState.notConnected(AIUnavailableReason.unsupported)
+    ))
+    .environment(\.horizontalSizeClass, .regular)
 }

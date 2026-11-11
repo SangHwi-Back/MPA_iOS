@@ -20,7 +20,7 @@ private extension Color {
     }
 }
 
-private enum JournalDetailLayout {
+enum JournalDetailLayout {
     static let gutter: CGFloat = 20
     static let readableWidth: CGFloat = 680
     static let chipHeight: CGFloat = 34
@@ -581,7 +581,7 @@ private struct JournalCommentText: View {
     }
 }
 
-private struct JournalShimmerLine: View {
+struct JournalShimmerLine: View {
     let widthRatio: CGFloat
     @State private var isBright = false
 
@@ -603,7 +603,7 @@ private struct JournalShimmerLine: View {
 // MARK: - Help resources
 
 /// Replaces the AI comment when the entry reads as a crisis. Always expanded, no ✦ or feedback.
-private struct JournalHelpResourceCard: View {
+struct JournalHelpResourceCard: View {
     let onCall: () -> Void
     let onOpenResources: () -> Void
 

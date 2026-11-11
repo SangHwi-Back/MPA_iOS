@@ -1,21 +1,49 @@
 //
+//  [NO AC] Spec: specs/home/SCREEN_SPEC.md
+//
 //  HomeView.swift
 //  MPA_ios
 //
 
 import SwiftUI
 
+/// A request to open the editor: today's date by default, optionally with a 글감 question on top.
+struct HomeEditorRequest: Identifiable {
+    let id = UUID()
+    var date: Date? = nil
+    var prompt: String? = nil
+}
+
 struct HomeView: View {
     @ObservedObject var viewModel: JournalViewModel
-    
+    var settingsViewModel: SettingsViewModel
+    @Binding var selectedTab: ContentTab
+    @Binding var isSettingsDetailPresented: Bool
+
     @Environment(\.productRepository) private var repository
-    @Environment(\.isDeviceiPad) private var isDeviceiPad
-    @Environment(\.isDeviceiPhoneDuo) private var isDeviceiPhoneDuo
     @Environment(\.contentsEnvironment) private var contentsEnvironment
-    
-    @State private var showEditor = false
+
+    @State private var home: HomeViewModel
+    @State private var editorRequest: HomeEditorRequest?
+    @State private var openedEntryID: UUID?
     @State private var path: [Product] = []
-    
+
+    init(
+        viewModel: JournalViewModel,
+        settingsViewModel: SettingsViewModel,
+        selectedTab: Binding<ContentTab>,
+        isSettingsDetailPresented: Binding<Bool>
+    ) {
+        self.viewModel = viewModel
+        self.settingsViewModel = settingsViewModel
+        self._selectedTab = selectedTab
+        self._isSettingsDetailPresented = isSettingsDetailPresented
+        self._home = State(initialValue: HomeViewModel(
+            entries: viewModel.entries,
+            aiStatus: HomeAIStatus(connection: settingsViewModel.aiConnection)
+        ))
+    }
+
     var body: some View {
         Group {
             switch contentsEnvironment {
@@ -26,14 +54,59 @@ struct HomeView: View {
             case .navigationSplit:
                 navigationSplitView
             case .generalVertical:
-                navigationStackWithDestination
+                homeStack
             }
         }
-        .fullScreenCover(isPresented: $showEditor) {
-            JournalEditorView(viewModel: viewModel, onClose: { showEditor = false })
+        .sheet(item: $editorRequest) { request in
+            JournalEditorView(
+                viewModel: viewModel,
+                initialDate: request.date,
+                initialPrompt: request.prompt,
+                onClose: { editorRequest = nil }
+            )
+            .presentationDetents([.large])
+        }
+        .sensoryFeedback(.impact(weight: .light), trigger: editorRequest?.id)
+        .onChange(of: viewModel.entries.map(\.id), initial: true) {
+            home.entries = viewModel.entries
+            home.now = .now
+        }
+        .onChange(of: settingsViewModel.aiConnection, initial: true) {
+            home.aiStatus = HomeAIStatus(connection: settingsViewModel.aiConnection)
+        }
+        .task(id: TaskKey(entryIDs: viewModel.entries.map(\.id), status: home.aiStatus)) {
+            await home.load()
         }
     }
-    
+
+    private struct TaskKey: Equatable {
+        let entryIDs: [UUID]
+        let status: HomeAIStatus
+    }
+
+    // MARK: - Layouts
+
+    private var homeStack: some View {
+        NavigationStack {
+            content
+                .navigationDestination(item: $openedEntryID) { id in detail(id) }
+        }
+    }
+
+    private var navigationSplitView: some View {
+        NavigationSplitView {
+            HomeSidebarView(
+                viewModel: viewModel,
+                today: home.today,
+                onOpen: openEntry,
+                onSeeAll: { selectedTab = .journal }
+            )
+            .navigationSplitViewColumnWidth(320)
+        } detail: {
+            homeStack
+        }
+    }
+
     @ViewBuilder
     private var iphoneDuoSplitView: some View {
         if #available(anyAppleOS 27.1, *) {
@@ -41,501 +114,439 @@ struct HomeView: View {
                 MainDateList(repository: repository, $path)
                     .modelContainer(for: Product.self, inMemory: true)
             } secondary: {
-                navigationStackWithDestination
+                homeStack
             }
             .arrangementViewStyle(.split)
         } else {
-            navigationContentView
+            homeStack
         }
     }
-    
+
     @ViewBuilder
     private var iphoneDuoOverlayView: some View {
         if #available(anyAppleOS 27.1, *) {
             ArrangementView {
-                navigationStackWithDestination
+                homeStack
             } secondary: {
                 MainDateList(repository: repository, $path)
                     .modelContainer(for: Product.self, inMemory: true)
             }
             .arrangementViewStyle(.overlay)
         } else {
-            navigationContentView
+            homeStack
         }
     }
-    
-    /// - Contents
-    private var navigationStackWithDestination: some View {
-        NavigationStack(path: $path) {
-            SplitTodayListView(showEditor: $showEditor, repository: repository, path: $path)
-                .navigationDestination(for: Product.self) { product in
-                    DailyJournalView(repository: repository, entry: product)
-                        .environment(\.journalPaths, $path)
-                }
-        }
-    }
-    
-    private var navigationSplitView: some View {
-        NavigationSplitView {
-            MainDateList(repository: repository, $path)
-                .modelContainer(for: Product.self, inMemory: true)
-        } detail: {
-            SplitTodayListView(showEditor: $showEditor, repository: repository, path: $path)
-                .navigationDestination(for: Product.self) { product in
-                    DailyJournalView(repository: repository, entry: product)
-                        .environment(\.journalPaths, $path)
-                }
-        }
-    }
-    
-    private var navigationContentView: some View {
-        NavigationStack(path: $path) {
-            ScrollView {
-                SplitTodayListView(showEditor: $showEditor, repository: repository, path: $path)
-                MainDateList(repository: repository, $path)
-                    .modelContainer(for: Product.self, inMemory: true)
-                    .addToolbar(MainDateListViewModel(repository: repository), showEditor: $showEditor, path: $path)
+
+    private var content: some View {
+        HomeContentView(
+            model: home,
+            onWrite: { editorRequest = HomeEditorRequest(date: $0, prompt: $1) },
+            onOpenEntry: openEntry,
+            onSelectTab: { selectedTab = $0 },
+            onConnectKey: {
+                selectedTab = .settings
+                isSettingsDetailPresented = true
             }
-            .navigationDestination(for: Product.self) { product in
-                DailyJournalView(repository: repository, entry: product)
-                    .environment(\.journalPaths, $path)
-            }
+        )
+    }
+
+    // MARK: - Navigation
+
+    private func openEntry(_ entry: Journal) {
+        openedEntryID = entry.id
+    }
+
+    @ViewBuilder
+    private func detail(_ id: UUID) -> some View {
+        if let entry = viewModel.entries.first(where: { $0.id == id }) {
+            JournalDetailView(
+                journal: entry,
+                journalViewModel: viewModel,
+                onOpenEntry: openEntry,
+                onDelete: { deleted in
+                    openedEntryID = nil
+                    viewModel.delete(deleted)
+                },
+                onOpenPrinciple: { _ in selectedTab = .principles }
+            )
         }
     }
-    
-    struct SplitTodayListView: View {
-        @Binding var showEditor: Bool
-        var repository: any ProductRepositoryProtocol
-        @Binding var path: [Product]
-        
-        var body: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    GreetingHeader()
-                    Spacer().frame(height: 16)
-                    JournalQuestionCard()
-                    Spacer().frame(height: 8)
-                    // BubbleView
-                    JournalReflectionCard()
-                    Spacer().frame(height: 20)
-                    MyWishSection()
-                    Spacer().frame(height: 16)
-                    NextWeeksSummaryCard()
-                    Spacer().frame(height: 16)
-                    TodayJournalPromptCard()
-                    Spacer().frame(height: 16)
-                    ThisWeekCalendarStrip()
-                    Spacer().frame(height: 16)
-                    RecentJournalSection()
-                    Spacer().frame(height: 36)
+}
+
+// MARK: - Content
+
+/// The scrolling 오늘 page. Stateless apart from scroll position; everything else lives in `HomeViewModel`.
+struct HomeContentView: View {
+    @Bindable var model: HomeViewModel
+    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onOpenEntry: (Journal) -> Void
+    let onSelectTab: (ContentTab) -> Void
+    let onConnectKey: () -> Void
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.openURL) private var openURL
+    @State private var isHeaderScrolledAway = false
+
+    private var isRegular: Bool { horizontalSizeClass == .regular }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: HomeLayoutMetrics.sectionSpacing) {
+                HomeGreetingHeader(dateLine: model.dateLine, greeting: model.greeting)
+                    .padding(.bottom, 4)
+                if isRegular, model.layout == .full || model.layout == .early {
+                    regularColumns
+                } else {
+                    sections
                 }
-                .padding()
             }
-            .addToolbar(MainDateListViewModel(repository: repository), showEditor: $showEditor, path: $path)
+            .padding(.horizontal, HomeLayoutMetrics.gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
+            .frame(maxWidth: isRegular ? 1100 : HomeLayoutMetrics.maxContentWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color.CANVAS)
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top > 72
+        } action: { _, isHidden in
+            isHeaderScrolledAway = isHidden
+        }
+        .navigationTitle(isHeaderScrolledAway ? "오늘" : "")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbar }
+        .alert(
+            model.aiStatus.unavailableReason?.homeAlertTitle ?? "",
+            isPresented: $model.isAlertPresented,
+            presenting: model.aiStatus.unavailableReason
+        ) { _ in
+            Button("API 키 연결", action: onConnectKey)
+            Button("확인") {}
+                .keyboardShortcut(.defaultAction)
+        } message: { reason in
+            Text(reason.homeAlertMessage)
         }
     }
-}
 
-private struct GreetingHeader: View {
-    private var todayDateText: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "M월 d일 EEEE"
-        return formatter.string(from: Date())
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("좋은 아침이에요")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color.TEXT_PRIMARY)
-            Text(todayDateText)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(Color.TEXT_TERTIARY)
+    // MARK: Toolbar (3.1, 3.12)
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        if !model.aiStatus.isAvailable {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    model.isAlertPresented = true
+                } label: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.WARNING)
+                .accessibilityLabel(model.aiStatus.unavailableReason?.homeAlertTitle ?? "AI 경고")
+                .transition(.scale.combined(with: .opacity))
+            }
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
         }
-    }
-}
-
-private struct AiCard<Content: View>: View {
-    let content: () -> Content
-    
-    var body: some View {
-        content()
-            .padding(16)
-            .background(Color.AI_TINT)
-            .border(Color.HAIRLINE, width: 1)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-}
-
-private struct AiLabel: View {
-    var title: String
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.AI_ACCENT)
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.AI_ACCENT)
-        }
-    }
-}
-
-private struct ChipPill: View {
-    var text: String
-    
-    var body: some View {
-        Text(text)
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Color.TEXT_PRIMARY)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Capsule().stroke(Color.HAIRLINE, lineWidth: 1))
-    }
-}
-
-private struct PillButton: View {
-    var title: String
-    var isFilled: Bool
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(isFilled ? Color.BRAND_ON_PRIMARY : Color.TEXT_SECONDARY)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(isFilled ? Color.BRAND_PRIMARY : Color.clear)
-                .overlay(Capsule().stroke(isFilled ? Color.clear : Color.HAIRLINE, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct JournalQuestionCard: View {
-    var body: some View {
-        AiCard {
-            VStack(alignment: .leading, spacing: 12) {
-                AiLabel(title: "오늘의 조언")
-                Text("오늘 일기에 '끝까지 듣기'가 자주 보여요. 오늘은 대화가 끝나길 기다리며, 상대의 말이 끝난 뒤 질문을 하나만 더 건네 보는 건 어때요?")
-                    .font(.system(size: 15, weight: .regular))
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                // An existing entry for today should open in edit mode; the editor cannot load one yet.
+                onWrite(nil, nil)
+            } label: {
+                Image(systemName: "plus")
                     .foregroundStyle(Color.TEXT_PRIMARY)
-                HStack {
-                    Text("참고한 일기")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color.TEXT_TERTIARY)
-                    Spacer()
-                    HStack(spacing: 8) {
-                        ChipPill(text: "10월 20일")
-                        ChipPill(text: "10월 27일")
+            }
+            .accessibilityLabel("새 일기")
+        }
+    }
+
+    // MARK: Phone sections (state matrix)
+
+    @ViewBuilder
+    private var sections: some View {
+        switch model.layout {
+        case .firstRun:
+            firstRun
+        case .early:
+            adviceCard
+            todayCard
+            HomePrincipleProgressSection(entryCount: model.entries.count)
+                .padding(.top, 16)
+        case .full:
+            adviceCard
+            todayCard
+            principles
+                .padding(.top, 24)
+            if model.showsWeeklySummary {
+                weeklySummary(isAlwaysExpanded: false)
+                    .padding(.top, 8)
+            }
+        case .diary:
+            diaryTodayCard
+            HomeWeekStrip(
+                days: model.weekDays,
+                onSelect: selectWeekDay,
+                onOpenCalendar: { onSelectTab(.journal) },
+                onChangeWeek: { delta in
+                    withAnimation { model.weekOffset = min(0, model.weekOffset + delta) }
+                }
+            )
+            .padding(.top, 16)
+            HomeRecentSection(entries: model.recentEntries, onOpen: onOpenEntry, onSeeAll: { onSelectTab(.journal) })
+                .padding(.top, 16)
+        }
+    }
+
+    /// Tablet: advice + 글감 on the left, principles + summary on the right.
+    private var regularColumns: some View {
+        HStack(alignment: .top, spacing: 48) {
+            VStack(spacing: HomeLayoutMetrics.sectionSpacing) {
+                adviceCard
+                todayCard
+            }
+            .frame(maxWidth: .infinity)
+            VStack(spacing: HomeLayoutMetrics.sectionSpacing) {
+                if model.layout == .full {
+                    HomePrinciplesSection(
+                        principles: model.principles,
+                        entryCount: model.entries.count,
+                        showsBubbleBackground: true,
+                        onSeeAll: { onSelectTab(.principles) },
+                        onOpenEntry: onOpenEntry
+                    )
+                    if model.showsWeeklySummary {
+                        weeklySummary(isAlwaysExpanded: true)
                     }
-                }
-                HStack {
-                    Text("🔺 5가지 내 새로운 생성됨")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color.TEXT_SECONDARY)
-                    Spacer()
-                    HStack(spacing: 12) {
-                        Image(systemName: "hand.thumbsup")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.TEXT_SECONDARY)
-                        Image(systemName: "hand.thumbsdown")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.TEXT_SECONDARY)
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.TEXT_SECONDARY)
-                    }
+                } else {
+                    HomePrincipleProgressSection(entryCount: model.entries.count)
                 }
             }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.top, 16)
+    }
+
+    private var firstRun: some View {
+        HomeFirstRunSection(
+            privacyLine: privacyLine,
+            onWrite: { onWrite(nil, nil) },
+            onQuestion: { onWrite(nil, $0) }
+        )
+    }
+
+    private var privacyLine: String? {
+        switch model.aiStatus {
+        case .unavailable: return nil
+        case .available(let engine), .keyError(let engine):
+            return engine.isOnDevice ? "모든 분석은 이 기기 안에서 이루어져요" : "요약·키워드만 \(engine == .openAIAPIKey ? "OpenAI" : "Gemini")(내 키)로 전송돼요"
+        }
+    }
+
+    private var adviceCard: some View {
+        HomeAdviceCard(
+            phase: model.advicePhase,
+            sources: model.advicePhase.text.map(model.sources(of:)) ?? [],
+            revealsByWord: model.revealsAdviceByWord,
+            onOpenSource: onOpenEntry,
+            onFeedback: model.toggleFeedback,
+            onRegenerate: { Task { await model.regenerateAdvice() } },
+            onRetry: { Task { await model.generateAdvice() } },
+            onCheckKey: onConnectKey,
+            onCallHelp: { openURL(URL(string: "tel:109")!) },
+            onOpenHelpResources: {}
+        )
+    }
+
+    @ViewBuilder
+    private var todayCard: some View {
+        if let entry = model.todayEntry {
+            HomeTodayPreviewCard(entry: entry) { onOpenEntry(entry) }
+        } else {
+            HomePromptCard(
+                phase: model.promptPhase,
+                onWrite: { onWrite(nil, $0) },
+                onNextPrompt: { Task { await model.nextPrompt() } }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var diaryTodayCard: some View {
+        if let entry = model.todayEntry {
+            HomeTodayPreviewCard(entry: entry) { onOpenEntry(entry) }
+        } else {
+            HomeDiaryTodayCard { onWrite(nil, nil) }
+        }
+    }
+
+    private var principles: some View {
+        HomePrinciplesSection(
+            principles: model.principles,
+            entryCount: model.entries.count,
+            onSeeAll: { onSelectTab(.principles) },
+            onOpenEntry: onOpenEntry
+        )
+    }
+
+    private func weeklySummary(isAlwaysExpanded: Bool) -> some View {
+        HomeWeeklySummaryCard(
+            phase: model.summaryPhase,
+            rangeLine: model.weeklyRangeLine,
+            isExpanded: model.isSummaryExpanded,
+            sources: model.summaryPhase.text.map(model.sources(of:)) ?? [],
+            isAlwaysExpanded: isAlwaysExpanded,
+            onToggle: { model.isSummaryExpanded.toggle() },
+            onRetry: { Task { await model.generateSummary() } },
+            onOpenSource: onOpenEntry
+        )
+    }
+
+    private func selectWeekDay(_ day: HomeWeekDay) {
+        if let entry = HomeViewModel.newestFirst(model.entries).first(where: { Calendar.current.isDate($0.day, inSameDayAs: day.date) }) {
+            onOpenEntry(entry)
+        } else {
+            onWrite(day.date, nil)
         }
     }
 }
 
-private struct JournalReflectionCard: View {
+// MARK: - Previews
+
+@MainActor
+private func homePreviewDate(hour: Int = 8, minute: Int = 12) -> Date {
+    Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 30, hour: hour, minute: minute))!
+}
+
+@MainActor
+private func homePreviewModel(
+    entries: [Journal],
+    status: HomeAIStatus = .available(.appleIntelligence),
+    isAlertPresented: Bool = false
+) -> HomeViewModel {
+    let generator = StubHomeAIGenerator(delay: .seconds(3600))
+    let model = HomeViewModel(
+        entries: entries,
+        aiStatus: status,
+        now: homePreviewDate(),
+        generator: generator,
+        isAlertPresented: isAlertPresented
+    )
+    guard status.isAvailable, !entries.isEmpty else { return model }
+    let sources = entries.count < 3
+        ? HomeViewModel.newestFirst(entries).prefix(2).map(\.id)
+        : entries.filter { [20, 27].contains(Calendar.current.component(.day, from: $0.day)) }.map(\.id)
+    return HomeViewModel(
+        entries: entries,
+        aiStatus: status,
+        now: homePreviewDate(),
+        generator: generator,
+        advice: AIText(
+            text: entries.count < 3 ? HomeSamples.shortAdvice : HomeSamples.advice,
+            engine: status.engine ?? .appleIntelligence,
+            generatedAt: homePreviewDate(),
+            sourceJournalIDs: Array(sources),
+            feedback: nil
+        ),
+        writingPrompt: HomeSamples.writingPrompt,
+        weeklySummary: AIText(
+            text: HomeSamples.weeklySummary,
+            engine: .appleIntelligence,
+            generatedAt: homePreviewDate(),
+            sourceJournalIDs: [],
+            feedback: nil
+        ),
+        isAlertPresented: isAlertPresented
+    )
+}
+
+private struct HomePreviewHost: View {
+    let model: HomeViewModel
+
     var body: some View {
-        AiCard {
-            VStack(alignment: .leading, spacing: 12) {
-                AiLabel(title: "오늘의 걸음")
-                Text("오늘은 누군가의 말을 끝까지 들었던 순간이 있었나요?")
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                HStack(spacing: 8) {
-                    PillButton(title: "이 질문으로 쓰기", isFilled: true, action: {})
-                    PillButton(title: "다른 질문", isFilled: false, action: {})
-                }
-            }
+        NavigationStack {
+            HomeContentView(model: model, onWrite: { _, _ in }, onOpenEntry: { _ in }, onSelectTab: { _ in }, onConnectKey: {})
         }
     }
 }
 
-private struct MyWishSection: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("나의 원칙")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                Spacer()
-                Text("전체 보기")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.BRAND_PRIMARY)
-            }
-            Text("일기 12개에서 찾았어요")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.TEXT_TERTIARY)
-            BubbleCloud()
-            BubbleLegend()
-        }
+@MainActor
+private func homeSidebarPreviewModel(entries: [Journal]) -> JournalViewModel {
+    let viewModel = JournalViewModel()
+    viewModel.today = Calendar.current.startOfDay(for: homePreviewDate())
+    viewModel.entries = entries
+    viewModel.keywordStageOverride = ["휴식": 0, "경청": 1, "솔직함": 2, "꾸준함": 3, "감사": 4]
+    return viewModel
+}
+
+/// 3+ entries, none today (Oct 30 is excluded so the 글감 card shows).
+@MainActor private var homeFullSamples: [Journal] {
+    Journal.homeSamples.filter { Calendar.current.component(.day, from: $0.day) != 30 }
+}
+
+#Preview("home") {
+    HomePreviewHost(model: homePreviewModel(entries: homeFullSamples))
+}
+
+#Preview("noJournalToday") {
+    HomePreviewHost(model: homePreviewModel(entries: homeFullSamples))
+}
+
+#Preview("todayJournalExist") {
+    HomePreviewHost(model: homePreviewModel(entries: Journal.homeEarlySamples))
+}
+
+#Preview("emptyJournals") {
+    HomePreviewHost(model: homePreviewModel(entries: []))
+}
+
+#Preview("aiNotAvailable") {
+    HomePreviewHost(model: homePreviewModel(entries: Journal.homeDiarySamples, status: .unavailable(.unsupported)))
+}
+
+#Preview("aiNotAvailableButtonTapped") {
+    HomePreviewHost(model: homePreviewModel(
+        entries: Journal.homeDiarySamples,
+        status: .unavailable(.unsupported),
+        isAlertPresented: true
+    ))
+}
+
+#Preview("bubbleLongTap") {
+    // The context menu opens on a long press; render this preview and long-press 경청 to see it.
+    HomePreviewHost(model: homePreviewModel(entries: homeFullSamples))
+}
+
+#Preview("darkMode") {
+    HomePreviewHost(model: homePreviewModel(entries: homeFullSamples))
+        .preferredColorScheme(.dark)
+}
+
+#Preview("tablet-todayJournalExist", traits: .landscapeLeft) {
+    NavigationSplitView {
+        HomeSidebarView(viewModel: homeSidebarPreviewModel(entries: Journal.homeSamples), today: homePreviewDate(), onOpen: { _ in }, onSeeAll: {})
+    } detail: {
+        HomePreviewHost(model: homePreviewModel(entries: homeFullSamples))
     }
 }
 
-private struct BubbleCloud: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                PrincipleBubble(label: "무조함", size: 64, color: Color.PRINCIPLE5)
-                Spacer(minLength: 8)
-                PrincipleBubble(label: "경청", size: 100, color: Color.PRINCIPLE1)
-                Spacer(minLength: 8)
-                PrincipleBubble(label: "솔직함", size: 72, color: Color.PRINCIPLE4)
-            }
-            HStack {
-                PrincipleBubble(label: "휴식", size: 80, color: Color.PRINCIPLE3)
-                Spacer(minLength: 8)
-                PrincipleBubble(label: "감사", size: 68, color: Color.PRINCIPLE2)
-            }
-        }
+#Preview("tablet-drawerCalendarButtonTapped", traits: .landscapeLeft) {
+    NavigationSplitView {
+        HomeSidebarView(
+            viewModel: homeSidebarPreviewModel(entries: Journal.homeSamples),
+            today: homePreviewDate(),
+            isCalendarMode: true,
+            selectedDay: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 27)),
+            onOpen: { _ in },
+            onSeeAll: {}
+        )
+    } detail: {
+        HomePreviewHost(model: homePreviewModel(entries: homeFullSamples))
     }
 }
 
-private struct BubbleLegend: View {
-    private let colors: [Color] = [
-        Color.PRINCIPLE1, Color.PRINCIPLE2, Color.PRINCIPLE3, Color.PRINCIPLE4, Color.PRINCIPLE5,
-    ]
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 6) {
-                Text("최근")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.TEXT_TERTIARY)
-                ForEach(colors.indices, id: \.self) { index in
-                    Circle()
-                        .fill(colors[index])
-                        .frame(width: 8, height: 8)
-                }
-                Text("오래된")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.TEXT_TERTIARY)
-            }
-            Text("크기 = 등장 빈도")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.TEXT_TERTIARY)
-        }
+#Preview("tablet-emptyJournals", traits: .landscapeLeft) {
+    NavigationSplitView {
+        HomeSidebarView(viewModel: homeSidebarPreviewModel(entries: []), today: homePreviewDate(), onOpen: { _ in }, onSeeAll: {})
+    } detail: {
+        HomePreviewHost(model: homePreviewModel(entries: []))
     }
 }
-
-private struct PrincipleBubble: View {
-    var label: String
-    var size: CGFloat
-    var color: Color
-    
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(color)
-                .frame(width: size, height: size)
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.ON_PRINCIPLE)
-        }
-    }
-}
-
-private struct NextWeeksSummaryCard: View {
-    var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("이전 주 요약")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                Text("10월 26일~30일 · 일기 4개 · 서분형이 늘었어요")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-            }
-            Spacer()
-            Image(systemName: "chevron.down")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.TEXT_PRIMARY)
-        }
-        .padding(16)
-        .background(Color.SUNKEN)
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.HAIRLINE, lineWidth: 1))
-    }
-}
-
-private struct TodayJournalPromptCard: View {
-    var body: some View {
-        Button(action: {}) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("오늘의 일기")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.TEXT_TERTIARY)
-                Text("오늘 하루를 몇 줄로 남겨보세요")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                Text("짧아도 괜찮아요. 오른쪽 아래 '쓰기'를 눌러 시작하세요.")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(Color.SURFACE)
-            .cornerRadius(16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.HAIRLINE, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct ThisWeekCalendarStrip: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("이번 주")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                Spacer()
-                Button(action: {}) {
-                    Text("캘린더")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.BRAND_PRIMARY)
-                }
-                .buttonStyle(.plain)
-            }
-            ScrollView(.horizontal) {
-                HStack(spacing: 8) {
-                    WeekDayColumn(weekday: "월", day: "26", hasJournal: true)
-                    WeekDayColumn(weekday: "화", day: "27", hasJournal: true)
-                    WeekDayColumn(weekday: "수", day: "28", hasJournal: false)
-                    WeekDayColumn(weekday: "목", day: "29", hasJournal: true)
-                    WeekDayColumn(weekday: "금", day: "30", hasJournal: false, isSelected: true)
-                    WeekDayColumn(weekday: "토", day: "31", hasJournal: false, isCurrentWeek: false)
-                    WeekDayColumn(weekday: "일", day: "1", hasJournal: false, isCurrentWeek: false)
-                }
-            }
-        }
-    }
-}
-
-private struct WeekDayColumn: View {
-    var weekday: String
-    var day: String
-    var hasJournal: Bool = false
-    var isCurrentWeek: Bool = true
-    var isSelected: Bool = false
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(weekday)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isCurrentWeek ? Color.TEXT_SECONDARY : Color.TEXT_TERTIARY)
-            Text(day)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(isCurrentWeek ? Color.TEXT_PRIMARY : Color.TEXT_TERTIARY)
-            if hasJournal {
-                Circle()
-                    .fill(Color.BRAND_PRIMARY)
-                    .frame(width: 4, height: 4)
-            }
-        }
-        .frame(width: 50, height: 64)
-        .background(isSelected ? Color.BRAND_CONTAINER : Color.clear)
-        .cornerRadius(12)
-    }
-}
-
-private struct RecentJournalSection: View {
-    var items: [RecentJournalItem] = [
-        RecentJournalItem(day: "29", weekday: "목", title: "퇴근길 산책", preview: "한 정거장 먼저 내려서 걸었다. 바람이 차가워서 오히려 머리가 맑아졌다.", hasPhoto: true),
-        RecentJournalItem(day: "27", weekday: "화", title: "회의에서 말을 끊지 않기", preview: "끝까지 듣고 나니 내가 하려던 질문이 달라졌다.", hasPhoto: false),
-    ]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("최근 기록")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                Spacer()
-                Text("모두 보기")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-            }
-            ForEach(items) { item in
-                RecentJournalRow(item: item)
-                    .padding(.vertical, 12)
-                if let lastItem = items.last, item.id != lastItem.id {
-                    Divider()
-                        .background(Color.HAIRLINE)
-                        .padding(.vertical, 8)
-                }
-            }
-        }
-    }
-}
-
-private struct RecentJournalItem: Identifiable {
-    let id = UUID()
-    let day: String
-    let weekday: String
-    let title: String
-    let preview: String
-    let hasPhoto: Bool
-}
-
-private struct RecentJournalRow: View {
-    var item: RecentJournalItem
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading) {
-                Text(item.day)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                Text(item.weekday)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.TEXT_TERTIARY)
-            }
-            .frame(width: 44, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                    .lineLimit(1)
-                Text(item.preview)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-                    .lineLimit(2)
-            }
-            if item.hasPhoto {
-                Spacer()
-                Image(systemName: "photo")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Color.TEXT_TERTIARY)
-                    .frame(width: 56, height: 56)
-                    .background(Color.SUNKEN)
-                    .cornerRadius(10)
-            }
-        }
-    }
-}
-
-//#Preview {
-//    HomeView(viewModel: JournalViewModel(productRepository: MockProductRepository()))
-//}

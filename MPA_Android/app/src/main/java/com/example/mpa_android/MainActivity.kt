@@ -30,7 +30,12 @@ import androidx.navigation.navArgument
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
+import com.example.mpa_android.ui.view.home.HomeActions
 import com.example.mpa_android.ui.view.home.HomeScreen
+import com.example.mpa_android.ui.view.home.homeFabLabel
+import com.example.mpa_android.model.HomeAIStatus
+import android.net.Uri
+import androidx.compose.runtime.collectAsState
 import com.example.mpa_android.ui.view.journal.JournalDetailScreen
 import com.example.mpa_android.ui.view.journal.JournalEditorScreen
 import com.example.mpa_android.ui.view.journal.JournalScreen
@@ -45,6 +50,7 @@ import java.time.LocalDate
 
 private const val JOURNAL_EDITOR_ROUTE = "journal-editor"
 private const val JOURNAL_EDITOR_DATE_ARG = "date"
+private const val JOURNAL_EDITOR_PROMPT_ARG = "prompt"
 private const val SETTINGS_AI_CONNECTION_ROUTE = "settings-ai-connection"
 private const val JOURNAL_DETAIL_ROUTE = "journal-detail"
 private const val JOURNAL_DETAIL_PATTERN = "$JOURNAL_DETAIL_ROUTE/{${JournalDetailViewModel.ARG_JOURNAL_ID}}"
@@ -120,6 +126,28 @@ fun App() {
     val currentRoute = navBackStackEntry?.destination?.route
     var isJournalSearchActive by remember { mutableStateOf(false) }
     var journalScrollToTopSignal by remember { mutableIntStateOf(0) }
+    var isHomeFabExpanded by remember { mutableStateOf(true) }
+    val journals by journalViewModel.visibleJournals.collectAsState()
+    val settingsState by settingsViewModel.uiState.collectAsState()
+    // No AI: the 원칙 tab is hidden and the app becomes a plain diary (Home 3.15).
+    val isAIAvailable = HomeAIStatus.from(settingsState.aiConnection).isAvailable
+    val visibleTabs = TabDestinations.entries.filter { isAIAvailable || it != TabDestinations.PRINCIPAL }
+
+    fun openEditor(date: LocalDate? = null, prompt: String? = null) {
+        val query = buildList {
+            date?.let { add("$JOURNAL_EDITOR_DATE_ARG=$it") }
+            prompt?.let { add("$JOURNAL_EDITOR_PROMPT_ARG=${Uri.encode(it)}") }
+        }.joinToString("&")
+        navController.navigate(if (query.isEmpty()) JOURNAL_EDITOR_ROUTE else "$JOURNAL_EDITOR_ROUTE?$query")
+    }
+
+    fun selectTab(tab: TabDestinations) {
+        navController.navigate(tab.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     var topAppBarModel by remember { mutableStateOf(TopAppBarModel(
         "",
@@ -155,7 +183,7 @@ fun App() {
                     tonalElevation = 0.dp,
                     windowInsets = NavigationBarDefaults.windowInsets,
                 ) {
-                    TabDestinations.entries.forEach { destinations ->
+                    visibleTabs.forEach { destinations ->
                         val isSelected = currentRoute == destinations.route
                         NavigationBarItem(
                             selected = isSelected,
@@ -201,7 +229,14 @@ fun App() {
                 currentRoute != TabDestinations.SETTINGS.route &&
                 currentRoute != SETTINGS_AI_CONNECTION_ROUTE
             ) {
-                WriteJournalFloatingActionButton()
+                val isHome = currentRoute == TabDestinations.TODAY.route
+                WriteJournalFloatingActionButton(
+                    label = if (isHome) homeFabLabel(journals) else "쓰기",
+                    isEmphasized = isHome && journals.isEmpty(),
+                    expanded = !isHome || isHomeFabExpanded,
+                    // An existing entry for today should open in edit mode; the editor cannot load one yet.
+                    onClick = { openEditor() },
+                )
             }
         },
         content = { innerPadding ->
@@ -215,8 +250,16 @@ fun App() {
                         CompositionLocalProvider(LocalInnerPadding provides innerPadding) {
                             when (destination) {
                                 TabDestinations.TODAY -> HomeScreen(
-                                    onAddJournal = { navController.navigate(JOURNAL_EDITOR_ROUTE) },
+                                    aiConnection = settingsState.aiConnection,
+                                    actions = HomeActions(
+                                        onWrite = { date, prompt -> openEditor(date, prompt) },
+                                        onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
+                                        onOpenPrinciples = { selectTab(TabDestinations.PRINCIPAL) },
+                                        onOpenJournal = { selectTab(TabDestinations.JOURNAL) },
+                                        onConnectKey = { navController.navigate(SETTINGS_AI_CONNECTION_ROUTE) },
+                                    ),
                                     dynamicTopAppBar = { dynamicTopAppBar(it) },
+                                    onFabExpandedChange = { isHomeFabExpanded = it },
                                 )
                                 TabDestinations.JOURNAL -> JournalScreen(
                                     viewModel = journalViewModel,
@@ -264,9 +307,15 @@ fun App() {
                     )
                 }
                 composable(
-                    route = "$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG={$JOURNAL_EDITOR_DATE_ARG}",
+                    route = "$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG={$JOURNAL_EDITOR_DATE_ARG}" +
+                        "&$JOURNAL_EDITOR_PROMPT_ARG={$JOURNAL_EDITOR_PROMPT_ARG}",
                     arguments = listOf(
                         navArgument(JOURNAL_EDITOR_DATE_ARG) {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                        navArgument(JOURNAL_EDITOR_PROMPT_ARG) {
                             type = NavType.StringType
                             nullable = true
                             defaultValue = null
@@ -276,6 +325,7 @@ fun App() {
                     JournalEditorScreen(
                         viewModel = journalViewModel,
                         initialDate = entry.arguments?.getString(JOURNAL_EDITOR_DATE_ARG)?.let(LocalDate::parse),
+                        initialPrompt = entry.arguments?.getString(JOURNAL_EDITOR_PROMPT_ARG),
                         onClose = { navController.popBackStack() },
                     )
                 }

@@ -81,6 +81,31 @@ extension Journal {
         ]
     }
 
+    // MARK: Home (오늘) previews
+
+    /// 3+ entries for the full home: principles 경청, 꾸준함, 솔직함, 휴식, 감사.
+    static var homeSamples: [Journal] { listSamples }
+
+    /// 1–2 entries, one written today at 8:12 ("todayJournalExist").
+    static var homeEarlySamples: [Journal] {
+        let calendar = Calendar(identifier: .gregorian)
+        let today = sampleEntry(day: 30, title: "비 오기 전 산책", body: "하늘이 낮게 깔려서 우산을 챙겼는데 결국 비는 오지 않았다. 덕분에 천천히 걸었다.", keywords: ["휴식"], hasPhoto: false)
+        let written = calendar.date(from: DateComponents(year: 2026, month: 10, day: 30, hour: 8, minute: 12))!
+        return [
+            Journal(id: today.id, day: today.day, createdAt: written, title: today.title, body: today.body, keywords: today.keywords, analysisState: today.analysisState),
+            sampleEntry(day: 29, title: "퇴근길 산책", body: "한 정거장 먼저 내려서 걸었다. 바람이 차가워서 오히려 머리가 맑아졌다.", keywords: ["꾸준함"], hasPhoto: true),
+        ]
+    }
+
+    /// 일기 앱 모드: entries on Mon 26, Tue 27, Thu 29 and nothing today.
+    static var homeDiarySamples: [Journal] {
+        [
+            sampleEntry(day: 29, title: "퇴근길 산책", body: "한 정거장 먼저 내려서 걸었다. 바람이 차가워서 오히려 머리가 맑아졌다.", keywords: [], hasPhoto: true),
+            sampleEntry(day: 27, title: "회의에서 말을 끊지 않기", body: "끝까지 듣고 나니 내가 하려던 질문이 달라졌다.", keywords: [], hasPhoto: false),
+            sampleEntry(day: 26, title: "월요일의 작은 감사", body: "출근길에 커피를 건네준 동료에게 고맙다고 제대로 말했다.", keywords: [], hasPhoto: false),
+        ]
+    }
+
     static var searchSamples: [Journal] {
         [
             sampleEntry(day: 27, title: "회의에서 말을 끊지 않기", body: "오늘은 경청해 보기로 했다. 끝까지 듣고 나니 내가 하려던 질문이 달라졌다.", keywords: ["경청", "솔직함"], hasPhoto: false),

@@ -694,7 +694,7 @@ private fun JournalCommentFooter(comment: AIText, actions: JournalDetailActions)
 
 /** Replaces the AI comment when the entry reads as a crisis. Always expanded, no ✦ or feedback. */
 @Composable
-private fun JournalHelpResourceCard(onCall: () -> Unit, onOpenResources: () -> Unit, modifier: Modifier = Modifier) {
+internal fun JournalHelpResourceCard(onCall: () -> Unit, onOpenResources: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
