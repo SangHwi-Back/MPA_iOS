@@ -1,3 +1,4 @@
 # OS files (applies repo-wide; MPA_ios/ and MPA_Android/ each have their own
 # gitignore for tool-specific/build artifacts)
 .DS_Store
+.specs/
