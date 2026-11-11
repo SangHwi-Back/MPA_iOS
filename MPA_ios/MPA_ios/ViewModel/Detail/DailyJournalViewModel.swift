@@ -15,7 +15,7 @@ class DailyJournalViewModel: ObservableObject {
     private(set) var isEditMode: Bool = false
 
     @Environment(\.journalPaths) private var journalPaths
-    private var repository: ProductRepositoryProtocol
+    private var repository: any ProductRepository
 
     private var productId: Int
     @Binding var product: Product
@@ -26,7 +26,7 @@ class DailyJournalViewModel: ObservableObject {
         product.name.isEmpty.not && product.desc.isEmpty.not
     }
 
-    init(repository: any ProductRepositoryProtocol, productId: Int) {
+    init(repository: any ProductRepository, productId: Int) {
         self.productId = productId
         self.repository = repository
 
@@ -114,18 +114,8 @@ class DailyJournalViewModel: ObservableObject {
         product.images = journalImages.compactMap { $0.toJSONString() }
     }
 
+    /// A fetched product is already stored, so `save` writes its changes; a new one is added.
     func saveItem() {
-        guard isEditMode.not else {
-#if DEBUG
-            do { try repository.update(product) } catch {
-                fatalError(error.localizedDescription)
-            }
-#else
-            try? repository.update(product)
-#endif
-            return
-        }
-
 #if DEBUG
         do { try repository.save(product) } catch {
             fatalError(error.localizedDescription)

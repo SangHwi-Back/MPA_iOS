@@ -11,8 +11,7 @@ import SwiftUI
 /// 저장 전에는 "완료" 버튼으로 `JournalViewModel.addJournal`을 1회 호출해 저장하고,
 /// 저장 후에는 저장 시각을 보여주는 상태로 전환된다 (서버/DB가 없어 이후 수정은 반영되지 않음).
 struct JournalEditorView: View {
-    @ObservedObject var viewModel: JournalViewModel
-    var onClose: () -> Void
+    private var onClose: () -> Void
     
     @State private var day: Date
     @State private var pendingDate: Date
@@ -22,8 +21,9 @@ struct JournalEditorView: View {
     @State private var showDatePicker = false
     @State private var savedJournal: Journal?
     
-    init(viewModel: JournalViewModel, initialDate: Date? = nil, initialPrompt: String? = nil, onClose: @escaping () -> Void) {
-        self.viewModel = viewModel
+    @Environment(JournalViewModel.self) private var journalViewModel
+    
+    init(initialDate: Date? = nil, initialPrompt: String? = nil, onClose: @escaping () -> Void) {
         self.onClose = onClose
         let startDay = Calendar.current.startOfDay(for: initialDate ?? .now)
         _day = State(initialValue: startDay)
@@ -98,7 +98,7 @@ struct JournalEditorView: View {
                 .buttonStyle(.plain)
             } else {
                 Button {
-                    savedJournal = viewModel.addJournal(day: day, title: title, body: bodyText, prompt: prompt)
+                    savedJournal = journalViewModel.addJournal(day: day, title: title, body: bodyText, prompt: prompt)
                 } label: {
                     Text("완료")
                         .font(.subheadline.weight(.semibold))
@@ -276,7 +276,7 @@ struct JournalEditorView: View {
         .presentationDetents([.medium])
     }
 }
-
 #Preview {
-    JournalEditorView(viewModel: JournalViewModel(), onClose: {})
+    JournalEditorView(onClose: {})
+        .environment(JournalViewModel(repository: InMemoryJournalRepository()))
 }

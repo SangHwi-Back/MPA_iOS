@@ -1,6 +1,4 @@
 //
-//  [NO AC] Spec: specs/journal/SCREEN_SPEC.md
-//
 //  JournalViewModel.swift
 //  MPA_ios
 //
@@ -24,47 +22,51 @@ struct JournalKeywordSuggestion: Identifiable {
 }
 
 @MainActor
-final class JournalViewModel: ObservableObject {
-
-    private static let viewModeKey = "journal.viewMode"
+@Observable
+final class JournalViewModel {
     private static let recentSearchesKey = "journal.recentSearches"
     private static let maxRecentSearches = 5
     private static let maxKeywordSuggestions = 3
     private static let principleStageCount = 5
 
-    @Published var entries: [Journal] = []
+    /// Stored journals, minus the one waiting in the undo toast.
+    var entries: [Journal] {
+        guard let pendingID = pendingDeletion?.journal.id else { return repository.journals }
+        return repository.journals.filter { $0.id != pendingID }
+    }
     /// The last choice is restored the next time the app opens.
-    @Published var viewMode: JournalViewMode = JournalViewModel.storedViewMode() {
+    var viewMode: JournalViewMode = JournalViewMode.storedViewMode() {
         didSet {
-            UserDefaults.standard.set(viewMode.rawValue, forKey: Self.viewModeKey)
+            UserDefaults.standard.set(viewMode.rawValue, forKey: JournalViewMode.viewModeKey)
             if viewMode == .calendar, oldValue != .calendar { selectToday() }
         }
     }
-    @Published var searchQuery: String = "" {
+    var searchQuery: String = "" {
         didSet { scheduleSearch() }
     }
     /// `searchQuery` after the 250ms debounce. Results are computed from this value.
-    @Published private(set) var appliedSearchQuery: String = ""
-    @Published var isSearchActive: Bool = false
-    @Published private(set) var recentSearches: [String] =
+    private(set) var appliedSearchQuery: String = ""
+    var isSearchActive: Bool = false
+    private(set) var recentSearches: [String] =
         UserDefaults.standard.stringArray(forKey: JournalViewModel.recentSearchesKey) ?? []
-    @Published var today: Date = Calendar.current.startOfDay(for: .now)
-    @Published var selectedDate: Date = Calendar.current.startOfDay(for: .now)
-    @Published var displayedMonth: Date = Calendar.current.startOfMonth(for: .now)
-    @Published private(set) var pendingDeletion: JournalDeletion?
+    var today: Date = Calendar.current.startOfDay(for: .now)
+    var selectedDate: Date = Calendar.current.startOfDay(for: .now)
+    var displayedMonth: Date = Calendar.current.startOfMonth(for: .now)
+    private(set) var pendingDeletion: JournalDeletion?
     /// Incremented when the 기록 tab is tapped again, to scroll back to the top.
-    @Published var scrollToTopSignal = 0
+    var scrollToTopSignal = 0
 
     /// Fixes the keyword dot colors to match design images in previews.
     var keywordStageOverride: [String: Int]?
 
-    @Published var productRepository: (any ProductRepositoryProtocol)!
+    @ObservationIgnored private var searchTask: Task<Void, Never>?
+    @ObservationIgnored private var deletionTask: Task<Void, Never>?
 
-    private var searchTask: Task<Void, Never>?
-    private var deletionTask: Task<Void, Never>?
+    /// Only the domain protocol: this view model does not know the data is in SwiftData.
+    @ObservationIgnored private let repository: any JournalRepository
 
-    private static func storedViewMode() -> JournalViewMode {
-        UserDefaults.standard.string(forKey: viewModeKey).flatMap(JournalViewMode.init(rawValue:)) ?? .list
+    init(repository: any JournalRepository) {
+        self.repository = repository
     }
 
     // MARK: - List grouping
@@ -244,25 +246,29 @@ final class JournalViewModel: ObservableObject {
 
     // MARK: - Mutations
 
-    /// Creates a new journal entry and appends it to `entries`. There is no server/DB yet,
-    /// so this is the only source of truth for journals across the app.
+    /// Creates a new journal entry and stores it. Returns `nil` if saving failed.
     @discardableResult
     func addJournal(
         day: Date = Calendar.current.startOfDay(for: .now),
         title: String = "",
         body: String = "",
         prompt: String? = nil
-    ) -> Journal {
+    ) -> Journal? {
         let journal = Journal(day: day, title: title, body: body, prompt: prompt)
-        entries.append(journal)
-        return journal
+        do {
+            try repository.save(journal)
+            return journal
+        } catch {
+            return nil
+        }
     }
 
-    /// Removes the entry and shows the undo toast. A previous pending deletion becomes permanent.
+    /// Hides the entry and shows the undo toast. The entry stays stored until the toast
+    /// goes away (`commitPendingDeletion`), so undo only has to show it again.
+    /// A previous pending deletion becomes permanent.
     func delete(_ journal: Journal, autoCommit: Bool = true) {
-        guard let index = entries.firstIndex(where: { $0.id == journal.id }) else { return }
         commitPendingDeletion()
-        entries.remove(at: index)
+        guard let index = entries.firstIndex(where: { $0.id == journal.id }) else { return }
         pendingDeletion = JournalDeletion(journal: journal, index: index)
         guard autoCommit else { return }
 
@@ -278,16 +284,17 @@ final class JournalViewModel: ObservableObject {
     }
 
     func undoDeletion() {
-        guard let deletion = pendingDeletion else { return }
+        guard pendingDeletion != nil else { return }
         deletionTask?.cancel()
-        entries.insert(deletion.journal, at: min(deletion.index, entries.count))
         pendingDeletion = nil
     }
 
-    /// `entries` is in memory only, so dropping the pending deletion is the hard delete.
+    /// Deletes the entry waiting in the undo toast from the repository.
     func commitPendingDeletion() {
         deletionTask?.cancel()
+        guard let deletion = pendingDeletion else { return }
         pendingDeletion = nil
+        try? repository.delete(deletion.journal)
     }
 
     func deactivateSearch() {
@@ -297,7 +304,7 @@ final class JournalViewModel: ObservableObject {
 
     /// Load sample data for preview.
     func loadSampleData() {
-        entries = [Journal.sample]
+        try? repository.save(Journal.sample)
     }
 }
 

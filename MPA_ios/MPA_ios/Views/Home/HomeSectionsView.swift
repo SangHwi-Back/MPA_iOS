@@ -902,7 +902,6 @@ struct HomeRecentRow: View {
 struct HomeFirstRunSection: View {
     /// nil hides the line (no AI: the warning button explains instead).
     let privacyLine: String?
-    let onWrite: () -> Void
     let onQuestion: (String) -> Void
 
     var body: some View {
@@ -919,12 +918,6 @@ struct HomeFirstRunSection: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.TEXT_SECONDARY)
                 .padding(.top, 10)
-            Button(action: onWrite) {
-                Label("첫 일기 쓰기", systemImage: "pencil")
-            }
-            .buttonStyle(HomeCapsuleButtonStyle(isFullWidth: true))
-            .padding(.top, 28)
-            .padding(.horizontal, 8)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("이런 질문으로 시작해 보세요")

@@ -13,7 +13,11 @@ struct MPA_iosApp: App {
     @State private var isLaunchProcessing: Bool = true
     @State private var hingeStatus: DeviceHingeStatus?
     
-    let persistence = Persistence()
+    @State private var productViewModel = ProductViewModel(repository: SwiftDataProductRepository(context: Persistence.shared.container.mainContext))
+    @State private var journalViewModel = JournalViewModel(repository: SwiftDataJournalRepository(context: Persistence.shared.container.mainContext))
+    @State private var homeViewModel = HomeViewModel()
+    @State private var settingsViewModel = SettingsViewModel()
+    
     
     var isDeviceiPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
@@ -46,12 +50,15 @@ struct MPA_iosApp: App {
                 contents
             }
         }
-        .modelContainer(persistence.container)
+        .modelContainer(Persistence.shared.container)
     }
     
     var contents: some View {
         ContentView()
-            .productRepository(ProductRepository(context: persistence.container.mainContext))
+            .environment(productViewModel)
+            .environment(journalViewModel)
+            .environment(homeViewModel)
+            .environment(settingsViewModel)
             .environment(\.isDeviceiPad, isDeviceiPad)
             .environment(\.isDeviceiPhoneDuo, isDeviceiPhoneDuo)
             .environment(\.hingeStatus, hingeStatus)

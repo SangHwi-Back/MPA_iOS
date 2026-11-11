@@ -8,15 +8,14 @@
 import SwiftUI
 
 struct MainDateList: View {
-    @StateObject private var model: MainDateListViewModel
+    @Environment(ProductViewModel.self) private var model: ProductViewModel
     
     @Binding private var path: [Product]
     
     @State private var tappedItemId: Int? = nil
     
-    init(repository: ProductRepositoryProtocol, _ path: Binding<[Product]>) {
+    init(_ path: Binding<[Product]>) {
         self._path = path
-        _model = StateObject(wrappedValue: MainDateListViewModel(repository: repository))
     }
     
     var body: some View {
@@ -25,11 +24,6 @@ struct MainDateList: View {
                 EmptyView
             } else {
                 ListContentsForEach
-            }
-        }
-        .onChange(of: path.count) { oldValue, newValue in
-            if oldValue > newValue {
-                model.fetchItems()
             }
         }
     }
@@ -194,7 +188,7 @@ struct MainDateList: View {
 
 extension View {
     func addToolbar(
-        _ model: MainDateListViewModel,
+        _ model: ProductViewModel,
         showEditor: Binding<Bool>,
         path: Binding<[Product]>
     ) -> some View {
@@ -213,7 +207,7 @@ extension View {
 // MARK: - View Modifiers
 
 private struct ToolBar: ViewModifier {
-    private var model: MainDateListViewModel
+    private var model: ProductViewModel
     @Binding
     private var path: [Product]
     @Binding
@@ -221,7 +215,7 @@ private struct ToolBar: ViewModifier {
     
     @Environment(\.contentsEnvironment) private var contentsEnvironment
     
-    init(_ model: MainDateListViewModel, showEditor: Binding<Bool>, path: Binding<[Product]>) {
+    init(_ model: ProductViewModel, showEditor: Binding<Bool>, path: Binding<[Product]>) {
         self.model = model
         self._showEditor = showEditor
         self._path = path
@@ -345,20 +339,4 @@ struct UIViewLifeCycleHandler: UIViewControllerRepresentable {
             onWillAppear()
         }
     }
-}
-
-// MARK: - Previews
-
-#Preview("데이터 없음") {
-    MainDateList(
-        repository: EmptyProductRepositoryForPreview(),
-        Binding.constant([Product]())
-    )
-}
-
-#Preview("데이터 있음") {
-    MainDateList(
-        repository: MockProductRepository(withSampleData: true),
-        Binding.constant([Product]())
-    )
 }

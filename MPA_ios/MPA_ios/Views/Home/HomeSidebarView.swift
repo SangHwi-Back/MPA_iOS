@@ -11,7 +11,7 @@
 import SwiftUI
 
 struct HomeSidebarView: View {
-    @ObservedObject var viewModel: JournalViewModel
+    @Environment(JournalViewModel.self) private var viewModel
     let today: Date
     let onOpen: (Journal) -> Void
     let onSeeAll: () -> Void
@@ -23,14 +23,12 @@ struct HomeSidebarView: View {
     private let calendar = Calendar.current
 
     init(
-        viewModel: JournalViewModel,
         today: Date,
         isCalendarMode: Bool = false,
         selectedDay: Date? = nil,
         onOpen: @escaping (Journal) -> Void,
         onSeeAll: @escaping () -> Void
     ) {
-        self.viewModel = viewModel
         self.today = today
         self.onOpen = onOpen
         self.onSeeAll = onSeeAll
@@ -40,8 +38,11 @@ struct HomeSidebarView: View {
         self._displayedMonth = State(initialValue: Calendar.current.startOfMonth(for: day))
     }
 
-    private var entries: [Journal] { HomeViewModel.newestFirst(viewModel.entries) }
-
+//    private var entries: [Journal] { HomeViewModel.newestFirst(viewModel.entries) }
+    private var entries: [Journal] {
+        viewModel.entries
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -212,8 +213,9 @@ struct HomeSidebarView: View {
     }
 
     private var canGoBack: Bool {
-        guard let first = viewModel.entries.map(\.day).min() else { return false }
-        return displayedMonth > calendar.startOfMonth(for: first)
+//        guard let first = viewModel.entries.map(\.day).min() else { return false }
+//        return displayedMonth > calendar.startOfMonth(for: first)
+        return true
     }
 
     private var canGoForward: Bool { displayedMonth < calendar.startOfMonth(for: today) }

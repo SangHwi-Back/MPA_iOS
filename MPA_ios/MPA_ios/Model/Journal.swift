@@ -284,4 +284,31 @@ extension Journal {
             analysisState: .analyzed(at: created.addingTimeInterval(60))
         )
     }()
+    
+    /// Maximum characters of body that fit in the two preview lines.
+    static let snippetVisibleLength = 40
+
+    /// The preview text, cut to the sentence containing the match when the match is past the two visible lines.
+    func searchSnippet(for query: String) -> String {
+        let text = previewText
+        guard let match = text.range(of: query, options: .caseInsensitive),
+              text.distance(from: text.startIndex, to: match.lowerBound) > Self.snippetVisibleLength else {
+            return text
+        }
+        let sentenceStart = text[..<match.lowerBound].range(of: ". ", options: .backwards)?.upperBound
+        return "…" + text[(sentenceStart ?? match.lowerBound)...]
+    }
+
+    /// Analysis has not finished, so the chip area stays blank instead of collapsing.
+    var reservesKeywordSpace: Bool {
+        switch analysisState {
+        case .notAnalyzed, .analyzing: return true
+        case .analyzed, .failed, .unavailable: return false
+        }
+    }
+
+    var showsKeywords: Bool {
+        if case .analyzed = analysisState { return true }
+        return false
+    }
 }

@@ -36,7 +36,7 @@ struct DailyJournalView: View {
         && model.product.desc.isNotEmpty
     }
     
-    init(repository: ProductRepositoryProtocol, entry: Product) {
+    init(repository: any ProductRepository, entry: Product) {
         let vm = DailyJournalViewModel(
             repository: repository,
             productId: entry.id)

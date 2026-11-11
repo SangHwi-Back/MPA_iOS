@@ -8,48 +8,33 @@
 import Foundation
 import SwiftData
 
+/// `ProductRepository` that keeps products in an array. For previews and tests.
 @MainActor
-class SuperProductRepository: ProductRepositoryProtocol {
-    private var products: [Product] = []
+@Observable
+class SuperProductRepository: ProductRepository {
+    private(set) var products: [Product] = []
 
     init(withSampleData: Bool = false, products: [Product]) {
         if withSampleData {
-            self.products = products
+            self.products = Self.newestFirst(products)
         }
-    }
-
-    func save(_ product: Product) throws {
-        products.append(product)
-    }
-
-    func update(_ product: Product) throws {
-        if let index = products.firstIndex(where: { $0.id == product.id }) {
-            products[index] = product
-        }
-    }
-
-    func delete(_ product: Product) throws {
-        products.removeAll { $0.id == product.id }
-    }
-
-    func saveOrUpdate(_ product: Product) throws {
-        if try isExist(product) {
-            try update(product)
-        } else {
-            try save(product)
-        }
-    }
-
-    func isExist(_ product: Product) throws -> Bool {
-        products.contains { $0.id == product.id }
     }
 
     func fetch(id: Int) throws -> Product? {
         products.first { $0.id == id }
     }
 
-    func fetchAll() throws -> [Product] {
-        products
+    /// Same id replaces the stored product, like `@Attribute(.unique)` in SwiftData.
+    func save(_ product: Product) throws {
+        products = Self.newestFirst(products.filter { $0.id != product.id } + [product])
+    }
+
+    func delete(_ product: Product) throws {
+        products.removeAll { $0.id == product.id }
+    }
+
+    private static func newestFirst(_ products: [Product]) -> [Product] {
+        products.sorted { $0.createdDate > $1.createdDate }
     }
 }
 

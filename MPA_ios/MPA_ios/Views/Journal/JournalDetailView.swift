@@ -41,7 +41,7 @@ private struct PresentedKeyword: Identifiable {
 /// Part B — reads one entry. Editing happens in the editor.
 struct JournalDetailView: View {
 
-    @ObservedObject var journalViewModel: JournalViewModel
+    @Environment(JournalViewModel.self) private var journalViewModel
     @State private var model: JournalDetailViewModel
 
     var onOpenEntry: (Journal) -> Void
@@ -62,7 +62,6 @@ struct JournalDetailView: View {
 
     init(
         journal: Journal,
-        journalViewModel: JournalViewModel,
         generator: any JournalCommentGenerating = StubJournalCommentGenerator(),
         isCommentExpanded: Bool = false,
         presentedKeyword: String? = nil,
@@ -74,7 +73,6 @@ struct JournalDetailView: View {
         onOpenPhoto: @escaping (Journal, Int) -> Void = { _, _ in },
         onOpenHelpResources: @escaping () -> Void = {}
     ) {
-        self.journalViewModel = journalViewModel
         self._model = State(initialValue: JournalDetailViewModel(
             journal: journal,
             generator: generator,
@@ -374,7 +372,6 @@ struct JournalDetailView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("완료") {
                             model.changeDay(to: pendingDay)
-                            journalViewModel.objectWillChange.send()
                             isDatePickerPresented = false
                         }
                     }
@@ -778,21 +775,31 @@ private struct JournalKeywordSheet: View {
 
 // MARK: - Preview
 
-@MainActor
-private func journalDetailPreviewModel() -> JournalViewModel {
-    let viewModel = JournalViewModel()
-    viewModel.entries = Journal.detailKeywordSamples
-    viewModel.keywordStageOverride = ["경청": 1, "솔직함": 2]
-    return viewModel
-}
-
 private struct JournalDetailPreview: View {
-    var journal = Journal.detailSample()
-    var isCommentExpanded = false
-    var presentedKeyword: String?
-    var startsAtBottom = false
+    let journal: Journal
+    let isCommentExpanded: Bool
+    let presentedKeyword: String?
+    let startsAtBottom: Bool
 
-    @StateObject private var viewModel = journalDetailPreviewModel()
+    @State private var viewModel: JournalViewModel
+
+    init(
+        journal: Journal = Journal.detailSample(),
+        isCommentExpanded: Bool = false,
+        presentedKeyword: String? = nil,
+        startsAtBottom: Bool = false
+    ) {
+        self.journal = journal
+        self.isCommentExpanded = isCommentExpanded
+        self.presentedKeyword = presentedKeyword
+        self.startsAtBottom = startsAtBottom
+        // The shown entry plus other "경청" entries for the keyword sheet.
+        let viewModel = JournalViewModel(
+            repository: InMemoryJournalRepository(journals: [journal] + Journal.detailKeywordSamples)
+        )
+        viewModel.keywordStageOverride = ["경청": 1, "솔직함": 2]
+        self._viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
         NavigationStack {
@@ -800,18 +807,13 @@ private struct JournalDetailPreview: View {
                 .navigationDestination(isPresented: .constant(true)) {
                     JournalDetailView(
                         journal: journal,
-                        journalViewModel: viewModel,
                         isCommentExpanded: isCommentExpanded,
                         presentedKeyword: presentedKeyword,
                         startsAtBottom: startsAtBottom
                     )
                 }
         }
-        .onAppear {
-            if !viewModel.entries.contains(where: { $0.id == journal.id }) {
-                viewModel.entries.insert(journal, at: 0)
-            }
-        }
+        .environment(viewModel)
     }
 }
 

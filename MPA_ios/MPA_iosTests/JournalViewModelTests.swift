@@ -1,4 +1,6 @@
 //
+//  [NO AC] Spec: specs/journal/SCREEN_SPEC.md
+//
 //  JournalViewModelTests.swift
 //  MPA_iosTests
 //
@@ -10,66 +12,117 @@ import Testing
 @Suite("Journal ViewModel Tests", .serialized)
 @MainActor
 struct JournalViewModelTests {
-    
+
+    private func makeViewModel(_ journals: [Journal] = []) -> (JournalViewModel, InMemoryJournalRepository) {
+        let repository = InMemoryJournalRepository(journals: journals)
+        return (JournalViewModel(repository: repository), repository)
+    }
+
+    // MARK: - Adding
+
     @Test("Entries is empty initially")
-    func entriesIsEmptyInitially() throws {
-        let viewModel = JournalViewModel()
+    func entriesIsEmptyInitially() {
+        let (viewModel, _) = makeViewModel()
         #expect(viewModel.entries.isEmpty)
     }
-    
-    @Test("addJournal appends with explicit fields")
-    func addJournalAppendsWithExplicitFields() throws {
-        let viewModel = JournalViewModel()
+
+    @Test("addJournal stores explicit fields")
+    func addJournalStoresExplicitFields() {
+        let (viewModel, repository) = makeViewModel()
         let day = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!
-        let title = "Trip"
-        let body = "Details"
-        let prompt = "What happened?"
-        
-        viewModel.addJournal(day: day, title: title, body: body, prompt: prompt)
-        
+
+        viewModel.addJournal(day: day, title: "Trip", body: "Details", prompt: "What happened?")
+
         #expect(viewModel.entries.count == 1)
         let journal = viewModel.entries[0]
         #expect(Calendar.current.isDate(journal.day, inSameDayAs: day))
-        #expect(journal.title == title)
-        #expect(journal.body == body)
-        #expect(journal.prompt == prompt)
+        #expect(journal.title == "Trip")
+        #expect(journal.body == "Details")
+        #expect(journal.prompt == "What happened?")
+        #expect(repository.journals.count == 1)
     }
-    
-    @Test("addJournal returns the same instance appended")
-    func addJournalReturnsSameInstanceAppended() throws {
-        let viewModel = JournalViewModel()
-        let day = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 16))!
-        
-        let returned = viewModel.addJournal(day: day, title: "Same")
-        
-        #expect(returned.id == viewModel.entries[0].id)
+
+    @Test("addJournal returns the stored instance")
+    func addJournalReturnsTheStoredInstance() {
+        let (viewModel, _) = makeViewModel()
+
+        let returned = viewModel.addJournal(title: "Same")
+
+        #expect(returned?.id == viewModel.entries[0].id)
     }
-    
+
     @Test("addJournal without arguments uses defaults")
-    func addJournalWithoutArgumentsUsesDefaults() throws {
-        let viewModel = JournalViewModel()
-        let expectedDay = Calendar.current.startOfDay(for: .now)
-        
+    func addJournalWithoutArgumentsUsesDefaults() {
+        let (viewModel, _) = makeViewModel()
+
         viewModel.addJournal()
-        
+
         let journal = viewModel.entries[0]
-        #expect(Calendar.current.isDate(journal.day, inSameDayAs: expectedDay))
+        #expect(Calendar.current.isDate(journal.day, inSameDayAs: .now))
         #expect(journal.title == "")
         #expect(journal.body == "")
         #expect(journal.prompt == nil)
     }
-    
-    @Test("addJournal accumulates in call order")
-    func addJournalAccumulatesInCallOrder() throws {
-        let viewModel = JournalViewModel()
-        let day1 = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1))!
-        let day2 = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 2))!
-        
-        viewModel.addJournal(day: day1, title: "First")
-        viewModel.addJournal(day: day2, title: "Second")
-        
-        #expect(viewModel.entries.count == 2)
-        #expect(viewModel.entries[0].title == "First")
-        #expect(viewModel.entries[1].title == "Second")
+
+    @Test("Entries are newest first")
+    func entriesAreNewestFirst() {
+        let old = Journal(createdAt: Date(timeIntervalSince1970: 100), title: "Old")
+        let new = Journal(createdAt: Date(timeIntervalSince1970: 200), title: "New")
+        let (viewModel, _) = makeViewModel([old, new])
+
+        #expect(viewModel.entries.map(\.title) == ["New", "Old"])
+    }
+
+    // MARK: - Deleting with undo
+
+    @Test("delete hides the entry but keeps it stored until commit")
+    func deleteHidesTheEntryButKeepsItStored() {
+        let journal = Journal(title: "A")
+        let (viewModel, repository) = makeViewModel([journal])
+
+        viewModel.delete(journal, autoCommit: false)
+
+        #expect(viewModel.entries.isEmpty)
+        #expect(viewModel.pendingDeletion?.journal.id == journal.id)
+        #expect(repository.journals.count == 1)
+    }
+
+    @Test("undoDeletion shows the entry again")
+    func undoDeletionShowsTheEntryAgain() {
+        let journal = Journal(title: "A")
+        let (viewModel, repository) = makeViewModel([journal])
+
+        viewModel.delete(journal, autoCommit: false)
+        viewModel.undoDeletion()
+
+        #expect(viewModel.entries.count == 1)
+        #expect(viewModel.pendingDeletion == nil)
+        #expect(repository.journals.count == 1)
+    }
+
+    @Test("commitPendingDeletion removes it from the repository")
+    func commitPendingDeletionRemovesIt() {
+        let journal = Journal(title: "A")
+        let (viewModel, repository) = makeViewModel([journal])
+
+        viewModel.delete(journal, autoCommit: false)
+        viewModel.commitPendingDeletion()
+
+        #expect(repository.journals.isEmpty)
+        #expect(viewModel.pendingDeletion == nil)
+    }
+
+    @Test("Deleting another entry commits the previous one")
+    func deletingAnotherEntryCommitsThePreviousOne() {
+        let a = Journal(title: "A")
+        let b = Journal(title: "B")
+        let (viewModel, repository) = makeViewModel([a, b])
+
+        viewModel.delete(a, autoCommit: false)
+        viewModel.delete(b, autoCommit: false)
+
+        #expect(repository.journals.map(\.id) == [b.id])
+        #expect(viewModel.pendingDeletion?.journal.id == b.id)
+        #expect(viewModel.entries.isEmpty)
     }
 }

@@ -1,6 +1,4 @@
 //
-//  [NO AC]
-//
 //  ContentView.swift
 //  MPA_ios
 //
@@ -87,13 +85,15 @@ struct ContentView: View {
     private var verticalSizeClass
     @Environment(\.isDeviceiPhoneDuo)
     private var isDeviceiPhoneDuo
-    @Environment(\.productRepository)
-    private var productRepository
+    @Environment(ProductViewModel.self)
+    private var productViewModel: ProductViewModel
+    @Environment(JournalViewModel.self)
+    private var journalViewModel: JournalViewModel
+    @Environment(SettingsViewModel.self)
+    private var settingsViewModel: SettingsViewModel
     
-    @StateObject private var journalViewModel = JournalViewModel()
-    @State private var settingsViewModel = SettingsViewModel()
     @State private var isSettingsDetailPresented = false
-
+    
     private var isAIAvailable: Bool {
         HomeAIStatus(connection: settingsViewModel.aiConnection).isAvailable
     }
@@ -130,8 +130,6 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             Tab(ContentTab.today.title, image: iconName(for: .today), value: .today) {
                 HomeView(
-                    viewModel: journalViewModel,
-                    settingsViewModel: settingsViewModel,
                     selectedTab: $selectedTab,
                     isSettingsDetailPresented: $isSettingsDetailPresented
                 )
@@ -156,9 +154,6 @@ struct ContentView: View {
         }
         .overlay {
             getModalView()
-        }
-        .onAppear {
-            journalViewModel.productRepository = productRepository
         }
     }
     
@@ -192,9 +187,4 @@ struct ContentView: View {
             return "tab_settings" + suffix
         }
     }
-}
-
-#Preview("데이터 있음") {
-    ContentView()
-        .productRepository(MockProductRepository(withSampleData: true))
 }

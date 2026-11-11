@@ -128,7 +128,7 @@ struct DailyJournalViewModelTests {
         viewModel.product.name = "Edit 2"
         viewModel.saveItem()
 
-        let all = try mockRepo.fetchAll()
+        let all = mockRepo.products
         let matching = all.filter { $0.id == 400 }
         #expect(matching.count == 1, "중복 항목이 생성되어서는 안 됩니다")
         #expect(matching.first?.name == "Edit 2", "마지막 편집 내용이 저장되어야 합니다")

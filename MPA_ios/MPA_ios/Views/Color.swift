@@ -46,6 +46,12 @@ enum LightColorHex {
     static let principle5        = "#A9CBB0"
     static let onPrinciple       = "#2A211C"   // label text on bubbles
     
+    // Component
+    static let disable           = "#C9C2B8"
+    static let placeHolder       = "#DCD5C9"
+    static let toastBackground   = "#363432"
+    static let toastAction       = "#AEB8F0"
+    
     static let principleScale = [principle1, principle2, principle3, principle4, principle5]
 }
 
@@ -87,6 +93,12 @@ enum DarkColorHex {
     static let principle4        = "#9BAE80"
     static let principle5        = "#82A38A"
     static let onPrinciple       = "#141312"
+    
+    // Component
+    static let disable           = "#4A4640"
+    static let placeHolder       = "#2E2B28"
+    static let toastBackground   = "#363432"
+    static let toastAction       = "#AEB8F0"
     
     static let principleScale = [principle1, principle2, principle3, principle4, principle5]
 }
@@ -150,5 +162,24 @@ extension Color {
     static let PRINCIPLE3 = Color.mpa(LightColorHex.principle3, dark: DarkColorHex.principle3)
     static let PRINCIPLE4 = Color.mpa(LightColorHex.principle4, dark: DarkColorHex.principle4)
     static let PRINCIPLE5 = Color.mpa(LightColorHex.principle5, dark: DarkColorHex.principle5)
+    static let DISABLE = Color.mpa(LightColorHex.disable, dark: DarkColorHex.disable)
+    static let PLACEHOLDER = Color.mpa(LightColorHex.placeHolder, dark: DarkColorHex.placeHolder)
+    static let TOAST_BACKGROUND = Color.mpa(LightColorHex.toastBackground, dark: DarkColorHex.toastBackground)
+    static let TOAST_ACTION = Color.mpa(LightColorHex.toastAction, dark: DarkColorHex.toastAction)
     static let ON_PRINCIPLE = Color.mpa(LightColorHex.onPrinciple, dark: DarkColorHex.onPrinciple)
+    static let PRINCIPLE_SCALES : [Color] = {
+#if canImport(UIKit)
+        var isDark = false
+        
+        let _ = Color(UIColor { traits in
+            isDark = traits.userInterfaceStyle == .dark
+            return UIColor(Color(hex: ""))
+        })
+        
+        return (isDark ? DarkColorHex.principleScale : LightColorHex.principleScale)
+            .map({Color(hex: $0)})
+#else
+return Color(hex: light)
+#endif
+    }()
 }
