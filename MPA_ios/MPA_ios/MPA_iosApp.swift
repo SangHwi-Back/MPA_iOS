@@ -22,10 +22,6 @@ struct MPA_iosApp: App {
     var isDeviceiPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
     }
-    var isDeviceiPhoneDuo: Bool {
-        UIDevice.current.userInterfaceIdiom == .phone
-        && UIDevice.current.name.contains("Duo")
-    }
     
     var body: some Scene {
         WindowGroup {
@@ -60,7 +56,6 @@ struct MPA_iosApp: App {
             .environment(homeViewModel)
             .environment(settingsViewModel)
             .environment(\.isDeviceiPad, isDeviceiPad)
-            .environment(\.isDeviceiPhoneDuo, isDeviceiPhoneDuo)
             .environment(\.hingeStatus, hingeStatus)
             .transition(.opacity)
     }

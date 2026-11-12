@@ -83,8 +83,8 @@ struct ContentView: View {
     private var horizontalSizeClass
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
-    @Environment(\.isDeviceiPhoneDuo)
-    private var isDeviceiPhoneDuo
+    @Environment(\.hingeStatus)
+    private var hingeStatus
     @Environment(ProductViewModel.self)
     private var productViewModel: ProductViewModel
     @Environment(JournalViewModel.self)
@@ -101,7 +101,7 @@ struct ContentView: View {
     var contentsEnvironment: ContentsEnvironment {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return .navigationSplit
-        } else if isDeviceiPhoneDuo {
+        } else if hingeStatus != nil {
             if horizontalSizeClass == .compact && verticalSizeClass == .compact {
                 return .navigationSplit
             }

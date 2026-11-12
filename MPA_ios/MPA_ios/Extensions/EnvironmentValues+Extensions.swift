@@ -11,7 +11,6 @@ extension EnvironmentValues {
     @Entry var journalPaths: Binding<[Product]> = .constant([])
     @Entry var contentsEnvironment: ContentsEnvironment = .generalVertical
     @Entry var isDeviceiPad: Bool = false
-    @Entry var isDeviceiPhoneDuo: Bool = false
     @Entry var hingeStatus: DeviceHingeStatus? = nil
 }
 
