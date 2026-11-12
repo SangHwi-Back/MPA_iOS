@@ -905,54 +905,56 @@ struct HomeFirstRunSection: View {
     let onQuestion: (String) -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            HomeEmptyIllustration()
-                .frame(height: 230)
-            Text("첫 일기를 써보세요")
-                .font(.system(size: 26, weight: .bold))
-                .foregroundStyle(Color.TEXT_PRIMARY)
-                .padding(.top, 8)
-            Text("몇 줄이면 충분해요. 일기가 쌓이면\n그 안에서 나만의 원칙을 찾아드릴게요.")
-                .font(.system(size: 16))
-                .lineSpacing(6)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color.TEXT_SECONDARY)
-                .padding(.top, 10)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("이런 질문으로 시작해 보세요")
-                    .font(.system(size: 14, weight: .semibold))
+        ScrollView {
+            VStack(spacing: 0) {
+                HomeEmptyIllustration()
+                    .frame(height: 230)
+                Text("첫 일기를 써보세요")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(Color.TEXT_PRIMARY)
+                    .padding(.top, 8)
+                Text("몇 줄이면 충분해요. 일기가 쌓이면\n그 안에서 나만의 원칙을 찾아드릴게요.")
+                    .font(.system(size: 16))
+                    .lineSpacing(6)
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(Color.TEXT_SECONDARY)
-                    .padding(.bottom, 4)
-                ForEach(HomeSamples.exampleQuestions, id: \.self) { question in
-                    Button { onQuestion(question) } label: {
-                        HStack {
-                            Text(question)
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color.TEXT_PRIMARY)
-                                .multilineTextAlignment(.leading)
-                            Spacer(minLength: 8)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Color.TEXT_TERTIARY)
+                    .padding(.top, 10)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("이런 질문으로 시작해 보세요")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.TEXT_SECONDARY)
+                        .padding(.bottom, 4)
+                    ForEach(HomeSamples.exampleQuestions, id: \.self) { question in
+                        Button { onQuestion(question) } label: {
+                            HStack {
+                                Text(question)
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Color.TEXT_PRIMARY)
+                                    .multilineTextAlignment(.leading)
+                                Spacer(minLength: 8)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(Color.TEXT_TERTIARY)
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 52)
+                            .background(Color.SURFACE, in: .rect(cornerRadius: 18, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.HAIRLINE, lineWidth: 1)
+                            }
                         }
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 52)
-                        .background(Color.SURFACE, in: .rect(cornerRadius: 18, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.HAIRLINE, lineWidth: 1)
-                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
-            }
-            .padding(.top, 32)
-
-            if let privacyLine {
-                Label(privacyLine, systemImage: "lock")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-                    .padding(.top, 20)
+                .padding(.top, 32)
+                
+                if let privacyLine {
+                    Label(privacyLine, systemImage: "lock")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.TEXT_SECONDARY)
+                        .padding(.top, 20)
+                }
             }
         }
         .frame(maxWidth: .infinity)

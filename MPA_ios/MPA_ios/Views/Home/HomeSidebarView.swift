@@ -55,6 +55,7 @@ struct HomeSidebarView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
         }
+        .padding()
         .background(Color.SUNKEN.opacity(0.5))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

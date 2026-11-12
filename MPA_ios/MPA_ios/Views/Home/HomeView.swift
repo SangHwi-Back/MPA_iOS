@@ -76,6 +76,7 @@ struct HomeView: View {
         }
     }
     
+    @ViewBuilder
     private var navigationSplitView: some View {
         NavigationSplitView {
             HomeSidebarView(
@@ -92,13 +93,25 @@ struct HomeView: View {
     @ViewBuilder
     private var iphoneDuoSplitView: some View {
         if #available(anyAppleOS 27.1, *) {
-            ArrangementView {
-                MainDateList($path)
-                    .modelContainer(for: Product.self, inMemory: true)
-            } secondary: {
-                homeStack
+            if homeViewModel.entries.isEmpty {
+                HomeFirstRunSection(
+                    privacyLine: homeViewModel.privacyLine,
+                    onQuestion: { question in editorRequest = HomeEditorRequest(date: .now, prompt: question) }
+                )
+                .padding()
+            } else {
+                ArrangementView {
+                    HomeSidebarView(
+                        today: homeViewModel.today,
+                        onOpen: openEntry,
+                        onSeeAll: { selectedTab = .journal }
+                    )
+                    .navigationSplitViewColumnWidth(320)
+                } secondary: {
+                    homeStack
+                }
+                .arrangementViewStyle(.split)
             }
-            .arrangementViewStyle(.split)
         } else {
             homeStack
         }
@@ -108,10 +121,10 @@ struct HomeView: View {
     private var iphoneDuoOverlayView: some View {
         if #available(anyAppleOS 27.1, *) {
             ArrangementView {
-                homeStack
-            } secondary: {
                 MainDateList($path)
                     .modelContainer(for: Product.self, inMemory: true)
+            } secondary: {
+                homeStack
             }
             .arrangementViewStyle(.overlay)
         } else {
@@ -311,17 +324,9 @@ struct HomeContentView: View {
     
     private var firstRun: some View {
         HomeFirstRunSection(
-            privacyLine: privacyLine,
+            privacyLine: homeViewModel.privacyLine,
             onQuestion: { onWrite(nil, $0) }
         )
-    }
-    
-    private var privacyLine: String? {
-        switch homeViewModel.aiStatus {
-        case .unavailable: return nil
-        case .available(let engine), .keyError(let engine):
-            return engine.isOnDevice ? "모든 분석은 이 기기 안에서 이루어져요" : "요약·키워드만 \(engine == .openAIAPIKey ? "OpenAI" : "Gemini")(내 키)로 전송돼요"
-        }
     }
     
     private var adviceCard: some View {

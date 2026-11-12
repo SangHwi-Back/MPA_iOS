@@ -28,6 +28,16 @@ final class HomeViewModel {
     var aiStatus: HomeAIStatus {
         didSet { if oldValue != aiStatus { resetAI() } }
     }
+    var privacyLine: String? {
+        switch aiStatus {
+        case .unavailable:
+            return nil
+        case .available(let engine), .keyError(let engine):
+            return engine.isOnDevice
+                ? "모든 분석은 이 기기 안에서 이루어져요"
+                : "요약·키워드만 \(engine == .openAIAPIKey ? "OpenAI" : "Gemini")(내 키)로 전송돼요"
+        }
+    }
 
     // MARK: AI cards
 
