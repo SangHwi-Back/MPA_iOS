@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package com.example.mpa_android.ui.view.journal
 
@@ -7,70 +7,18 @@ import android.content.Intent
 import android.view.HapticFeedbackConstants
 import android.view.accessibility.AccessibilityManager
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imeNestedScroll
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SnackbarData
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -102,27 +50,21 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
 import com.example.mpa_android.TopAppBarModel
-import com.example.mpa_android.model.AnalysisState
-import com.example.mpa_android.model.Journal
-import com.example.mpa_android.model.JournalSamples
-import com.example.mpa_android.model.PRINCIPLE_STAGE_COUNT
-import com.example.mpa_android.model.keywordStages
+import com.example.mpa_android.model.*
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
-import com.example.mpa_android.viewmodel.JournalViewModel
 import com.example.mpa_android.viewmodel.JournalViewMode
+import com.example.mpa_android.viewmodel.JournalViewModel
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.WeekFields
-import java.util.Locale
-import kotlinx.coroutines.delay
+import java.util.*
 
 private val KOREAN_WEEKDAYS = listOf("월", "화", "수", "목", "금", "토", "일")
 private val DISABLED_ARROW = Color(0xFFC9C2B8)
 private val PHOTO_PLACEHOLDER = Color(0xFFDCD5C9)
-private val SNACKBAR_BACKGROUND = Color(0xFF322F2C)
-private val SNACKBAR_ACTION = Color(0xFFAEB8F0)
 private const val SEARCH_DEBOUNCE_MILLIS = 250L
 private const val SNIPPET_VISIBLE_LENGTH = 40
 private const val MAX_KEYWORD_SUGGESTIONS = 3
@@ -300,7 +242,6 @@ private fun JournalContent(
                 JournalEmptyState(
                     modifier = Modifier.weight(1f),
                     viewMode = viewMode,
-                    listState = listState,
                     addAction = { actions.onWrite(today) }
                 )
             } else {
@@ -329,89 +270,7 @@ private fun JournalContent(
                 )
             }
         }
-
-        // The FAB sits above the snackbar, and the snackbar stays directly above the navigation bar.
-        if (!isEmpty) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.End,
-            ) {
-                JournalFab(
-                    isCalendar = viewMode == JournalViewMode.CALENDAR,
-                    isScrollingDown = listState.lastScrolledForward,
-                    onClick = { actions.onWrite(today) },
-                    modifier = Modifier.padding(end = 16.dp, bottom = 16.dp),
-                )
-                SnackbarHost(snackbarHostState) { data ->
-                    JournalUndoSnackbar(data)
-                }
-            }
-        }
     }
-}
-
-@Composable
-private fun JournalUndoSnackbar(data: SnackbarData) {
-    Row(
-        modifier = Modifier
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(SNACKBAR_BACKGROUND)
-            .padding(start = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = data.visuals.message,
-            modifier = Modifier.weight(1f),
-            color = Color.White,
-            fontSize = 15.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = data.visuals.actionLabel.orEmpty(),
-            modifier = Modifier
-                .clickable { data.performAction() }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            color = SNACKBAR_ACTION,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
-private fun JournalFab(
-    isCalendar: Boolean,
-    isScrollingDown: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ExtendedFloatingActionButton(
-        text = {
-            Text(
-                text = "첫 일기 쓰기",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        },
-        icon = {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_edit),
-                contentDescription = if (isCalendar) "쓰기" else null,
-                tint = MPAColor.BRAND_ON_PRIMARY.color(),
-            )
-        },
-        expanded = (!isCalendar && !isScrollingDown),
-        onClick = onClick,
-        modifier = modifier,
-        containerColor =  MPAColor.BRAND_PRIMARY.color(),
-        contentColor = MPAColor.BRAND_ON_PRIMARY.color(),
-    )
 }
 
 @Composable
@@ -1383,7 +1242,6 @@ private fun RowScope.JournalCalendarDayCell(
 private fun JournalEmptyState(
     modifier: Modifier = Modifier,
     viewMode: JournalViewMode,
-    listState: LazyListState,
     addAction: () -> Unit
 ) {
     Column(
@@ -1417,9 +1275,35 @@ private fun JournalEmptyState(
         Spacer(Modifier.height(24.dp))
         JournalFab(
             isCalendar = viewMode == JournalViewMode.CALENDAR,
-            isScrollingDown = listState.lastScrolledForward,
             onClick = addAction,
         )
+    }
+}
+
+@Composable
+private fun JournalFab(
+    isCalendar: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(onClick = onClick, modifier = modifier.fillMaxWidth(0.6f), colors = IconButtonColors(
+        containerColor = MPAColor.BRAND_PRIMARY.color(),
+        contentColor = MPAColor.BRAND_ON_PRIMARY.color(),
+        disabledContainerColor = MPAColor.BRAND_PRIMARY.color(),
+        disabledContentColor = MPAColor.BRAND_ON_PRIMARY.color()
+    )) {
+        Row {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_edit),
+                contentDescription = if (isCalendar) "쓰기" else null,
+                tint = MPAColor.BRAND_ON_PRIMARY.color(),
+            )
+            Text(
+                text = "첫 일기 쓰기",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 

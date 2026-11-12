@@ -58,7 +58,8 @@ fun JournalEditorScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MPAColor.CANVAS.color()),
+            .background(MPAColor.CANVAS.color())
+            .statusBarsPadding(),
     ) {
         EditorTopBar(
             savedJournal = savedJournal,
