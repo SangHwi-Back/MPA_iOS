@@ -7,63 +7,17 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.view.HapticFeedbackConstants
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -80,13 +34,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -101,36 +49,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.runtime.collectAsState
 import com.example.mpa_android.R
 import com.example.mpa_android.TopAppBarModel
 import com.example.mpa_android.TopAppBarStyle
-import com.example.mpa_android.model.AIConnectionState
-import com.example.mpa_android.model.AIEngine
-import com.example.mpa_android.model.AIFeedback
-import com.example.mpa_android.model.AIText
-import com.example.mpa_android.model.AIUnavailableReason
-import com.example.mpa_android.model.HomeAIPhase
-import com.example.mpa_android.model.HomeAIStatus
-import com.example.mpa_android.model.HomeLayout
-import com.example.mpa_android.model.HomePrinciple
-import com.example.mpa_android.model.HomeSamples
-import com.example.mpa_android.model.HomeWeekDay
-import com.example.mpa_android.model.Journal
-import com.example.mpa_android.model.JournalSamples
-import com.example.mpa_android.model.homeAlertMessage
-import com.example.mpa_android.model.homeAlertTitle
+import com.example.mpa_android.model.*
 import com.example.mpa_android.ui.theme.MPAColor
+import com.example.mpa_android.ui.view.WRITE_FAB_RESERVED_HEIGHT
 import com.example.mpa_android.ui.view.journal.JournalHelpResourceCard
 import com.example.mpa_android.viewmodel.HomeUiState
 import com.example.mpa_android.viewmodel.HomeViewModel
+import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.TextStyle
-import java.util.Locale
+import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlinx.coroutines.delay
 
 private val GUTTER = 20.dp
 private val CARD_RADIUS = 24.dp
@@ -260,7 +194,7 @@ private fun HomeContent(
             .background(MPAColor.CANVAS.color())
             .verticalScroll(scrollState)
             .padding(horizontal = GUTTER)
-            .padding(top = 8.dp, bottom = 120.dp),
+            .padding(top = 8.dp, bottom = 120.dp + WRITE_FAB_RESERVED_HEIGHT),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         // Previews draw the large title themselves; in the app it is the top app bar.
@@ -351,7 +285,7 @@ private fun SurfaceCard(modifier: Modifier = Modifier, content: @Composable () -
 
 /** Lavender AI card. Failure states switch to a neutral surface (Part B 4). */
 @Composable
-private fun AiCard(isNeutral: Boolean = false, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun AiCard(modifier: Modifier = Modifier, isNeutral: Boolean = false, content: @Composable () -> Unit) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -585,7 +519,7 @@ private fun PromptCard(phase: HomeAIPhase, onWrite: (String) -> Unit, onNext: ()
                     containerColor = MPAColor.BRAND_PRIMARY.color(),
                     contentColor = MPAColor.BRAND_ON_PRIMARY.color(),
                 ),
-            ) { Text("이 질문으로 쓰기", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+            ) { Text("쓰기", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
             TextButton(onClick = onNext, enabled = phase != HomeAIPhase.Loading) {
                 Text("다른 질문", fontSize = 16.sp, color = MPAColor.BRAND_PRIMARY.color())
             }
@@ -860,10 +794,10 @@ private fun Modifier.drawDashedBorder(color: Color): Modifier = drawBehind {
 private fun WeeklySummaryCard(state: HomeUiState, actions: HomeActions, modelActions: HomeModelActions) {
     val phase = state.summaryPhase
     AiCard(
-        isNeutral = phase == HomeAIPhase.Failed || phase == HomeAIPhase.Resting,
         modifier = Modifier
             .clickable(onClick = modelActions.onToggleSummary)
             .semantics { stateDescription = if (state.isSummaryExpanded) "펼쳐짐" else "접힘" },
+        isNeutral = phase == HomeAIPhase.Failed || phase == HomeAIPhase.Resting,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {

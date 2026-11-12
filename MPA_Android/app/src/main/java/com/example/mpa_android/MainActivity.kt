@@ -1,6 +1,8 @@
 package com.example.mpa_android
 
 import android.os.Bundle
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,33 +32,33 @@ import androidx.navigation.navArgument
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
-import com.example.mpa_android.ui.view.home.HomeActions
-import com.example.mpa_android.ui.view.home.HomeScreen
 import com.example.mpa_android.ui.view.home.homeFabLabel
 import com.example.mpa_android.model.HomeAIStatus
 import android.net.Uri
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalLayoutDirection
+import com.example.mpa_android.ui.view.TabViewContents
+import com.example.mpa_android.ui.view.TabViewContentsModel
 import com.example.mpa_android.ui.view.journal.JournalDetailScreen
 import com.example.mpa_android.ui.view.journal.JournalEditorScreen
-import com.example.mpa_android.ui.view.journal.JournalScreen
-import com.example.mpa_android.ui.view.principle.PrincipleScreen
 import com.example.mpa_android.ui.view.settings.SettingsAIConnectionDetailScreen
-import com.example.mpa_android.ui.view.settings.SettingsScreen
 import com.example.mpa_android.viewmodel.JournalDetailViewModel
 import com.example.mpa_android.viewmodel.JournalViewModel
 import com.example.mpa_android.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 
-private const val JOURNAL_EDITOR_ROUTE = "journal-editor"
-private const val JOURNAL_EDITOR_DATE_ARG = "date"
-private const val JOURNAL_EDITOR_PROMPT_ARG = "prompt"
-private const val SETTINGS_AI_CONNECTION_ROUTE = "settings-ai-connection"
-private const val JOURNAL_DETAIL_ROUTE = "journal-detail"
-private const val JOURNAL_DETAIL_PATTERN = "$JOURNAL_DETAIL_ROUTE/{${JournalDetailViewModel.ARG_JOURNAL_ID}}"
+const val JOURNAL_EDITOR_ROUTE = "journal-editor"
+const val JOURNAL_EDITOR_DATE_ARG = "date"
+const val JOURNAL_EDITOR_PROMPT_ARG = "prompt"
+const val SETTINGS_AI_CONNECTION_ROUTE = "settings-ai-connection"
+const val JOURNAL_DETAIL_ROUTE = "journal-detail"
+const val JOURNAL_DETAIL_PATTERN = "$JOURNAL_DETAIL_ROUTE/{${JournalDetailViewModel.ARG_JOURNAL_ID}}"
 
-val LocalInnerPadding = staticCompositionLocalOf {
-    PaddingValues()
+val LocalAppGlobalModel = staticCompositionLocalOf {
+    GlobalModel()
 }
 
 @AndroidEntryPoint
@@ -72,7 +74,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-enum class TabDestinations(
+enum class TabDestination(
     val route: String,
     val label: String,
     val contentDescription: String
@@ -84,27 +86,27 @@ enum class TabDestinations(
 }
 
 @Composable
-fun TabDestinations.icon(isSelected: Boolean): ImageVector = ImageVector.vectorResource(
+fun TabDestination.icon(isSelected: Boolean): ImageVector = ImageVector.vectorResource(
     when (this) {
-        TabDestinations.TODAY ->
+        TabDestination.TODAY ->
             if (isSelected)
                 R.drawable.ic_tab_today_selected
             else
                 R.drawable.ic_tab_today
 
-        TabDestinations.JOURNAL ->
+        TabDestination.JOURNAL ->
             if (isSelected)
                 R.drawable.ic_tab_journal_selected
             else
                 R.drawable.ic_tab_journal
 
-        TabDestinations.PRINCIPAL ->
+        TabDestination.PRINCIPAL ->
             if (isSelected)
                 R.drawable.ic_tab_principles_selected
             else
                 R.drawable.ic_tab_principles
 
-        TabDestinations.SETTINGS ->
+        TabDestination.SETTINGS ->
             if (isSelected)
                 R.drawable.ic_tab_settings_selected
             else
@@ -117,21 +119,30 @@ fun TabDestinations.icon(isSelected: Boolean): ImageVector = ImageVector.vectorR
 fun App() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val startDestination = TabDestinations.TODAY
+    val startDestination = TabDestination.TODAY
     // Shared across tabs and the editor so a journal added from the editor shows up
     // in the Journal tab immediately (there is no server/DB yet to re-fetch from).
     val journalViewModel: JournalViewModel = hiltViewModel()
     // Shared by the settings list and the AI connection screen.
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val currentRoute = navBackStackEntry?.destination?.route
-    var isJournalSearchActive by remember { mutableStateOf(false) }
-    var journalScrollToTopSignal by remember { mutableIntStateOf(0) }
-    var isHomeFabExpanded by remember { mutableStateOf(true) }
     val journals by journalViewModel.visibleJournals.collectAsState()
     val settingsState by settingsViewModel.uiState.collectAsState()
     // No AI: the 원칙 tab is hidden and the app becomes a plain diary (Home 3.15).
     val isAIAvailable = HomeAIStatus.from(settingsState.aiConnection).isAvailable
-    val visibleTabs = TabDestinations.entries.filter { isAIAvailable || it != TabDestinations.PRINCIPAL }
+    val visibleTabs = TabDestination.entries.filter { isAIAvailable || it != TabDestination.PRINCIPAL }
+
+    val globalModel = remember { GlobalModel(isHomeFabExpanded = true) }
+
+    var topAppBarModel by remember { mutableStateOf(TopAppBarModel(
+        "",
+        null,
+        { TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()) },
+        { },
+        { }))
+    }
+
+    val scrollBehavior = topAppBarModel.scrollBehavior()
 
     fun openEditor(date: LocalDate? = null, prompt: String? = null) {
         val query = buildList {
@@ -141,22 +152,13 @@ fun App() {
         navController.navigate(if (query.isEmpty()) JOURNAL_EDITOR_ROUTE else "$JOURNAL_EDITOR_ROUTE?$query")
     }
 
-    fun selectTab(tab: TabDestinations) {
+    fun selectTab(tab: TabDestination) {
         navController.navigate(tab.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
             restoreState = true
         }
     }
-
-    var topAppBarModel by remember { mutableStateOf(TopAppBarModel(
-        "",
-        null,
-        { TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()) },
-        { },
-        { }))
-    }
-    val scrollBehavior = topAppBarModel.scrollBehavior()
 
     fun dynamicTopAppBar(model: TopAppBarModel) {
         topAppBarModel = model
@@ -165,16 +167,19 @@ fun App() {
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         // The expanded search screen extends its background under the status bar.
-        containerColor = if (isJournalSearchActive) MPAColor.CONTAINER.color() else MPAColor.CANVAS.color(),
+        containerColor = if (globalModel.isJournalSearchActive) MPAColor.CONTAINER.color() else MPAColor.CANVAS.color(),
         topBar = {
             // The journal detail draws its own app bar.
-            if (currentRoute != JOURNAL_DETAIL_PATTERN) {
+            if (currentRoute != null &&
+                currentRoute != JOURNAL_DETAIL_PATTERN &&
+                !currentRoute.contains(JOURNAL_EDITOR_ROUTE)) {
+
                 MPATopAppBar(topAppBarModel, scrollBehavior)
             }
         },
         bottomBar = {
             if (
-                !isJournalSearchActive &&
+                !globalModel.isJournalSearchActive &&
                 currentRoute != SETTINGS_AI_CONNECTION_ROUTE &&
                 currentRoute != JOURNAL_DETAIL_PATTERN
             ) {
@@ -193,8 +198,8 @@ fun App() {
                                 unselectedTextColor = MPAColor.TEXT_PRIMARY.color(),
                             ),
                             onClick = {
-                                if (isSelected && destinations == TabDestinations.JOURNAL) {
-                                    journalScrollToTopSignal += 1
+                                if (isSelected && destinations == TabDestination.JOURNAL) {
+                                    globalModel.journalScrollToTopSignal += 1
                                 }
                                 navController.navigate(destinations.route) {
                                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -225,109 +230,100 @@ fun App() {
         floatingActionButton = {
             // The 기록 tab places its own FAB so it can sit above the undo snackbar.
             if (
-                currentRoute != TabDestinations.JOURNAL.route &&
-                currentRoute != TabDestinations.SETTINGS.route &&
+                currentRoute != TabDestination.JOURNAL.route &&
+                currentRoute != TabDestination.SETTINGS.route &&
                 currentRoute != SETTINGS_AI_CONNECTION_ROUTE
             ) {
-                val isHome = currentRoute == TabDestinations.TODAY.route
+                val isHome = currentRoute == TabDestination.TODAY.route
                 WriteJournalFloatingActionButton(
                     label = if (isHome) homeFabLabel(journals) else "쓰기",
                     isEmphasized = isHome && journals.isEmpty(),
-                    expanded = !isHome || isHomeFabExpanded,
+                    expanded = !isHome || globalModel.isHomeFabExpanded,
                     // An existing entry for today should open in edit mode; the editor cannot load one yet.
                     onClick = { openEditor() },
                 )
             }
         },
         content = { innerPadding ->
-            NavHost(
-                navController,
-                modifier = Modifier.padding(innerPadding),
-                startDestination = startDestination.route
-            ) {
-                TabDestinations.entries.forEach { destination ->
-                    composable(destination.route) {
-                        CompositionLocalProvider(LocalInnerPadding provides innerPadding) {
-                            when (destination) {
-                                TabDestinations.TODAY -> HomeScreen(
-                                    aiConnection = settingsState.aiConnection,
-                                    actions = HomeActions(
-                                        onWrite = { date, prompt -> openEditor(date, prompt) },
-                                        onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
-                                        onOpenPrinciples = { selectTab(TabDestinations.PRINCIPAL) },
-                                        onOpenJournal = { selectTab(TabDestinations.JOURNAL) },
-                                        onConnectKey = { navController.navigate(SETTINGS_AI_CONNECTION_ROUTE) },
-                                    ),
-                                    dynamicTopAppBar = { dynamicTopAppBar(it) },
-                                    onFabExpandedChange = { isHomeFabExpanded = it },
-                                )
-                                TabDestinations.JOURNAL -> JournalScreen(
-                                    viewModel = journalViewModel,
-                                    onWrite = { date -> navController.navigate("$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG=$date") },
-                                    onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
-                                    onSearchActiveChange = { isJournalSearchActive = it },
-                                    scrollToTopSignal = journalScrollToTopSignal,
-                                    dynamicTopAppBar = { dynamicTopAppBar(it) },
-                                )
-                                TabDestinations.PRINCIPAL -> PrincipleScreen(
-                                    dynamicTopAppBar = { dynamicTopAppBar(it) },
-                                )
-                                TabDestinations.SETTINGS -> SettingsScreen(
-                                    viewModel = settingsViewModel,
-                                    onOpenAIConnection = { navController.navigate(SETTINGS_AI_CONNECTION_ROUTE) },
-                                    dynamicTopAppBar = { dynamicTopAppBar(it) },
-                                )
-                            }
+            globalModel.localInnerPadding = innerPadding
+
+            val navPadding = if (currentRoute == JOURNAL_DETAIL_PATTERN || currentRoute?.contains(JOURNAL_EDITOR_ROUTE) == true) {
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                    end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                    bottom = innerPadding.calculateBottomPadding(),
+                )
+            } else innerPadding
+
+            CompositionLocalProvider(LocalAppGlobalModel provides globalModel) {
+                NavHost(
+                    navController,
+                    modifier = Modifier.padding(navPadding),
+                    startDestination = startDestination.route
+                ) {
+                    TabDestination.entries.forEach { destination ->
+                        composable(destination.route) {
+                            TabViewContents(
+                                navController,
+                                TabViewContentsModel(
+                                destination = destination,
+                                selectTab = { selectTab(it) },
+                                onDrawTopAppBar = { dynamicTopAppBar(it) },
+                                openEditor = { date, prompt -> openEditor(date, prompt) }
+                            ))
                         }
                     }
-                }
-                composable(JOURNAL_DETAIL_PATTERN) {
-                    JournalDetailScreen(
-                        onBack = { navController.popBackStack() },
-                        // TODO: JournalEditorScreen cannot open an existing entry yet (Part C, 상세에서 편집).
-                        onEdit = {},
-                        onDelete = { journal ->
-                            // Back to the list first, then the undo snackbar (Part A 3.8).
-                            navController.popBackStack(TabDestinations.JOURNAL.route, inclusive = false)
-                            journalViewModel.deleteJournal(journal)
-                        },
-                        onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
-                        onOpenPrinciple = {
-                            navController.navigate(TabDestinations.PRINCIPAL.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                            }
-                        },
-                    )
-                }
-                composable(SETTINGS_AI_CONNECTION_ROUTE) {
-                    SettingsAIConnectionDetailScreen(
-                        viewModel = settingsViewModel,
-                        onBack = { navController.popBackStack() },
-                    )
-                }
-                composable(
-                    route = "$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG={$JOURNAL_EDITOR_DATE_ARG}" +
-                        "&$JOURNAL_EDITOR_PROMPT_ARG={$JOURNAL_EDITOR_PROMPT_ARG}",
-                    arguments = listOf(
-                        navArgument(JOURNAL_EDITOR_DATE_ARG) {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        },
-                        navArgument(JOURNAL_EDITOR_PROMPT_ARG) {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        },
-                    ),
-                ) { entry ->
-                    JournalEditorScreen(
-                        viewModel = journalViewModel,
-                        initialDate = entry.arguments?.getString(JOURNAL_EDITOR_DATE_ARG)?.let(LocalDate::parse),
-                        initialPrompt = entry.arguments?.getString(JOURNAL_EDITOR_PROMPT_ARG),
-                        onClose = { navController.popBackStack() },
-                    )
+                    composable(JOURNAL_DETAIL_PATTERN) {
+                        JournalDetailScreen(
+                            onBack = { navController.popBackStack() },
+                            // TODO: JournalEditorScreen cannot open an existing entry yet (Part C, 상세에서 편집).
+                            onEdit = {},
+                            onDelete = { journal ->
+                                // Back to the list first, then the undo snackbar (Part A 3.8).
+                                navController.popBackStack(TabDestination.JOURNAL.route, inclusive = false)
+                                journalViewModel.deleteJournal(journal)
+                            },
+                            onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
+                            onOpenPrinciple = {
+                                navController.navigate(TabDestination.PRINCIPAL.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                }
+                            },
+                        )
+                    }
+                    composable(SETTINGS_AI_CONNECTION_ROUTE) {
+                        SettingsAIConnectionDetailScreen(
+                            viewModel = settingsViewModel,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable(
+                        route = "$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG={$JOURNAL_EDITOR_DATE_ARG}" +
+                                "&$JOURNAL_EDITOR_PROMPT_ARG={$JOURNAL_EDITOR_PROMPT_ARG}",
+                        arguments = listOf(
+                            navArgument(JOURNAL_EDITOR_DATE_ARG) {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            },
+                            navArgument(JOURNAL_EDITOR_PROMPT_ARG) {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            },
+                        ),
+                        // Opens as a full-screen modal sliding up from the bottom, and back down on close.
+                        enterTransition = { slideInVertically(initialOffsetY = { it }) },
+                        popExitTransition = { slideOutVertically(targetOffsetY = { it }) },
+                    ) { entry ->
+                        JournalEditorScreen(
+                            viewModel = journalViewModel,
+                            initialDate = entry.arguments?.getString(JOURNAL_EDITOR_DATE_ARG)?.let(LocalDate::parse),
+                            initialPrompt = entry.arguments?.getString(JOURNAL_EDITOR_PROMPT_ARG),
+                            onClose = { navController.popBackStack() },
+                        )
+                    }
                 }
             }
         }
@@ -375,6 +371,20 @@ data class TopAppBarModel @OptIn(ExperimentalMaterial3Api::class) constructor(
     val trailingSection: @Composable RowScope.() -> Unit,
     val style: TopAppBarStyle = TopAppBarStyle.SMALL,
 )
+
+// Compose state holder so distant screens can read and write shared app state
+// via LocalAppGlobalModel without threading it through every intermediate composable.
+class GlobalModel(
+    isJournalSearchActive: Boolean = false,
+    isHomeFabExpanded: Boolean = false,
+    journalScrollToTopSignal: Int = 0,
+    localInnerPadding: PaddingValues = PaddingValues(0.dp),
+) {
+    var isJournalSearchActive by mutableStateOf(isJournalSearchActive)
+    var isHomeFabExpanded by mutableStateOf(isHomeFabExpanded)
+    var journalScrollToTopSignal by mutableIntStateOf(journalScrollToTopSignal)
+    var localInnerPadding by mutableStateOf(localInnerPadding)
+}
 
 @Preview(showBackground = true)
 @Composable
