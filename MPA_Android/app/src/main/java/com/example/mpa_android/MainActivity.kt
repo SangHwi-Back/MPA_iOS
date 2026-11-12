@@ -32,7 +32,6 @@ import androidx.navigation.navArgument
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
 import com.example.mpa_android.ui.view.WriteJournalFloatingActionButton
-import com.example.mpa_android.ui.view.home.homeFabLabel
 import com.example.mpa_android.model.HomeAIStatus
 import android.net.Uri
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -234,11 +233,8 @@ fun App() {
                 currentRoute != TabDestination.SETTINGS.route &&
                 currentRoute != SETTINGS_AI_CONNECTION_ROUTE
             ) {
-                val isHome = currentRoute == TabDestination.TODAY.route
                 WriteJournalFloatingActionButton(
-                    label = if (isHome) homeFabLabel(journals) else "쓰기",
-                    isEmphasized = isHome && journals.isEmpty(),
-                    expanded = !isHome || globalModel.isHomeFabExpanded,
+                    isHome = currentRoute == TabDestination.TODAY.route,
                     // An existing entry for today should open in edit mode; the editor cannot load one yet.
                     onClick = { openEditor() },
                 )
