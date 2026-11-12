@@ -243,7 +243,7 @@ fun App() {
         content = { innerPadding ->
             globalModel.localInnerPadding = innerPadding
 
-            val navPadding = if (currentRoute == JOURNAL_DETAIL_PATTERN || currentRoute?.contains(JOURNAL_EDITOR_ROUTE) == true) {
+            val navPadding = if (currentRoute != null && (currentRoute == JOURNAL_DETAIL_PATTERN || currentRoute.contains(JOURNAL_EDITOR_ROUTE))) {
                 PaddingValues(
                     start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
                     end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
