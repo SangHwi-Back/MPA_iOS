@@ -12,6 +12,7 @@ import SwiftUI
 
 struct HomeSidebarView: View {
     @Environment(JournalViewModel.self) private var viewModel
+    
     let today: Date
     let onOpen: (Journal) -> Void
     let onSeeAll: () -> Void
@@ -37,25 +38,17 @@ struct HomeSidebarView: View {
         self._selectedDay = State(initialValue: day)
         self._displayedMonth = State(initialValue: Calendar.current.startOfMonth(for: day))
     }
-
-//    private var entries: [Journal] { HomeViewModel.newestFirst(viewModel.entries) }
-    private var entries: [Journal] {
-        viewModel.entries
-    }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if isCalendarMode {
-                    calendarContent
-                } else {
-                    recentContent
-                }
+        VStack(alignment: .leading, spacing: 16) {
+            if isCalendarMode {
+                calendarContent
+            } else {
+                recentContent
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 24)
         }
-        .padding()
+        .padding(.horizontal, 16)
+        .padding(.bottom, 24)
         .background(Color.SUNKEN.opacity(0.5))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -79,22 +72,27 @@ struct HomeSidebarView: View {
     private var recentContent: some View {
         HomeSectionHeader(title: "최근 기록", actionTitle: "모두 보기", action: onSeeAll)
             .padding(.horizontal, 8)
-        if entries.isEmpty {
+        if viewModel.entries.isEmpty {
             Text("아직 기록이 없어요")
                 .font(.system(size: 15))
                 .foregroundStyle(Color.TEXT_SECONDARY)
                 .padding(.horizontal, 8)
+            
+            Spacer()
         } else {
-            Text(monthTitle(entries[0].day))
+            Text(monthTitle(viewModel.entries[0].day))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.TEXT_SECONDARY)
                 .padding(.horizontal, 8)
-            ForEach(entries, id: \.id) { entry in
-                Button { onOpen(entry) } label: {
-                    HomeRecentRow(entry: entry, isHighlighted: calendar.isDate(entry.day, inSameDayAs: today))
+            
+            ScrollView {
+                ForEach(viewModel.entries, id: \.id) { entry in
+                    Button { onOpen(entry) } label: {
+                        HomeRecentRow(entry: entry, isHighlighted: calendar.isDate(entry.day, inSameDayAs: today))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, calendar.isDate(entry.day, inSameDayAs: today) ? 0 : 8)
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, calendar.isDate(entry.day, inSameDayAs: today) ? 0 : 8)
             }
         }
     }
@@ -137,9 +135,16 @@ struct HomeSidebarView: View {
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(Color.TEXT_SECONDARY)
             .padding(.top, 8)
-        ForEach(dayEntries, id: \.id) { entry in
-            Button { onOpen(entry) } label: { selectedDayRow(entry) }
-                .buttonStyle(.plain)
+        
+        if dayEntries.isEmpty {
+            Spacer()
+        }
+        
+        ScrollView {
+            ForEach(dayEntries, id: \.id) { entry in
+                Button { onOpen(entry) } label: { selectedDayRow(entry) }
+                    .buttonStyle(.plain)
+            }
         }
     }
 
@@ -199,7 +204,7 @@ struct HomeSidebarView: View {
     // MARK: Helpers
 
     private var dayEntries: [Journal] {
-        entries.filter { calendar.isDate($0.day, inSameDayAs: selectedDay) }
+        viewModel.entries.filter { calendar.isDate($0.day, inSameDayAs: selectedDay) }
     }
 
     private var grid: [Date?] {
@@ -214,9 +219,8 @@ struct HomeSidebarView: View {
     }
 
     private var canGoBack: Bool {
-//        guard let first = viewModel.entries.map(\.day).min() else { return false }
-//        return displayedMonth > calendar.startOfMonth(for: first)
-        return true
+        guard let first = viewModel.entries.map(\.day).min() else { return false }
+        return displayedMonth > calendar.startOfMonth(for: first)
     }
 
     private var canGoForward: Bool { displayedMonth < calendar.startOfMonth(for: today) }

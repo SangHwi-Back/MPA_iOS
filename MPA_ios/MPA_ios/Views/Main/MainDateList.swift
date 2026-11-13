@@ -213,8 +213,6 @@ private struct ToolBar: ViewModifier {
     @Binding
     private var showEditor: Bool
     
-    @Environment(\.contentsEnvironment) private var contentsEnvironment
-    
     init(_ model: ProductViewModel, showEditor: Binding<Bool>, path: Binding<[Product]>) {
         self.model = model
         self._showEditor = showEditor

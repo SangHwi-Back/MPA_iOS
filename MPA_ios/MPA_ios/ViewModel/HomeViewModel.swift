@@ -22,9 +22,8 @@ final class HomeViewModel {
 
     /// Clock for the greeting, the date line, and "today". Fixed in previews.
     var now: Date
-    var entries: [Journal] {
-        didSet { if oldValue.map(\.id) != entries.map(\.id) { invalidateForNewEntries() } }
-    }
+    /// Every stored journal. Read from the repository, so the screen follows adds and deletes on its own.
+    var entries: [Journal] { repository.journals }
     var aiStatus: HomeAIStatus {
         didSet { if oldValue != aiStatus { resetAI() } }
     }
@@ -55,11 +54,14 @@ final class HomeViewModel {
 
     private var adviceFailures = 0
     private var summaryFailures = 0
+    /// Entry ids the AI cards were last written for. See `invalidateIfEntriesChanged()`.
+    @ObservationIgnored private var knownEntryIDs: [UUID]
+    @ObservationIgnored private let repository: any JournalRepository
     private let generator: any HomeAIGenerating
     private let calendar: Calendar
 
     init(
-        entries: [Journal] = [],
+        repository: any JournalRepository,
         aiStatus: HomeAIStatus = .available(.appleIntelligence),
         now: Date = .now,
         generator: any HomeAIGenerating = StubHomeAIGenerator(),
@@ -70,7 +72,8 @@ final class HomeViewModel {
         isAlertPresented: Bool = false,
         calendar: Calendar = .current
     ) {
-        self.entries = entries
+        self.repository = repository
+        self.knownEntryIDs = repository.journals.map(\.id)
         self.aiStatus = aiStatus
         self.now = now
         self.generator = generator
@@ -103,6 +106,13 @@ final class HomeViewModel {
         entries
             .filter { calendar.isDate($0.day, inSameDayAs: today) }
             .max { $0.createdAt < $1.createdAt }
+    }
+
+    /// Entries grouped by month. Each key is the first day of that month at 00:00.
+    var entriesByMonth: [Date: [Journal]] {
+        Dictionary(grouping: entries) { entry in
+            calendar.dateInterval(of: .month, for: entry.day)?.start ?? calendar.startOfDay(for: entry.day)
+        }
     }
 
     var principles: [HomePrinciple] { Self.principles(in: entries) }
@@ -151,7 +161,9 @@ final class HomeViewModel {
     // MARK: - Loading
 
     /// Starts every AI card the current layout shows that has nothing yet.
+    /// Call again whenever the entries change (the view runs it in `.task(id:)` keyed on the entry ids).
     func load() async {
+        invalidateIfEntriesChanged()
         guard aiStatus.isAvailable, !entries.isEmpty else { return }
         async let advice: Void = loadAdviceIfNeeded()
         async let prompt: Void = loadPromptIfNeeded()
@@ -243,8 +255,11 @@ final class HomeViewModel {
         summaryFailures = 0
     }
 
-    private func invalidateForNewEntries() {
-        // New entries change the sources and the progress state, so the advice is written again.
+    /// New or deleted entries change the sources and the progress state, so the advice is written again.
+    private func invalidateIfEntriesChanged() {
+        let ids = entries.map(\.id)
+        guard ids != knownEntryIDs else { return }
+        knownEntryIDs = ids
         if case .loaded = advicePhase { advicePhase = .idle }
         if case .sensitive = advicePhase { advicePhase = .idle }
         if case .loaded = summaryPhase { summaryPhase = .idle }

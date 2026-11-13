@@ -101,37 +101,37 @@ final class HomeViewModelTests: XCTestCase {
     // MARK: - Derived state
 
     func testTodayEntryMatchesNow() {
-        XCTAssertEqual(HomeViewModel(entries: [homeJournal(oct(30)), homeJournal(oct(29))], now: homeNow).todayEntry?.day, oct(30))
-        XCTAssertNil(HomeViewModel(entries: [homeJournal(oct(29))], now: homeNow).todayEntry)
+        XCTAssertEqual(HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(30)), homeJournal(oct(29))]), now: homeNow).todayEntry?.day, oct(30))
+        XCTAssertNil(HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(29))]), now: homeNow).todayEntry)
     }
 
     func testWeeklySummaryNeedsThreeEntriesThisWeekAndAI() {
         let available = HomeAIStatus.available(.appleIntelligence)
         let three = [homeJournal(oct(12)), homeJournal(oct(20)), homeJournal(oct(29))]
 
-        XCTAssertFalse(HomeViewModel(entries: Array(three.prefix(2)), aiStatus: available, now: homeNow).showsWeeklySummary)
-        XCTAssertTrue(HomeViewModel(entries: three, aiStatus: available, now: homeNow).showsWeeklySummary)
-        XCTAssertFalse(HomeViewModel(entries: three, aiStatus: .unavailable(.turnedOff), now: homeNow).showsWeeklySummary)
+        XCTAssertFalse(HomeViewModel(repository: InMemoryJournalRepository(journals: Array(three.prefix(2))), aiStatus: available, now: homeNow).showsWeeklySummary)
+        XCTAssertTrue(HomeViewModel(repository: InMemoryJournalRepository(journals: three), aiStatus: available, now: homeNow).showsWeeklySummary)
+        XCTAssertFalse(HomeViewModel(repository: InMemoryJournalRepository(journals: three), aiStatus: .unavailable(.turnedOff), now: homeNow).showsWeeklySummary)
         // Three entries, none this week.
-        XCTAssertFalse(HomeViewModel(entries: Array(three.prefix(2)) + [homeJournal(oct(5))], aiStatus: available, now: homeNow).showsWeeklySummary)
+        XCTAssertFalse(HomeViewModel(repository: InMemoryJournalRepository(journals: Array(three.prefix(2)) + [homeJournal(oct(5))]), aiStatus: available, now: homeNow).showsWeeklySummary)
     }
 
     func testWeeklyRangeLineCountsThisWeek() {
-        let model = HomeViewModel(entries: [homeJournal(oct(27)), homeJournal(oct(30)), homeJournal(oct(20))], now: homeNow)
+        let model = HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(27)), homeJournal(oct(30)), homeJournal(oct(20))]), now: homeNow)
 
         XCTAssertEqual(model.weeklyRangeLine, "10월 27일–30일 · 일기 2개")
     }
 
     func testSensitiveContentInRecentEntries() {
-        XCTAssertTrue(HomeViewModel(entries: [homeJournal(oct(27), body: "요즘 죽고 싶다")], now: homeNow).isSensitive)
-        XCTAssertFalse(HomeViewModel(entries: [homeJournal(oct(27), body: "산책을 했다")], now: homeNow).isSensitive)
+        XCTAssertTrue(HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(27), body: "요즘 죽고 싶다")]), now: homeNow).isSensitive)
+        XCTAssertFalse(HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(27), body: "산책을 했다")]), now: homeNow).isSensitive)
     }
 
     // MARK: - AI cards
 
     func testFeedbackTogglesOff() {
         let text = AIText(text: "조언", engine: .appleIntelligence, generatedAt: homeNow, sourceJournalIDs: [], feedback: nil)
-        let model = HomeViewModel(entries: [homeJournal(oct(29))], now: homeNow, advice: text)
+        let model = HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(29))]), now: homeNow, advice: text)
 
         model.toggleFeedback(.helpful)
         XCTAssertEqual(model.advicePhase.text?.feedback, .helpful)
@@ -145,7 +145,7 @@ final class HomeViewModelTests: XCTestCase {
             func writingPrompt(engine: AIEngine) async throws -> String { throw HomeAIError.generationFailed }
             func weeklySummary(sourceIDs: [UUID], engine: AIEngine) async throws -> AIText { throw HomeAIError.generationFailed }
         }
-        let model = HomeViewModel(entries: [homeJournal(oct(29))], now: homeNow, generator: Failing())
+        let model = HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(29))]), now: homeNow, generator: Failing())
 
         await model.generateAdvice()
         XCTAssertEqual(model.advicePhase, .failed)
@@ -154,8 +154,31 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(model.advicePhase, .resting)
     }
 
+    func testNewEntryInRepositoryRewritesAdvice() async throws {
+        struct Instant: HomeAIGenerating {
+            func advice(sourceIDs: [UUID], isShort: Bool, engine: AIEngine) async throws -> AIText {
+                AIText(text: "새 조언", engine: engine, generatedAt: homeNow, sourceJournalIDs: sourceIDs, feedback: nil)
+            }
+            func writingPrompt(engine: AIEngine) async throws -> String { "질문" }
+            func weeklySummary(sourceIDs: [UUID], engine: AIEngine) async throws -> AIText {
+                AIText(text: "요약", engine: engine, generatedAt: homeNow, sourceJournalIDs: sourceIDs, feedback: nil)
+            }
+        }
+        let repository = InMemoryJournalRepository(journals: [homeJournal(oct(29))])
+        let old = AIText(text: "예전 조언", engine: .appleIntelligence, generatedAt: homeNow, sourceJournalIDs: [], feedback: nil)
+        let model = HomeViewModel(repository: repository, now: homeNow, generator: Instant(), advice: old)
+
+        await model.load()
+        XCTAssertEqual(model.advicePhase.text?.text, "예전 조언")
+
+        try repository.save(homeJournal(oct(30)))
+        XCTAssertEqual(model.entries.count, 2)
+        await model.load()
+        XCTAssertEqual(model.advicePhase.text?.text, "새 조언")
+    }
+
     func testSensitiveEntriesReplaceAdvice() async {
-        let model = HomeViewModel(entries: [homeJournal(oct(29), body: "죽고 싶다")], now: homeNow)
+        let model = HomeViewModel(repository: InMemoryJournalRepository(journals: [homeJournal(oct(29), body: "죽고 싶다")]), now: homeNow)
 
         await model.generateAdvice()
 

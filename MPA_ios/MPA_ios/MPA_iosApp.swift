@@ -13,14 +13,20 @@ struct MPA_iosApp: App {
     @State private var isLaunchProcessing: Bool = true
     @State private var hingeStatus: DeviceHingeStatus?
     
-    @State private var productViewModel = ProductViewModel(repository: SwiftDataProductRepository(context: Persistence.shared.container.mainContext))
-    @State private var journalViewModel = JournalViewModel(repository: SwiftDataJournalRepository(context: Persistence.shared.container.mainContext))
-    @State private var homeViewModel = HomeViewModel()
+    @State private var productViewModel: ProductViewModel
+    @State private var journalViewModel: JournalViewModel
+    @State private var homeViewModel: HomeViewModel
     @State private var settingsViewModel = SettingsViewModel()
-    
-    
-    var isDeviceiPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
+
+    init() {
+        let context = Persistence.shared.container.mainContext
+        // One repository shared by 오늘 and 기록, so both screens see the same journals.
+        _productViewModel = State(initialValue: ProductViewModel(repository: SwiftDataProductRepository(context: context)))
+        
+        let journalRepository = SwiftDataJournalRepository(context: context)
+        _journalViewModel = State(initialValue: JournalViewModel(repository: journalRepository))
+        
+        _homeViewModel = State(initialValue: HomeViewModel(repository: journalRepository))
     }
     
     var body: some Scene {
@@ -38,10 +44,9 @@ struct MPA_iosApp: App {
                         }
                     }
             } else if #available(anyAppleOS 27.1, *) {
-                contents
-                    .onHingeChange { _, newContext in
-                        self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
-                    }
+                contents.onHingeChange { _, newContext in
+                    self.hingeStatus = getHingeStatus(from: newContext.hinge?.status)
+                }
             } else {
                 contents
             }
@@ -55,7 +60,6 @@ struct MPA_iosApp: App {
             .environment(journalViewModel)
             .environment(homeViewModel)
             .environment(settingsViewModel)
-            .environment(\.isDeviceiPad, isDeviceiPad)
             .environment(\.hingeStatus, hingeStatus)
             .transition(.opacity)
     }

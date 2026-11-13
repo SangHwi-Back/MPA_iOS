@@ -17,9 +17,13 @@ struct HomeView: View {
     @Binding var isSettingsDetailPresented: Bool
     
     @Environment(HomeViewModel.self) private var homeViewModel
-    @Environment(JournalViewModel.self) private var journalViewModel
-    @Environment(SettingsViewModel.self) private var settingsViewModel
-    @Environment(\.contentsEnvironment) private var contentsEnvironment
+    
+    @Environment(\.hingeStatus)
+    private var hingeStatus
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
     
     @State private var editorRequest: HomeEditorRequest?
     @State private var openedEntryID: UUID?
@@ -27,15 +31,24 @@ struct HomeView: View {
     
     var body: some View {
         Group {
-            switch contentsEnvironment {
-            case .horizontalDuoSplit:
-                iphoneDuoSplitView
-            case .verticalDuoOverlay:
-                iphoneDuoOverlayView
-            case .navigationSplit:
+            if let hingeStatus {
+                if hingeStatus == .closed {
+                    if verticalSizeClass == .regular {
+                        generalContent
+                    } else {
+                        navigationSplitView
+                    }
+                } else {
+                    iphoneDuoSplitView
+                }
+            } else if UIDevice.current.userInterfaceIdiom == .pad {
                 navigationSplitView
-            case .generalVertical:
-                homeStack
+            } else {
+                if verticalSizeClass == .compact {
+                    navigationSplitView
+                } else {
+                    generalContent
+                }
             }
         }
         .sheet(item: $editorRequest) { request in
@@ -47,18 +60,10 @@ struct HomeView: View {
             .presentationDetents([.large])
         }
         .sensoryFeedback(.impact(weight: .light), trigger: editorRequest?.id)
-        .onChange(of: journalViewModel.entries.map(\.id), initial: true) {
-            homeViewModel.entries = journalViewModel.entries
+        // Entries come from the shared JournalRepository, so this reruns whenever one is added or deleted.
+        .task(id: TaskKey(entryIDs: homeViewModel.entries.map(\.id), status: homeViewModel.aiStatus)) {
             homeViewModel.now = .now
-        }
-        .onChange(of: settingsViewModel.aiConnection, initial: true) {
-            homeViewModel.aiStatus = HomeAIStatus(connection: settingsViewModel.aiConnection)
-        }
-        .task(id: TaskKey(entryIDs: journalViewModel.entries.map(\.id), status: homeViewModel.aiStatus)) {
             await homeViewModel.load()
-        }
-        .onAppear {
-            homeViewModel.entries = journalViewModel.entries
         }
     }
     
@@ -68,13 +73,6 @@ struct HomeView: View {
     }
     
     // MARK: - Layouts
-    
-    private var homeStack: some View {
-        NavigationStack {
-            content
-                .navigationDestination(item: $openedEntryID) { id in detail(id) }
-        }
-    }
     
     @ViewBuilder
     private var navigationSplitView: some View {
@@ -86,7 +84,7 @@ struct HomeView: View {
             )
             .navigationSplitViewColumnWidth(320)
         } detail: {
-            homeStack
+            generalContent
         }
     }
     
@@ -108,40 +106,28 @@ struct HomeView: View {
                     )
                     .navigationSplitViewColumnWidth(320)
                 } secondary: {
-                    homeStack
+                    generalContent
                 }
                 .arrangementViewStyle(.split)
             }
         } else {
-            homeStack
+            generalContent
         }
     }
     
-    @ViewBuilder
-    private var iphoneDuoOverlayView: some View {
-        if #available(anyAppleOS 27.1, *) {
-            ArrangementView {
-                MainDateList($path)
-                    .modelContainer(for: Product.self, inMemory: true)
-            } secondary: {
-                homeStack
-            }
-            .arrangementViewStyle(.overlay)
-        } else {
-            homeStack
+    private var generalContent: some View {
+        NavigationStack {
+            HomeContentView(
+                onWrite: { editorRequest = HomeEditorRequest(date: $0, prompt: $1) },
+                onOpenEntry: openEntry,
+                onSelectTab: { selectedTab = $0 },
+                onConnectKey: {
+                    selectedTab = .settings
+                    isSettingsDetailPresented = true
+                }
+            )
+            .navigationDestination(item: $openedEntryID) { id in detail(id) }
         }
-    }
-    
-    private var content: some View {
-        HomeContentView(
-            onWrite: { editorRequest = HomeEditorRequest(date: $0, prompt: $1) },
-            onOpenEntry: openEntry,
-            onSelectTab: { selectedTab = $0 },
-            onConnectKey: {
-                selectedTab = .settings
-                isSettingsDetailPresented = true
-            }
-        )
     }
     
     // MARK: - Navigation
@@ -152,14 +138,11 @@ struct HomeView: View {
     
     @ViewBuilder
     private func detail(_ id: UUID) -> some View {
-        if let entry = journalViewModel.entries.first(where: { $0.id == id }) {
+        if let entry = homeViewModel.entries.first(where: { $0.id == id }) {
             JournalDetailView(
                 journal: entry,
                 onOpenEntry: openEntry,
-                onDelete: { deleted in
-                    openedEntryID = nil
-                    journalViewModel.delete(deleted)
-                },
+                onDelete: { _ in openedEntryID = nil },
                 onOpenPrinciple: { _ in selectedTab = .principles }
             )
         }
@@ -169,7 +152,7 @@ struct HomeView: View {
 // MARK: - Content
 
 /// The scrolling 오늘 page. Stateless apart from scroll position; everything else lives in `HomeViewModel`.
-struct HomeContentView: View {
+private struct HomeContentView: View {
     let onWrite: (_ date: Date?, _ prompt: String?) -> Void
     let onOpenEntry: (Journal) -> Void
     let onSelectTab: (ContentTab) -> Void
@@ -177,7 +160,6 @@ struct HomeContentView: View {
     
     @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.openURL) private var openURL
     @State private var isHeaderScrolledAway = false
     
     private var isRegular: Bool { horizontalSizeClass == .regular }
@@ -188,9 +170,19 @@ struct HomeContentView: View {
                 HomeGreetingHeader(dateLine: homeViewModel.dateLine, greeting: homeViewModel.greeting)
                     .padding(.bottom, 4)
                 if isRegular, homeViewModel.layout == .full || homeViewModel.layout == .early {
-                    regularColumns
+                    HomeContentRegularColumns(
+                        onWrite: onWrite,
+                        onOpenEntry: onOpenEntry,
+                        onSelectTab: onSelectTab,
+                        onConnectKey: onConnectKey
+                    )
                 } else {
-                    sections
+                    HomeContentSections(
+                        onWrite: onWrite,
+                        onOpenEntry: onOpenEntry,
+                        onSelectTab: onSelectTab,
+                        onConnectKey: onConnectKey
+                    )
                 }
             }
             .padding(.horizontal, HomeLayoutMetrics.gutter)
@@ -207,7 +199,7 @@ struct HomeContentView: View {
         }
         .navigationTitle(isHeaderScrolledAway ? "오늘" : "")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbar }
+        .toolbar { HomeContentToolbar(onWrite: onWrite) }
         .alert(
             homeViewModel.aiStatus.unavailableReason?.homeAlertTitle ?? "",
             isPresented: Binding(get: {
@@ -224,11 +216,17 @@ struct HomeContentView: View {
             Text(reason.homeAlertMessage)
         }
     }
+}
+
+// MARK: - HomeContentView subviews
+
+/// Warning button (shown while AI is unavailable) and the + button (3.1, 3.12).
+private struct HomeContentToolbar: ToolbarContent {
+    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
     
-    // MARK: Toolbar (3.1, 3.12)
+    @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
     
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
+    var body: some ToolbarContent {
         if !homeViewModel.aiStatus.isAvailable {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -255,146 +253,6 @@ struct HomeContentView: View {
             .accessibilityLabel("새 일기")
         }
     }
-    
-    // MARK: Phone sections (state matrix)
-    
-    @ViewBuilder
-    private var sections: some View {
-        switch homeViewModel.layout {
-        case .firstRun:
-            firstRun
-        case .early:
-            adviceCard
-            todayCard
-            HomePrincipleProgressSection(entryCount: homeViewModel.entries.count)
-                .padding(.top, 16)
-        case .full:
-            adviceCard
-            todayCard
-            principles
-                .padding(.top, 24)
-            if homeViewModel.showsWeeklySummary {
-                weeklySummary(isAlwaysExpanded: false)
-                    .padding(.top, 8)
-            }
-        case .diary:
-            diaryTodayCard
-            HomeWeekStrip(
-                days: homeViewModel.weekDays,
-                onSelect: selectWeekDay,
-                onOpenCalendar: { onSelectTab(.journal) },
-                onChangeWeek: { delta in
-                    withAnimation { homeViewModel.weekOffset = min(0, homeViewModel.weekOffset + delta) }
-                }
-            )
-            .padding(.top, 16)
-            HomeRecentSection(entries: homeViewModel.recentEntries, onOpen: onOpenEntry, onSeeAll: { onSelectTab(.journal) })
-                .padding(.top, 16)
-        }
-    }
-    
-    /// Tablet: advice + 글감 on the left, principles + summary on the right.
-    private var regularColumns: some View {
-        HStack(alignment: .top, spacing: 48) {
-            VStack(spacing: HomeLayoutMetrics.sectionSpacing) {
-                adviceCard
-                todayCard
-            }
-            .frame(maxWidth: .infinity)
-            VStack(spacing: HomeLayoutMetrics.sectionSpacing) {
-                if homeViewModel.layout == .full {
-                    HomePrinciplesSection(
-                        principles: homeViewModel.principles,
-                        entryCount: homeViewModel.entries.count,
-                        showsBubbleBackground: true,
-                        onSeeAll: { onSelectTab(.principles) },
-                        onOpenEntry: onOpenEntry
-                    )
-                    if homeViewModel.showsWeeklySummary {
-                        weeklySummary(isAlwaysExpanded: true)
-                    }
-                } else {
-                    HomePrincipleProgressSection(entryCount: homeViewModel.entries.count)
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .padding(.top, 16)
-    }
-    
-    private var firstRun: some View {
-        HomeFirstRunSection(
-            privacyLine: homeViewModel.privacyLine,
-            onQuestion: { onWrite(nil, $0) }
-        )
-    }
-    
-    private var adviceCard: some View {
-        HomeAdviceCard(
-            phase: homeViewModel.advicePhase,
-            sources: homeViewModel.advicePhase.text.map(homeViewModel.sources(of:)) ?? [],
-            revealsByWord: homeViewModel.revealsAdviceByWord,
-            onOpenSource: onOpenEntry,
-            onFeedback: homeViewModel.toggleFeedback,
-            onRegenerate: { Task { await homeViewModel.regenerateAdvice() } },
-            onRetry: { Task { await homeViewModel.generateAdvice() } },
-            onCheckKey: onConnectKey,
-            onCallHelp: { openURL(URL(string: "tel:109")!) },
-            onOpenHelpResources: {}
-        )
-    }
-    
-    @ViewBuilder
-    private var todayCard: some View {
-        if let entry = homeViewModel.todayEntry {
-            HomeTodayPreviewCard(entry: entry) { onOpenEntry(entry) }
-        } else {
-            HomePromptCard(
-                phase: homeViewModel.promptPhase,
-                onWrite: { onWrite(nil, $0) },
-                onNextPrompt: { Task { await homeViewModel.nextPrompt() } }
-            )
-        }
-    }
-    
-    @ViewBuilder
-    private var diaryTodayCard: some View {
-        if let entry = homeViewModel.todayEntry {
-            HomeTodayPreviewCard(entry: entry) { onOpenEntry(entry) }
-        } else {
-            HomeDiaryTodayCard { onWrite(nil, nil) }
-        }
-    }
-    
-    private var principles: some View {
-        HomePrinciplesSection(
-            principles: homeViewModel.principles,
-            entryCount: homeViewModel.entries.count,
-            onSeeAll: { onSelectTab(.principles) },
-            onOpenEntry: onOpenEntry
-        )
-    }
-    
-    private func weeklySummary(isAlwaysExpanded: Bool) -> some View {
-        HomeWeeklySummaryCard(
-            phase: homeViewModel.summaryPhase,
-            rangeLine: homeViewModel.weeklyRangeLine,
-            isExpanded: homeViewModel.isSummaryExpanded,
-            sources: homeViewModel.summaryPhase.text.map(homeViewModel.sources(of:)) ?? [],
-            isAlwaysExpanded: isAlwaysExpanded,
-            onToggle: { homeViewModel.isSummaryExpanded.toggle() },
-            onRetry: { Task { await homeViewModel.generateSummary() } },
-            onOpenSource: onOpenEntry
-        )
-    }
-    
-    private func selectWeekDay(_ day: HomeWeekDay) {
-        if let entry = HomeViewModel.newestFirst(homeViewModel.entries).first(where: { Calendar.current.isDate($0.day, inSameDayAs: day.date) }) {
-            onOpenEntry(entry)
-        } else {
-            onWrite(day.date, nil)
-        }
-    }
 }
 
 // MARK: - Previews
@@ -412,7 +270,7 @@ private func homePreviewModel(
 ) -> HomeViewModel {
     let generator = StubHomeAIGenerator(delay: .seconds(3600))
     let model = HomeViewModel(
-        entries: entries,
+        repository: InMemoryJournalRepository(journals: entries),
         aiStatus: status,
         now: homePreviewDate(),
         generator: generator,
@@ -423,7 +281,7 @@ private func homePreviewModel(
     ? HomeViewModel.newestFirst(entries).prefix(2).map(\.id)
     : entries.filter { [20, 27].contains(Calendar.current.component(.day, from: $0.day)) }.map(\.id)
     return HomeViewModel(
-        entries: entries,
+        repository: InMemoryJournalRepository(journals: entries),
         aiStatus: status,
         now: homePreviewDate(),
         generator: generator,

@@ -85,6 +85,8 @@ struct ContentView: View {
     private var verticalSizeClass
     @Environment(\.hingeStatus)
     private var hingeStatus
+    @Environment(HomeViewModel.self)
+    private var homeViewModel
     @Environment(ProductViewModel.self)
     private var productViewModel: ProductViewModel
     @Environment(JournalViewModel.self)
@@ -96,23 +98,6 @@ struct ContentView: View {
     
     private var isAIAvailable: Bool {
         HomeAIStatus(connection: settingsViewModel.aiConnection).isAvailable
-    }
-
-    var contentsEnvironment: ContentsEnvironment {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return .navigationSplit
-        } else if hingeStatus != nil {
-            if horizontalSizeClass == .compact && verticalSizeClass == .compact {
-                return .navigationSplit
-            }
-            if horizontalSizeClass == .regular && verticalSizeClass == .regular {
-                return .horizontalDuoSplit
-            } else {
-                return .generalVertical
-            }
-        } else {
-            return .generalVertical
-        }
     }
 
     private func reselect(_ tab: ContentTab) {
@@ -133,7 +118,6 @@ struct ContentView: View {
                     selectedTab: $selectedTab,
                     isSettingsDetailPresented: $isSettingsDetailPresented
                 )
-                    .environment(\.contentsEnvironment, contentsEnvironment)
             }
             Tab(ContentTab.journal.title, image: iconName(for: .journal), value: .journal) {
                 JournalView(viewModel: journalViewModel)
@@ -149,6 +133,9 @@ struct ContentView: View {
             }
         }
         .environment(\.showModal, modalState)
+        .onChange(of: settingsViewModel.aiConnection, initial: true) {
+            homeViewModel.aiStatus = HomeAIStatus(connection: settingsViewModel.aiConnection)
+        }
         .onTapGesture {
             self.modalState.modalType = .none
         }

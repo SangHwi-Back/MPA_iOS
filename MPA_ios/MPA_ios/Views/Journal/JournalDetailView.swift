@@ -313,6 +313,7 @@ struct JournalDetailView: View {
                     Label("날짜 변경", systemImage: "calendar")
                 }
                 Button(role: .destructive) {
+                    journalViewModel.delete(journal)
                     onDelete(journal)
                 } label: {
                     Label("삭제", systemImage: "trash")
