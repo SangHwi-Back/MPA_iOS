@@ -16,7 +16,6 @@ class Persistence {
     
     init() {
         let schema = Schema([
-            Product.self,
             Journal.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -24,7 +23,6 @@ class Persistence {
         do {
             self.container = try ModelContainer(
                 for: schema,
-                migrationPlan: MyMigrationPlan.self,
                 configurations: [modelConfiguration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")

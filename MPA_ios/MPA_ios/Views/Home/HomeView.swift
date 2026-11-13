@@ -27,7 +27,6 @@ struct HomeView: View {
     
     @State private var editorRequest: HomeEditorRequest?
     @State private var openedEntryID: UUID?
-    @State private var path: [Product] = []
     
     var body: some View {
         Group {

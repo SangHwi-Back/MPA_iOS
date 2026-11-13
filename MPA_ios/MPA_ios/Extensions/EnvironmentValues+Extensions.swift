@@ -8,7 +8,6 @@
 import SwiftUI
 
 extension EnvironmentValues {
-    @Entry var journalPaths: Binding<[Product]> = .constant([])
     @Entry var hingeStatus: DeviceHingeStatus? = nil
 }
 

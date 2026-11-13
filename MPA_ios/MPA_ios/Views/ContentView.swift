@@ -87,8 +87,6 @@ struct ContentView: View {
     private var hingeStatus
     @Environment(HomeViewModel.self)
     private var homeViewModel
-    @Environment(ProductViewModel.self)
-    private var productViewModel: ProductViewModel
     @Environment(JournalViewModel.self)
     private var journalViewModel: JournalViewModel
     @Environment(SettingsViewModel.self)

@@ -13,19 +13,14 @@ struct MPA_iosApp: App {
     @State private var isLaunchProcessing: Bool = true
     @State private var hingeStatus: DeviceHingeStatus?
     
-    @State private var productViewModel: ProductViewModel
     @State private var journalViewModel: JournalViewModel
     @State private var homeViewModel: HomeViewModel
     @State private var settingsViewModel = SettingsViewModel()
 
     init() {
         let context = Persistence.shared.container.mainContext
-        // One repository shared by 오늘 and 기록, so both screens see the same journals.
-        _productViewModel = State(initialValue: ProductViewModel(repository: SwiftDataProductRepository(context: context)))
-        
         let journalRepository = SwiftDataJournalRepository(context: context)
         _journalViewModel = State(initialValue: JournalViewModel(repository: journalRepository))
-        
         _homeViewModel = State(initialValue: HomeViewModel(repository: journalRepository))
     }
     
@@ -56,7 +51,6 @@ struct MPA_iosApp: App {
     
     var contents: some View {
         ContentView()
-            .environment(productViewModel)
             .environment(journalViewModel)
             .environment(homeViewModel)
             .environment(settingsViewModel)
