@@ -39,10 +39,12 @@ struct HomeGreetingHeader: View {
             Text(dateLine)
                 .font(.system(size: 15))
                 .foregroundStyle(Color.TEXT_SECONDARY)
+                .accessibilityIdentifier(AccessibilityID.Home.date)
             Text(greeting)
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(Color.TEXT_PRIMARY)
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier(AccessibilityID.Home.greeting)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -87,6 +89,7 @@ struct HomeSourceChip: View {
 }
 
 private struct HomeSourceRow: View {
+    let card: String
     let sources: [Journal]
     let onOpen: (Journal) -> Void
 
@@ -96,8 +99,9 @@ private struct HomeSourceRow: View {
                 Text("참고한 일기")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.TEXT_SECONDARY)
-                ForEach(sources, id: \.id) { entry in
+                ForEach(Array(sources.enumerated()), id: \.element.id) { index, entry in
                     HomeSourceChip(title: HomeViewModel.chipDate(entry.day)) { onOpen(entry) }
+                        .accessibilityIdentifier(AccessibilityID.AICard.source(card, index + 1))
                 }
             }
         }
@@ -225,6 +229,8 @@ struct HomeAdviceCard: View {
         switch phase {
         case .sensitive:
             JournalHelpResourceCard(onCall: onCallHelp, onOpenResources: onOpenHelpResources)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(AccessibilityID.AI.helpCard)
         case .failed:
             failure(message: "조언을 만들지 못했어요. 잠시 후 다시 시도해 주세요.", button: "다시 시도", action: onRetry)
         case .resting:
@@ -232,6 +238,7 @@ struct HomeAdviceCard: View {
                 .font(.system(size: 15))
                 .foregroundStyle(Color.TEXT_SECONDARY)
                 .modifier(HomeAICardBackground(isNeutral: true))
+                .accessibilityIdentifier(AccessibilityID.AICard.homeAdvice)
         case .keyError:
             VStack(alignment: .leading, spacing: 8) {
                 Text("내 API 키를 확인해 주세요")
@@ -244,8 +251,11 @@ struct HomeAdviceCard: View {
                 Button("키 확인", action: onCheckKey)
                     .buttonStyle(HomeCapsuleButtonStyle(isProminent: false))
                     .padding(.top, 4)
+                    .accessibilityIdentifier(AccessibilityID.AICard.checkKey(AccessibilityID.AICard.homeAdvice))
             }
             .modifier(HomeAICardBackground(isNeutral: true))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityID.AICard.homeAdvice)
         case .idle, .loading, .loaded:
             content
         }
@@ -257,7 +267,8 @@ struct HomeAdviceCard: View {
             switch phase {
             case .loaded(let text):
                 HomeRevealText(text: text.text, revealsByWord: revealsByWord, size: 19)
-                HomeSourceRow(sources: sources, onOpen: onOpenSource)
+                    .accessibilityIdentifier(AccessibilityID.AICard.text(AccessibilityID.AICard.homeAdvice))
+                HomeSourceRow(card: AccessibilityID.AICard.homeAdvice, sources: sources, onOpen: onOpenSource)
                 footer(text: text)
             default:
                 HomeSkeleton(lines: 3)
@@ -268,6 +279,8 @@ struct HomeAdviceCard: View {
         }
         .modifier(HomeAICardBackground())
         .animation(.easeInOut(duration: 0.25), value: phase)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.AICard.homeAdvice)
     }
 
     private func footer(text: AIText) -> some View {
@@ -277,20 +290,24 @@ struct HomeAdviceCard: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Color.TEXT_SECONDARY)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier(AccessibilityID.AICard.sourceLabel(AccessibilityID.AICard.homeAdvice))
                 // Picking one hides the other (Part B 3).
                 if text.feedback != .notHelpful {
                     HomeIconButton(
                         systemName: text.feedback == .helpful ? "hand.thumbsup.fill" : "hand.thumbsup",
                         label: "도움됨"
                     ) { onFeedback(.helpful) }
+                    .accessibilityIdentifier(AccessibilityID.AICard.feedbackUp(AccessibilityID.AICard.homeAdvice))
                 }
                 if text.feedback != .helpful {
                     HomeIconButton(
                         systemName: text.feedback == .notHelpful ? "hand.thumbsdown.fill" : "hand.thumbsdown",
                         label: "도움 안 됨"
                     ) { onFeedback(.notHelpful) }
+                    .accessibilityIdentifier(AccessibilityID.AICard.feedbackDown(AccessibilityID.AICard.homeAdvice))
                 }
                 HomeIconButton(systemName: "arrow.clockwise", label: "다시 생성", action: onRegenerate)
+                    .accessibilityIdentifier(AccessibilityID.AICard.regenerate(AccessibilityID.AICard.homeAdvice))
             }
             .sensoryFeedback(.selection, trigger: text.feedback)
             if text.feedback == .notHelpful {
@@ -298,6 +315,7 @@ struct HomeAdviceCard: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.BRAND_PRIMARY)
                     .frame(minHeight: HomeLayoutMetrics.touchTarget)
+                    .accessibilityIdentifier(AccessibilityID.AICard.moreAdvice(AccessibilityID.AICard.homeAdvice))
             }
         }
     }
@@ -310,8 +328,11 @@ struct HomeAdviceCard: View {
                 .fixedSize(horizontal: false, vertical: true)
             Button(button, action: action)
                 .buttonStyle(HomeCapsuleButtonStyle(isProminent: false))
+                .accessibilityIdentifier(AccessibilityID.AICard.retry(AccessibilityID.AICard.homeAdvice))
         }
         .modifier(HomeAICardBackground(isNeutral: true))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.AICard.homeAdvice)
     }
 }
 
@@ -350,6 +371,7 @@ struct HomePromptCard: View {
                     .foregroundStyle(Color.TEXT_PRIMARY)
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity)
+                    .accessibilityIdentifier(AccessibilityID.Home.promptText)
             } else if phase == .failed {
                 Text("질문을 만들지 못했어요.")
                     .font(.system(size: 15))
@@ -365,6 +387,7 @@ struct HomePromptCard: View {
                 }
                 .buttonStyle(HomeCapsuleButtonStyle())
                 .disabled(phase.text == nil)
+                .accessibilityIdentifier(AccessibilityID.Home.promptWrite)
 
                 Button(action: onNextPrompt) {
                     Label("다른 질문", systemImage: "arrow.clockwise")
@@ -374,11 +397,14 @@ struct HomePromptCard: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(phase == .loading)
+                .accessibilityIdentifier(AccessibilityID.Home.promptAnother)
             }
             .padding(.top, 8)
         }
         .modifier(HomeSurfaceCard())
         .animation(.easeInOut(duration: 0.2), value: phase)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.prompt)
     }
 }
 
@@ -422,6 +448,7 @@ struct HomeTodayPreviewCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("오늘 일기 열기")
+        .accessibilityIdentifier(AccessibilityID.Home.todayPreview)
     }
 }
 
@@ -448,6 +475,7 @@ struct HomeSectionHeader: View {
     let title: String
     var subtitle: String?
     var actionTitle: String?
+    var actionID: String?
     var action: () -> Void = {}
 
     var body: some View {
@@ -463,12 +491,15 @@ struct HomeSectionHeader: View {
                         .foregroundStyle(Color.TEXT_SECONDARY)
                 }
             }
+            
             Spacer()
+            
             if let actionTitle {
                 Button(actionTitle, action: action)
                     .font(.system(size: 17))
                     .foregroundStyle(Color.BRAND_PRIMARY)
                     .frame(minHeight: HomeLayoutMetrics.touchTarget)
+                    .accessibilityIdentifier(actionID ?? "")
             }
         }
     }
@@ -487,6 +518,7 @@ struct HomePrinciplesSection: View {
                 title: "나의 원칙",
                 subtitle: "일기 \(entryCount)개에서 찾았어요",
                 actionTitle: "전체 보기",
+                actionID: AccessibilityID.Home.principlesSeeAll,
                 action: onSeeAll
             )
             HomeBubbleCloud(principles: principles, onOpenEntry: onOpenEntry)
@@ -498,8 +530,11 @@ struct HomePrinciplesSection: View {
                     }
                 }
             HomeBubbleLegend()
+                .accessibilityIdentifier(AccessibilityID.Home.principlesLegend)
                 .frame(maxWidth: .infinity)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.principles)
     }
 }
 
@@ -578,6 +613,7 @@ struct HomePrincipleBubble: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("원칙: \(principle.name), \(principle.stage == 0 ? "최근" : "\(principle.stage + 1)단계"), \(principle.count)개 일기에서 등장")
             .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier(AccessibilityID.Home.principlesBubble(principle.name))
     }
 
     private var bubble: some View {
@@ -623,7 +659,7 @@ struct HomePrincipleProgressSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HomeSectionHeader(title: "나의 원칙")
+            HomeSectionHeader(title: "나의 원칙", actionTitle: "", actionID: AccessibilityID.Home.principlesHeader)
             HStack(spacing: 24) {
                 ZStack {
                     Circle().stroke(Color.PRINCIPLE1, lineWidth: 2).frame(width: 40, height: 40).offset(x: -10, y: 6)
@@ -653,6 +689,7 @@ struct HomePrincipleProgressSection: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("원칙 분석까지 \(entryCount) / \(HomeViewModel.principleThreshold)")
                     .accessibilityAddTraits(.updatesFrequently)
+                    .accessibilityIdentifier(AccessibilityID.Home.principlesProgress)
                 }
             }
             .padding(HomeLayoutMetrics.cardPadding)
@@ -662,6 +699,8 @@ struct HomePrincipleProgressSection: View {
                     .stroke(Color.HAIRLINE, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.principles)
     }
 }
 
@@ -704,6 +743,7 @@ struct HomeWeeklySummaryCard: View {
             }
             .buttonStyle(.plain)
             .accessibilityValue(isExpanded ? "펼쳐짐" : "접힘")
+            .accessibilityIdentifier(AccessibilityID.Home.weeklySummaryLine)
 
             if isExpanded || isAlwaysExpanded {
                 expandedContent
@@ -712,6 +752,8 @@ struct HomeWeeklySummaryCard: View {
         }
         .modifier(HomeAICardBackground(isNeutral: phase == .failed || phase == .resting))
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.AICard.homeWeekly)
     }
 
     private var collapsedLine: String {
@@ -727,12 +769,13 @@ struct HomeWeeklySummaryCard: View {
                 .lineSpacing(6)
                 .foregroundStyle(Color.TEXT_PRIMARY)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier(AccessibilityID.AICard.text(AccessibilityID.AICard.homeWeekly))
             if isAlwaysExpanded {
                 Text(rangeLine)
                     .font(.system(size: 14))
                     .foregroundStyle(Color.TEXT_SECONDARY)
             } else {
-                HomeSourceRow(sources: sources, onOpen: onOpenSource)
+                HomeSourceRow(card: AccessibilityID.AICard.homeWeekly, sources: sources, onOpen: onOpenSource)
             }
         case .failed:
             Text("요약을 만들지 못했어요. 잠시 후 다시 시도해 주세요.")
@@ -740,6 +783,7 @@ struct HomeWeeklySummaryCard: View {
                 .foregroundStyle(Color.TEXT_SECONDARY)
             Button("다시 시도", action: onRetry)
                 .buttonStyle(HomeCapsuleButtonStyle(isProminent: false))
+                .accessibilityIdentifier(AccessibilityID.AICard.retry(AccessibilityID.AICard.homeWeekly))
         case .resting:
             Text("오늘은 쉬어 갈게요")
                 .font(.system(size: 15))
@@ -772,8 +816,11 @@ struct HomeDiaryTodayCard: View {
             }
             .buttonStyle(HomeCapsuleButtonStyle())
             .padding(.top, 12)
+            .accessibilityIdentifier(AccessibilityID.Home.todayCardWrite)
         }
         .modifier(HomeSurfaceCard())
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.todayCard)
     }
 }
 
@@ -785,13 +832,14 @@ struct HomeWeekStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HomeSectionHeader(title: "이번 주", actionTitle: "캘린더", action: onOpenCalendar)
+            HomeSectionHeader(title: "이번 주", actionTitle: "캘린더", actionID: AccessibilityID.Home.weekStripCalendar, action: onOpenCalendar)
             HStack(spacing: 4) {
                 ForEach(days) { day in
                     Button { onSelect(day) } label: { cell(day) }
                         .buttonStyle(.plain)
                         .disabled(day.isFuture)
                         .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier(AccessibilityID.Home.weekStripDay(day.date))
                 }
             }
             .gesture(
@@ -801,6 +849,8 @@ struct HomeWeekStrip: View {
                 }
             )
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.weekStrip)
     }
 
     private func cell(_ day: HomeWeekDay) -> some View {
@@ -840,15 +890,18 @@ struct HomeRecentSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HomeSectionHeader(title: "최근 기록", actionTitle: "모두 보기", action: onSeeAll)
+            HomeSectionHeader(title: "최근 기록", actionTitle: "모두 보기", actionID: AccessibilityID.Home.recentSeeAll, action: onSeeAll)
             ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                 Button { onOpen(entry) } label: { HomeRecentRow(entry: entry) }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier(AccessibilityID.Home.recentItem(index + 1))
                 if index < entries.count - 1 {
                     Divider().overlay(Color.HAIRLINE)
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.recent)
     }
 }
 
@@ -894,88 +947,5 @@ struct HomeRecentRow: View {
             }
         }
         .contentShape(Rectangle())
-    }
-}
-
-// MARK: - 3.14 첫 실행
-
-struct HomeFirstRunSection: View {
-    /// nil hides the line (no AI: the warning button explains instead).
-    let privacyLine: String?
-    let onQuestion: (String) -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                HomeEmptyIllustration()
-                    .frame(height: 230)
-                Text("첫 일기를 써보세요")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                    .padding(.top, 8)
-                Text("몇 줄이면 충분해요. 일기가 쌓이면\n그 안에서 나만의 원칙을 찾아드릴게요.")
-                    .font(.system(size: 16))
-                    .lineSpacing(6)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.TEXT_SECONDARY)
-                    .padding(.top, 10)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("이런 질문으로 시작해 보세요")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.TEXT_SECONDARY)
-                        .padding(.bottom, 4)
-                    ForEach(HomeSamples.exampleQuestions, id: \.self) { question in
-                        Button { onQuestion(question) } label: {
-                            HStack {
-                                Text(question)
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(Color.TEXT_PRIMARY)
-                                    .multilineTextAlignment(.leading)
-                                Spacer(minLength: 8)
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(Color.TEXT_TERTIARY)
-                            }
-                            .padding(.horizontal, 16)
-                            .frame(minHeight: 52)
-                            .background(Color.SURFACE, in: .rect(cornerRadius: 18, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.HAIRLINE, lineWidth: 1)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.top, 32)
-                
-                if let privacyLine {
-                    Label(privacyLine, systemImage: "lock")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color.TEXT_SECONDARY)
-                        .padding(.top, 20)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-/// Line drawing in one color + three principle dots (3.14). Dark mode uses the secondary text color.
-struct HomeEmptyIllustration: View {
-    var body: some View {
-        ZStack {
-            Image(systemName: "book")
-                .font(.system(size: 120, weight: .ultraLight))
-                .foregroundStyle(Color.TEXT_SECONDARY)
-            Image(systemName: "pencil")
-                .font(.system(size: 64, weight: .ultraLight))
-                .foregroundStyle(Color.TEXT_SECONDARY)
-                .offset(x: 84, y: -10)
-            Circle().stroke(Color.PRINCIPLE5, lineWidth: 2).frame(width: 14, height: 14).offset(x: 22, y: -98)
-            Circle().stroke(Color.PRINCIPLE1, lineWidth: 2).frame(width: 34, height: 34).offset(x: 54, y: -84)
-            Circle().stroke(Color.PRINCIPLE3, lineWidth: 2).frame(width: 18, height: 18).offset(x: 94, y: -94)
-        }
-        .accessibilityHidden(true)
     }
 }

@@ -80,8 +80,8 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android] 
 
 | 플랫폼 | 기기 | 상태 | 기준 이미지 |
 |---|---|---|---|
-| iOS | iPhone Duo 가 아닌 iPhone 시뮬레이터 | 세로 | `specs/<화면 종류>/ios` 폴더 내 이미지 |
-| iOS | iPad 시뮬레이터 | 가로 | `specs/<화면 종류>/tablet` 폴더 내 이미지 |
+| iOS | iPhone Duo 가 아닌 iPhone 시뮬레이터 | 가로/세로 | `specs/<화면 종류>/ios` 폴더 내 이미지 |
+| iOS | iPad 시뮬레이터 | 가로/세로 | `specs/<화면 종류>/tablet` 폴더 내 이미지 |
 | Android | 에뮬레이터 | 세로 | `specs/<화면 종류>/android` 폴더 내 이미지 |
 
 - 기준 이미지가 없는 항목은 SCREEN_SPEC.md 기준으로만 판단한다

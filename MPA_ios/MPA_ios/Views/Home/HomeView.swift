@@ -5,12 +5,20 @@
 
 import SwiftUI
 
-/// A request to open the editor: today's date by default, optionally with a 글감 question on top.
-struct HomeEditorRequest: Identifiable {
-    let id = UUID()
-    var date: Date? = nil
-    var prompt: String? = nil
-}
+/*
+ # uitest
+ ## 개요
+ - HomeView 는 기기의 상태에 따라 적절한 화면을 보여주는 역할
+ ## 용어 정리
+ - 없음
+ ## 테스트할 요소
+ - iPhone 세로: `home.screen` 이 보이고 `home.drawer` 는 없다
+ - iPhone 가로로 돌리면: `home.drawer` 와 `home.screen` 이 함께 보인다
+ - iPad: `home.drawer` 와 `home.screen` 가 보인다
+ - 공통 : `home.newJournalButton` 가 보인다
+ ## 제외
+ - iPhone Duo: 시뮬레이터에서 힌지 상태를 만들 수 없음 (수동 확인)
+ */
 
 struct HomeView: View {
     @Binding var selectedTab: ContentTab
@@ -33,20 +41,20 @@ struct HomeView: View {
             if let hingeStatus {
                 if hingeStatus == .closed {
                     if verticalSizeClass == .regular {
-                        generalContent
+                        HomeContent
                     } else {
-                        navigationSplitView
+                        HomeSidebarNavigationSplit
                     }
                 } else {
-                    iphoneDuoSplitView
+                    HomeIphoneDuoSplit
                 }
             } else if UIDevice.current.userInterfaceIdiom == .pad {
-                navigationSplitView
+                HomeSidebarNavigationSplit
             } else {
                 if verticalSizeClass == .compact {
-                    navigationSplitView
+                    HomeSidebarNavigationSplit
                 } else {
-                    generalContent
+                    HomeContent
                 }
             }
         }
@@ -74,7 +82,7 @@ struct HomeView: View {
     // MARK: - Layouts
     
     @ViewBuilder
-    private var navigationSplitView: some View {
+    private var HomeSidebarNavigationSplit: some View {
         NavigationSplitView {
             HomeSidebarView(
                 today: homeViewModel.today,
@@ -83,12 +91,12 @@ struct HomeView: View {
             )
             .navigationSplitViewColumnWidth(320)
         } detail: {
-            generalContent
+            HomeContent
         }
     }
     
     @ViewBuilder
-    private var iphoneDuoSplitView: some View {
+    private var HomeIphoneDuoSplit: some View {
         if #available(anyAppleOS 27.1, *) {
             if homeViewModel.entries.isEmpty {
                 HomeFirstRunSection(
@@ -105,16 +113,16 @@ struct HomeView: View {
                     )
                     .navigationSplitViewColumnWidth(320)
                 } secondary: {
-                    generalContent
+                    HomeContent
                 }
                 .arrangementViewStyle(.split)
             }
         } else {
-            generalContent
+            HomeContent
         }
     }
     
-    private var generalContent: some View {
+    private var HomeContent: some View {
         NavigationStack {
             HomeContentView(
                 onWrite: { editorRequest = HomeEditorRequest(date: $0, prompt: $1) },
@@ -148,110 +156,11 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Content
-
-/// The scrolling 오늘 page. Stateless apart from scroll position; everything else lives in `HomeViewModel`.
-private struct HomeContentView: View {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
-    let onOpenEntry: (Journal) -> Void
-    let onSelectTab: (ContentTab) -> Void
-    let onConnectKey: () -> Void
-    
-    @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var isHeaderScrolledAway = false
-    
-    private var isRegular: Bool { horizontalSizeClass == .regular }
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: HomeLayoutMetrics.sectionSpacing) {
-                HomeGreetingHeader(dateLine: homeViewModel.dateLine, greeting: homeViewModel.greeting)
-                    .padding(.bottom, 4)
-                if isRegular, homeViewModel.layout == .full || homeViewModel.layout == .early {
-                    HomeContentRegularColumns(
-                        onWrite: onWrite,
-                        onOpenEntry: onOpenEntry,
-                        onSelectTab: onSelectTab,
-                        onConnectKey: onConnectKey
-                    )
-                } else {
-                    HomeContentSections(
-                        onWrite: onWrite,
-                        onOpenEntry: onOpenEntry,
-                        onSelectTab: onSelectTab,
-                        onConnectKey: onConnectKey
-                    )
-                }
-            }
-            .padding(.horizontal, HomeLayoutMetrics.gutter)
-            .padding(.top, 8)
-            .padding(.bottom, 40)
-            .frame(maxWidth: isRegular ? 1100 : HomeLayoutMetrics.maxContentWidth)
-            .frame(maxWidth: .infinity)
-        }
-        .background(Color.CANVAS)
-        .onScrollGeometryChange(for: Bool.self) { geometry in
-            geometry.contentOffset.y + geometry.contentInsets.top > 72
-        } action: { _, isHidden in
-            isHeaderScrolledAway = isHidden
-        }
-        .navigationTitle(isHeaderScrolledAway ? "오늘" : "")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { HomeContentToolbar(onWrite: onWrite) }
-        .alert(
-            homeViewModel.aiStatus.unavailableReason?.homeAlertTitle ?? "",
-            isPresented: Binding(get: {
-                homeViewModel.isAlertPresented
-            }, set: {
-                homeViewModel.isAlertPresented = $0
-            }),
-            presenting: homeViewModel.aiStatus.unavailableReason
-        ) { _ in
-            Button("API 키 연결", action: onConnectKey)
-            Button("확인") {}
-                .keyboardShortcut(.defaultAction)
-        } message: { reason in
-            Text(reason.homeAlertMessage)
-        }
-    }
-}
-
-// MARK: - HomeContentView subviews
-
-/// Warning button (shown while AI is unavailable) and the + button (3.1, 3.12).
-private struct HomeContentToolbar: ToolbarContent {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
-    
-    @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
-    
-    var body: some ToolbarContent {
-        if !homeViewModel.aiStatus.isAvailable {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    homeViewModel.isAlertPresented = true
-                } label: {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.white)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.WARNING)
-                .accessibilityLabel(homeViewModel.aiStatus.unavailableReason?.homeAlertTitle ?? "AI 경고")
-                .transition(.scale.combined(with: .opacity))
-            }
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                // An existing entry for today should open in edit mode; the editor cannot load one yet.
-                onWrite(nil, nil)
-            } label: {
-                Image(systemName: "plus")
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-            }
-            .accessibilityLabel("새 일기")
-        }
-    }
+/// A request to open the editor: today's date by default, optionally with a 글감 question on top.
+struct HomeEditorRequest: Identifiable {
+    let id = UUID()
+    var date: Date? = nil
+    var prompt: String? = nil
 }
 
 // MARK: - Previews

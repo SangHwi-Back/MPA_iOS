@@ -10,6 +10,21 @@
 
 import SwiftUI
 
+/*
+ # uitest
+ ## 개요
+ - HomeView 내 NavigationSplitView 의 사이드 바 컨텐츠 뷰
+ ## 용어 정리
+ - `토글` : `home.drawer.calendarToggle` 를 가진 Button 뷰.
+ - `캘린더` : 토글에 의해 바뀌는 상태. `home.drawer.calendar.month`, `home.drawer.calendar.prev`, `home.drawer.calendar.next` 가 존재한다.
+ - `리스트` : 토글에 의해 바뀌는 상태. `home.drawer.seeAll` 이 존재하고 상황에 따라 `home.drawer.item.` 로 시작하는 식별자를 확인할 수 있다.
+   - `home.drawer.item.[1번 부터 시작하는 번호]`
+ ## 테스트할 요소
+ - 토글 버튼을 눌렀을 때 캘린더 상태와 리스트 상태가 번갈아 바뀌는지 확인한다.
+ ## 제외
+ - 없음
+ */
+
 struct HomeSidebarView: View {
     @Environment(JournalViewModel.self) private var viewModel
     
@@ -50,6 +65,8 @@ struct HomeSidebarView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 24)
         .background(Color.SUNKEN.opacity(0.5))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Home.drawer)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -61,6 +78,7 @@ struct HomeSidebarView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(isCalendarMode ? Color.BRAND_CONTAINER : Color.SURFACE)
                 .accessibilityLabel(isCalendarMode ? "최근 기록 보기" : "캘린더 보기")
+                .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarToggle)
             }
         }
         .toolbar(removing: .sidebarToggle)
@@ -70,8 +88,14 @@ struct HomeSidebarView: View {
 
     @ViewBuilder
     private var recentContent: some View {
-        HomeSectionHeader(title: "최근 기록", actionTitle: "모두 보기", action: onSeeAll)
-            .padding(.horizontal, 8)
+        HomeSectionHeader(
+            title: "최근 기록",
+            actionTitle: "모두 보기",
+            actionID: AccessibilityID.Home.drawerSeeAll,
+            action: onSeeAll
+        )
+        .padding(.horizontal, 8)
+        
         if viewModel.entries.isEmpty {
             Text("아직 기록이 없어요")
                 .font(.system(size: 15))
@@ -86,12 +110,13 @@ struct HomeSidebarView: View {
                 .padding(.horizontal, 8)
             
             ScrollView {
-                ForEach(viewModel.entries, id: \.id) { entry in
+                ForEach(Array(viewModel.entries.enumerated()), id: \.element.id) { index, entry in
                     Button { onOpen(entry) } label: {
                         HomeRecentRow(entry: entry, isHighlighted: calendar.isDate(entry.day, inSameDayAs: today))
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, calendar.isDate(entry.day, inSameDayAs: today) ? 0 : 8)
+                    .accessibilityIdentifier(AccessibilityID.Home.drawerItem(index + 1))
                 }
             }
         }
@@ -105,13 +130,16 @@ struct HomeSidebarView: View {
             Text(monthTitle(displayedMonth))
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color.TEXT_PRIMARY)
+                .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarMonth)
             Spacer()
             Button { shiftMonth(-1) } label: { Image(systemName: "chevron.left") }
                 .disabled(!canGoBack)
                 .frame(width: 44, height: 44)
+                .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarPrev)
             Button { shiftMonth(1) } label: { Image(systemName: "chevron.right") }
                 .disabled(!canGoForward)
                 .frame(width: 44, height: 44)
+                .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarNext)
         }
         .foregroundStyle(Color.BRAND_PRIMARY)
 
@@ -135,15 +163,17 @@ struct HomeSidebarView: View {
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(Color.TEXT_SECONDARY)
             .padding(.top, 8)
+            .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarSelectedHeader)
         
         if dayEntries.isEmpty {
             Spacer()
         }
         
         ScrollView {
-            ForEach(dayEntries, id: \.id) { entry in
+            ForEach(Array(dayEntries.enumerated()), id: \.element.id) { index, entry in
                 Button { onOpen(entry) } label: { selectedDayRow(entry) }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarEntry(index + 1))
             }
         }
     }
@@ -170,6 +200,7 @@ struct HomeSidebarView: View {
         }
         .buttonStyle(.plain)
         .disabled(isFuture)
+        .accessibilityIdentifier(AccessibilityID.Home.drawerCalendarDay(date))
     }
 
     private func selectedDayRow(_ entry: Journal) -> some View {
