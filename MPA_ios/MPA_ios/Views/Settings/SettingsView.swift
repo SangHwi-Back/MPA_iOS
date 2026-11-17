@@ -11,6 +11,7 @@ import SwiftUI
 
 enum SettingsDestination: Hashable {
     case aiConnection
+    case privacyDescription
 }
 
 enum SettingsLayout {
@@ -29,7 +30,10 @@ struct SettingsView: View {
     @Binding var isDetailPresented: Bool
 
     @State private var path: [SettingsDestination] = []
+    /// The screen shown in the tablet's right pane.
+    @State private var tabletDestination: SettingsDestination = .aiConnection
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(JournalViewModel.self) private var journalViewModel
 
     init(viewModel: SettingsViewModel, isDetailPresented: Binding<Bool> = .constant(false)) {
         self.viewModel = viewModel
@@ -37,25 +41,49 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        if horizontalSizeClass == .regular {
-            tabletLayout
-        } else {
-            phoneLayout
+        @Bindable var viewModel = viewModel
+        Group {
+            if horizontalSizeClass == .regular {
+                tabletLayout
+            } else {
+                phoneLayout
+            }
+        }
+        .sheet(isPresented: $viewModel.isDailyReminderSheetPresented) {
+            SettingsAlertDailyWriteDatePickerView(
+                isOn: viewModel.isDailyReminderOn,
+                hour: viewModel.dailyReminderHour,
+                minute: viewModel.dailyReminderMinute,
+                onConfirm: { isOn, hour, minute in
+                    Task { await viewModel.updateDailyReminder(isOn: isOn, hour: hour, minute: minute) }
+                },
+                onCancel: { viewModel.isDailyReminderSheetPresented = false }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .exportJournalsAlert(isPresented: $viewModel.isExportAlertPresented, journals: journalViewModel.entries)
+    }
+
+    @ViewBuilder
+    private func destinationView(_ destination: SettingsDestination) -> some View {
+        switch destination {
+        case .aiConnection:
+            SettingsAIConnectionDetailView(viewModel: viewModel)
+        case .privacyDescription:
+            SettingsInformationPrivacyDescriptionView(aiConnection: viewModel.aiConnection)
         }
     }
 
     private var phoneLayout: some View {
         NavigationStack(path: $path) {
-            SettingsListContent(viewModel: viewModel, isRegular: false) {
-                path.append(.aiConnection)
+            SettingsListContent(viewModel: viewModel, isRegular: false, selection: nil) { destination in
+                path.append(destination)
             }
             .background(Color.SUNKEN.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: SettingsDestination.self) { destination in
-                switch destination {
-                case .aiConnection:
-                    SettingsAIConnectionDetailView(viewModel: viewModel)
-                }
+                destinationView(destination)
             }
         }
         .onChange(of: path) { _, newPath in
@@ -65,7 +93,9 @@ struct SettingsView: View {
 
     private var tabletLayout: some View {
         HStack(spacing: 0) {
-            SettingsListContent(viewModel: viewModel, isRegular: true) {}
+            SettingsListContent(viewModel: viewModel, isRegular: true, selection: tabletDestination) { destination in
+                tabletDestination = destination
+            }
                 .frame(width: SettingsLayout.tabletSidebarWidth)
                 .background(Color.SUNKEN.ignoresSafeArea())
 
@@ -75,8 +105,9 @@ struct SettingsView: View {
                 .ignoresSafeArea()
 
             NavigationStack {
-                SettingsAIConnectionDetailView(viewModel: viewModel)
+                destinationView(tabletDestination)
             }
+            .id(tabletDestination)
             .frame(maxWidth: .infinity)
         }
     }
@@ -88,7 +119,9 @@ private struct SettingsListContent: View {
 
     @Bindable var viewModel: SettingsViewModel
     let isRegular: Bool
-    let onOpenAIConnection: () -> Void
+    /// The destination highlighted in the tablet list. `nil` on the phone.
+    let selection: SettingsDestination?
+    let onOpen: (SettingsDestination) -> Void
 
     var body: some View {
         ScrollView {
@@ -115,11 +148,11 @@ private struct SettingsListContent: View {
             SettingsRow(
                 tile: isRegular ? nil : "settings_tile_ai",
                 title: "AI 연결",
-                isSelected: isRegular,
-                action: onOpenAIConnection
+                isSelected: selection == .aiConnection,
+                action: { onOpen(.aiConnection) }
             ) {
                 SettingsRowValue(text: connectionValue, color: connectionValueColor)
-                SettingsChevron(isSelected: isRegular)
+                SettingsChevron(isSelected: selection == .aiConnection)
             }
         }
     }
@@ -132,20 +165,25 @@ private struct SettingsListContent: View {
                     .tint(Color.BRAND_PRIMARY)
             }
             SettingsRowDivider(isRegular: isRegular)
-            SettingsRow(tile: tile("settings_tile_data"), title: "데이터는 어디에 저장되나요?", action: {}) {
-                SettingsChevron()
+            SettingsRow(
+                tile: tile("settings_tile_data"),
+                title: "데이터는 어디에 저장되나요?",
+                isSelected: selection == .privacyDescription,
+                action: { onOpen(.privacyDescription) }
+            ) {
+                SettingsChevron(isSelected: selection == .privacyDescription)
             }
         }
     }
 
     private var recordSection: some View {
         SettingsSection(title: "기록", isRegular: isRegular) {
-            SettingsRow(tile: tile("settings_tile_reminder"), title: "매일 쓰기 알림", action: {}) {
+            SettingsRow(tile: tile("settings_tile_reminder"), title: "매일 쓰기 알림", action: { viewModel.isDailyReminderSheetPresented = true }) {
                 SettingsRowValue(text: viewModel.dailyReminderTime)
                 SettingsChevron()
             }
             SettingsRowDivider(isRegular: isRegular)
-            SettingsRow(tile: tile("settings_tile_export"), title: "기록 내보내기", action: {}) {
+            SettingsRow(tile: tile("settings_tile_export"), title: "기록 내보내기", action: { viewModel.isExportAlertPresented = true }) {
                 SettingsChevron()
             }
         }
@@ -369,6 +407,7 @@ private let previewKey = "AIzaSyD00000000"
             hasStandbyKey: false
         )
     ))
+    .environment(JournalViewModel(repository: InMemoryJournalRepository(journals: Journal.homeSamples)))
 }
 
 #Preview("aiConnectionDetail") {
@@ -397,4 +436,5 @@ private let previewKey = "AIzaSyD00000000"
         state: AIConnectionState.notConnected(AIUnavailableReason.unsupported)
     ))
     .environment(\.horizontalSizeClass, .regular)
+    .environment(JournalViewModel(repository: InMemoryJournalRepository(journals: Journal.homeSamples)))
 }

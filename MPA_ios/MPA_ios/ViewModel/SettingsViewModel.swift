@@ -10,6 +10,7 @@
 import SwiftUI
 import FoundationModels
 import LocalAuthentication
+import UserNotifications
 
 @MainActor
 @Observable
@@ -39,7 +40,19 @@ final class SettingsViewModel {
     var biometricLockTitle: String
 
     // Recording
-    var dailyReminderTime = "오후 9:30"
+    var isDailyReminderOn = true
+    /// 0…23.
+    var dailyReminderHour = 21
+    /// Multiple of 5.
+    var dailyReminderMinute = 30
+    var isDailyReminderSheetPresented = false
+    var isExportAlertPresented = false
+
+    /// "오후 9:30", or "꺼짐" when the reminder is off.
+    var dailyReminderTime: String {
+        guard isDailyReminderOn else { return "꺼짐" }
+        return Self.reminderTimeText(hour: dailyReminderHour, minute: dailyReminderMinute)
+    }
 
     // Help
     var appVersion = "1.0.0"
@@ -170,6 +183,24 @@ final class SettingsViewModel {
         ))
         apiKeyInput = ""
         isEditingKey = false
+    }
+
+    // MARK: - Daily reminder
+
+    /// Applies the sheet's choice. Turning it on asks for notification permission.
+    func updateDailyReminder(isOn: Bool, hour: Int, minute: Int) async {
+        isDailyReminderOn = isOn
+        dailyReminderHour = hour
+        dailyReminderMinute = minute
+        isDailyReminderSheetPresented = false
+        guard isOn else { return }
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+    }
+
+    static func reminderTimeText(hour: Int, minute: Int) -> String {
+        let period = hour < 12 ? "오전" : "오후"
+        let hour12 = hour % 12 == 0 ? 12 : hour % 12
+        return "\(period) \(hour12):\(String(format: "%02d", minute))"
     }
 
     // MARK: - Helpers

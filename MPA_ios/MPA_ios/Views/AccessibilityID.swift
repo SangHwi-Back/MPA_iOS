@@ -82,6 +82,39 @@ enum AccessibilityID {
         static func drawerCalendarEntry(_ index: Int) -> String { "home.drawer.calendar.entry.\(index)" }
     }
 
+    // Settings › 데이터는 어디에 저장되나요?
+    enum InformationPrivacyDescription {
+        static let screen = "informationPrivacyDescription.screen"
+        static let back = "informationPrivacyDescription.back"
+        static let title = "informationPrivacyDescription.title"
+        static let storage = "informationPrivacyDescription.storage"
+        static let readers = "informationPrivacyDescription.readers"
+        static let deletion = "informationPrivacyDescription.deletion"
+        /// `key`: "onDevice", "gemini", "openAI".
+        static func reader(_ key: String) -> String { "informationPrivacyDescription.reader.\(key)" }
+        static func readerInUse(_ key: String) -> String { "informationPrivacyDescription.reader.\(key).inUse" }
+    }
+
+    // Settings › 매일 쓰기 알림
+    enum AlertDailyWriteDatePicker {
+        static let screen = "alertDailyWriteDatePicker.screen"
+        static let cancel = "alertDailyWriteDatePicker.cancel"
+        static let confirm = "alertDailyWriteDatePicker.confirm"
+        static let toggle = "alertDailyWriteDatePicker.toggle"
+        static let timePicker = "alertDailyWriteDatePicker.timePicker"
+        static let inputModeToggle = "alertDailyWriteDatePicker.inputModeToggle"
+    }
+
+    // Settings › 기록 내보내기
+    enum AlertExportJournals {
+        static let screen = "alertExportJournals.screen"
+        static let message = "alertExportJournals.message"
+        static let optionMarkdown = "alertExportJournals.option.markdown"
+        static let optionJSON = "alertExportJournals.option.json"
+        static let confirm = "alertExportJournals.confirm"
+        static let cancel = "alertExportJournals.cancel"
+    }
+
     /// `yyyy-MM-dd` in the current calendar, independent of the user's locale.
     static func dayKey(_ date: Date) -> String {
         let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
