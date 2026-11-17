@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.LocalAppGlobalModel
 import com.example.mpa_android.R
+import androidx.compose.ui.platform.testTag
+import com.example.mpa_android.ui.TestTags
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.view.home.homeFabLabel
 import com.example.mpa_android.viewmodel.JournalViewModel
@@ -58,7 +60,7 @@ fun WriteJournalFloatingActionButton(
         },
         expanded = isExpanded,
         onClick = onClick,
-        modifier = modifier,
+        modifier = if (isHome) Modifier.testTag(TestTags.Home.NEW_JOURNAL_BUTTON).then(modifier) else modifier,
         containerColor = if (isEmphasized) MPAColor.BRAND_PRIMARY.color() else MPAColor.BRAND_CONTAINER.color(),
         contentColor = content,
     )

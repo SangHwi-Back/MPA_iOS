@@ -38,6 +38,8 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.example.mpa_android.ui.view.TabViewContents
 import com.example.mpa_android.ui.view.TabViewContentsModel
 import com.example.mpa_android.ui.view.journal.JournalDetailScreen
@@ -164,7 +166,9 @@ fun App() {
     }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier
+            .semantics { testTagsAsResourceId = true }
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         // The expanded search screen extends its background under the status bar.
         containerColor = if (globalModel.isJournalSearchActive) MPAColor.CONTAINER.color() else MPAColor.CANVAS.color(),
         topBar = {

@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.AnnotatedString
@@ -52,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
 import com.example.mpa_android.TopAppBarModel
 import com.example.mpa_android.TopAppBarStyle
+import com.example.mpa_android.ui.TestTags
 import com.example.mpa_android.model.*
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.view.WRITE_FAB_RESERVED_HEIGHT
@@ -101,6 +103,23 @@ private data class HomeModelActions(
 )
 
 // ── Root ──────────────────────────────────────────────────────────────
+
+/*
+ # uitest
+ ## 개요
+ - HomeScreen 은 오늘 탭의 화면. 공용 상단 바에 인사·날짜·AI 경고 버튼을 넘기고, 본문은 HomeContent 가 그린다
+ - 폰과 태블릿, 세로와 가로 모두 같은 한 칸 배치를 쓴다 (iOS 의 사이드바 같은 분기가 없다)
+ ## 용어 정리
+ - `AI 경고 버튼` : `home.aiWarningButton`. AI 를 쓸 수 없을 때만 상단 바에 보인다
+ - `새 일기 버튼` : `home.newJournalButton`. 오늘 탭에서만 태그가 붙는 공용 FAB
+ ## 테스트할 요소
+ - 공통: `home.screen` 과 `home.newJournalButton` 이 보인다
+ - 폰 가로로 돌리면: `home.screen` 과 `home.newJournalButton` 이 그대로 보인다
+ - [일기 앱] 공통: `home.aiWarningButton` 을 누르면 알림이 뜨고, 알림의 확인 버튼을 누르면 알림이 사라진다
+ ## 제외
+ - 인사·날짜: 모든 탭이 같이 쓰는 상단 바(MainActivity)의 제목이라 홈 전용 태그가 없음
+ - 알림의 API 키 연결 버튼: 설정 화면으로 넘어가는 동작이라 그 화면의 태그가 생긴 뒤에 추가
+ */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,7 +179,7 @@ fun homeFabLabel(entries: List<Journal>, today: LocalDate = LocalDate.now()): St
 
 @Composable
 private fun HomeWarningButton(onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(TOUCH_TARGET)) {
+    IconButton(onClick = onClick, modifier = Modifier.testTag(TestTags.Home.AI_WARNING_BUTTON).size(TOUCH_TARGET)) {
         Icon(
             imageVector = ImageVector.vectorResource(R.drawable.ic_alert_button),
             contentDescription = "AI 경고",
@@ -169,6 +188,32 @@ private fun HomeWarningButton(onClick: () -> Unit) {
         )
     }
 }
+
+/*
+ # uitest
+ ## 개요
+ - HomeScreen 의 본문. 일기 개수와 AI 사용 가능 여부에 따라 `첫 실행`, `일기 앱`, `AI 초기`, `AI 전체` 중 한 상태를 보여준다
+ ## 용어 정리
+ - 준비 상태 (테스트 실행 인자로 만든다. iOS 와 같은 이름을 쓴다)
+   - `[빈 상태]` : 일기 0개
+   - `[일기 앱]` : AI 사용 불가, 일기 3개, 오늘 일기 없음
+   - `[일기 앱·오늘 씀]` : AI 사용 불가, 오늘 일기를 포함한 일기 3개
+   - `[AI 초기]` : AI 사용 가능, 일기 1개, 오늘 일기 없음
+   - `[AI 전체]` : AI 사용 가능, 이번 주 일기를 포함한 일기 3개 이상, 오늘 일기 없음
+ - `첫 실행` : `home.empty` 와 예시 질문 `home.empty.example.[1번부터 시작하는 번호]` 가 있는 상태. AI 를 쓸 수 있으면 `home.privacyNote` 도 보인다
+ - `일기 앱` : `home.weekStrip`, `home.recent` 가 있는 상태. 오늘 일기가 없으면 `home.todayCard`, 있으면 `home.todayPreview` 가 보인다
+ - `AI 초기` : `ai.card.homeAdvice`, `home.prompt`, `home.principles.progress` 가 있는 상태
+ - `AI 전체` : `ai.card.homeAdvice`, `home.prompt`, `home.principles` 가 있고 `home.principles.progress` 는 없는 상태. 이번 주 일기가 있으면 `ai.card.homeWeekly` 가 보인다
+ ## 테스트할 요소
+ - [빈 상태] 공통: `home.empty`, `home.empty.example.1` 이 보이고 `home.recent`, `ai.card.homeAdvice` 는 없다
+ - [일기 앱] 공통: `home.todayCard`, `home.weekStrip`, `home.recent.item.1` 이 보이고 `ai.card.homeAdvice` 는 없다
+ - [일기 앱·오늘 씀] 공통: `home.todayPreview` 가 보이고 `home.todayCard` 는 없다
+ - [AI 초기] 공통: `ai.card.homeAdvice`, `home.prompt`, `home.principles.progress` 가 보이고 `home.aiWarningButton` 은 없다
+ - [AI 전체] 공통: `ai.card.homeAdvice`, `home.principles`, `ai.card.homeWeekly` 가 보이고 `home.principles.progress` 는 없다
+ ## 제외
+ - 다른 화면으로 넘어가는 동작 (예시 질문, 글감 쓰기, 최근 기록 항목, 주간 스트립 날짜를 눌렀을 때 에디터·상세가 열리는지): 에디터·상세 화면의 태그가 아직 없음
+ - AI 카드 안의 내용과 버튼 (조언 문구, 출처 칩, 피드백·다시 생성): 생성 결과에 따라 달라짐. 표시 여부는 위 상태 케이스에서, 값은 Unit 테스트에서 확인
+ */
 
 @Composable
 private fun HomeContent(
@@ -190,6 +235,7 @@ private fun HomeContent(
 
     Column(
         modifier = Modifier
+            .testTag(TestTags.Home.SCREEN)
             .fillMaxSize()
             .background(MPAColor.CANVAS.color())
             .verticalScroll(scrollState)
@@ -298,7 +344,7 @@ private fun AiCard(modifier: Modifier = Modifier, isNeutral: Boolean = false, co
 }
 
 @Composable
-private fun SectionHeader(title: String, subtitle: String? = null, actionTitle: String? = null, onAction: () -> Unit = {}) {
+private fun SectionHeader(title: String, subtitle: String? = null, actionTitle: String? = null, actionTag: String? = null, onAction: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(
@@ -313,7 +359,7 @@ private fun SectionHeader(title: String, subtitle: String? = null, actionTitle: 
             }
         }
         if (actionTitle != null) {
-            TextButton(onClick = onAction) {
+            TextButton(onClick = onAction, modifier = if (actionTag != null) Modifier.testTag(actionTag) else Modifier) {
                 Text(actionTitle, fontSize = 16.sp, color = MPAColor.BRAND_PRIMARY.color())
             }
         }
@@ -322,9 +368,9 @@ private fun SectionHeader(title: String, subtitle: String? = null, actionTitle: 
 
 /** "참고한 일기" chip: M3 assist chip shape (radius 8). */
 @Composable
-private fun SourceChip(text: String, onClick: () -> Unit) {
+private fun SourceChip(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .heightIn(min = TOUCH_TARGET)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -343,7 +389,7 @@ private fun SourceChip(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SourceRow(sources: List<Journal>, onOpen: (Journal) -> Unit) {
+private fun SourceRow(card: String, sources: List<Journal>, onOpen: (Journal) -> Unit) {
     if (sources.isEmpty()) return
     FlowRow(
         verticalArrangement = Arrangement.Center,
@@ -351,13 +397,15 @@ private fun SourceRow(sources: List<Journal>, onOpen: (Journal) -> Unit) {
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Text("참고한 일기", fontSize = 13.sp, color = MPAColor.TEXT_SECONDARY.color())
-        sources.forEach { entry -> SourceChip(HomeViewModel.chipDate(entry.day)) { onOpen(entry) } }
+        sources.forEachIndexed { index, entry ->
+            SourceChip(HomeViewModel.chipDate(entry.day), Modifier.testTag(TestTags.AICard.source(card, index + 1))) { onOpen(entry) }
+        }
     }
 }
 
 /** Word-by-word fade in (Part B 2, 120 ms per word). Screen readers get the full text at once. */
 @Composable
-private fun RevealText(text: String, revealsByWord: Boolean, fontSize: Int = 18) {
+private fun RevealText(modifier: Modifier = Modifier, text: String, revealsByWord: Boolean, fontSize: Int = 18) {
     val words = remember(text) { text.split(" ") }
     var visible by remember(text) { mutableStateOf(if (revealsByWord) 0 else Int.MAX_VALUE) }
     LaunchedEffect(text, revealsByWord) {
@@ -379,7 +427,7 @@ private fun RevealText(text: String, revealsByWord: Boolean, fontSize: Int = 18)
             fontSize = fontSize.sp,
             lineHeight = (fontSize * 1.6).sp,
             color = MPAColor.TEXT_PRIMARY.color(),
-            modifier = Modifier.semantics { contentDescription = text },
+            modifier = modifier.semantics { contentDescription = text },
         )
     }
 }
@@ -401,8 +449,8 @@ private fun Skeleton(lines: Int) {
 }
 
 @Composable
-private fun FeedbackIcon(iconRes: Int, label: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(TOUCH_TARGET)) {
+private fun FeedbackIcon(iconRes: Int, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = modifier.size(TOUCH_TARGET)) {
         Icon(
             imageVector = ImageVector.vectorResource(iconRes),
             contentDescription = label,
@@ -420,40 +468,41 @@ private fun AdviceCard(state: HomeUiState, actions: HomeActions, modelActions: H
     val view = LocalView.current
     when (val phase = state.advicePhase) {
         HomeAIPhase.Sensitive -> JournalHelpResourceCard(
+            modifier = Modifier.testTag(TestTags.AI.HELP_CARD),
             onCall = { context.startActivity(Intent(Intent.ACTION_DIAL, "tel:109".toUri())) },
             onOpenResources = {},
         )
-        HomeAIPhase.Failed -> AiCard(isNeutral = true) {
+        HomeAIPhase.Failed -> AiCard(modifier = Modifier.testTag(TestTags.AICard.HOME_ADVICE), isNeutral = true) {
             Text("조언을 만들지 못했어요. 잠시 후 다시 시도해 주세요.", fontSize = 15.sp, color = MPAColor.TEXT_SECONDARY.color())
-            OutlinedButton(onClick = modelActions.onRetryAdvice) { Text("다시 시도", color = MPAColor.BRAND_PRIMARY.color()) }
+            OutlinedButton(modifier = Modifier.testTag(TestTags.AICard.retry(TestTags.AICard.HOME_ADVICE)), onClick = modelActions.onRetryAdvice) { Text("다시 시도", color = MPAColor.BRAND_PRIMARY.color()) }
         }
-        HomeAIPhase.Resting -> AiCard(isNeutral = true) {
+        HomeAIPhase.Resting -> AiCard(modifier = Modifier.testTag(TestTags.AICard.HOME_ADVICE), isNeutral = true) {
             Text("오늘은 쉬어 갈게요", fontSize = 15.sp, color = MPAColor.TEXT_SECONDARY.color())
         }
-        HomeAIPhase.KeyError -> AiCard(isNeutral = true) {
+        HomeAIPhase.KeyError -> AiCard(modifier = Modifier.testTag(TestTags.AICard.HOME_ADVICE), isNeutral = true) {
             Text("내 API 키를 확인해 주세요", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = MPAColor.TEXT_PRIMARY.color())
             Text(
                 "Gemini가 키를 받지 않았어요. 사용 한도를 넘었거나 키가 만료됐을 수 있어요.",
                 fontSize = 15.sp,
                 color = MPAColor.TEXT_SECONDARY.color(),
             )
-            OutlinedButton(onClick = actions.onConnectKey) { Text("키 확인", color = MPAColor.BRAND_PRIMARY.color()) }
+            OutlinedButton(modifier = Modifier.testTag(TestTags.AICard.checkKey(TestTags.AICard.HOME_ADVICE)), onClick = actions.onConnectKey) { Text("키 확인", color = MPAColor.BRAND_PRIMARY.color()) }
         }
-        HomeAIPhase.Idle, HomeAIPhase.Loading, is HomeAIPhase.Loaded -> AiCard {
+        HomeAIPhase.Idle, HomeAIPhase.Loading, is HomeAIPhase.Loaded -> AiCard(modifier = Modifier.testTag(TestTags.AICard.HOME_ADVICE)) {
             AiLabel("오늘의 조언")
             val text = phase.text
             if (text == null) {
                 Skeleton(lines = 3)
                 Text("기기에서 만드는 중…", fontSize = 12.sp, color = MPAColor.TEXT_SECONDARY.color())
             } else {
-                RevealText(text.text, state.revealsAdviceByWord)
-                SourceRow(state.sources(text), actions.onOpenEntry)
+                RevealText(Modifier.testTag(TestTags.AICard.text(TestTags.AICard.HOME_ADVICE)), text.text, state.revealsAdviceByWord)
+                SourceRow(TestTags.AICard.HOME_ADVICE, state.sources(text), actions.onOpenEntry)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = text.engine.sourceLabel,
                         fontSize = 12.sp,
                         color = MPAColor.TEXT_SECONDARY.color(),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.testTag(TestTags.AICard.sourceLabel(TestTags.AICard.HOME_ADVICE)).weight(1f),
                     )
                     val confirm = {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
@@ -463,18 +512,20 @@ private fun AdviceCard(state: HomeUiState, actions: HomeActions, modelActions: H
                         FeedbackIcon(
                             if (text.feedback == AIFeedback.HELPFUL) R.drawable.ic_thumb_up_filled else R.drawable.ic_thumb_up,
                             "도움됨",
+                            Modifier.testTag(TestTags.AICard.feedbackUp(TestTags.AICard.HOME_ADVICE)),
                         ) { confirm(); modelActions.onFeedback(AIFeedback.HELPFUL) }
                     }
                     if (text.feedback != AIFeedback.HELPFUL) {
                         FeedbackIcon(
                             if (text.feedback == AIFeedback.NOT_HELPFUL) R.drawable.ic_thumb_down_filled else R.drawable.ic_thumb_down,
                             "도움 안 됨",
+                            Modifier.testTag(TestTags.AICard.feedbackDown(TestTags.AICard.HOME_ADVICE)),
                         ) { confirm(); modelActions.onFeedback(AIFeedback.NOT_HELPFUL) }
                     }
-                    FeedbackIcon(R.drawable.ic_refresh, "다시 생성", modelActions.onRegenerateAdvice)
+                    FeedbackIcon(R.drawable.ic_refresh, "다시 생성", Modifier.testTag(TestTags.AICard.regenerate(TestTags.AICard.HOME_ADVICE)), modelActions.onRegenerateAdvice)
                 }
                 if (text.feedback == AIFeedback.NOT_HELPFUL) {
-                    TextButton(onClick = modelActions.onRegenerateAdvice) {
+                    TextButton(modifier = Modifier.testTag(TestTags.AICard.moreAdvice(TestTags.AICard.HOME_ADVICE)), onClick = modelActions.onRegenerateAdvice) {
                         Text("다른 조언 보기", fontWeight = FontWeight.SemiBold, color = MPAColor.BRAND_PRIMARY.color())
                     }
                 }
@@ -497,11 +548,11 @@ private fun TodayOrPromptCard(state: HomeUiState, actions: HomeActions, modelAct
 
 @Composable
 private fun PromptCard(phase: HomeAIPhase, onWrite: (String) -> Unit, onNext: () -> Unit) {
-    SurfaceCard(Modifier.animateContentSize()) {
+    SurfaceCard(Modifier.testTag(TestTags.Home.PROMPT).animateContentSize()) {
         AiLabel("오늘의 글감", fontSize = 14)
         val prompt = phase.text?.text
         when {
-            prompt != null -> Text(prompt, fontSize = 22.sp, lineHeight = 32.sp, color = MPAColor.TEXT_PRIMARY.color())
+            prompt != null -> Text(prompt, fontSize = 22.sp, lineHeight = 32.sp, color = MPAColor.TEXT_PRIMARY.color(), modifier = Modifier.testTag(TestTags.Home.PROMPT_TEXT))
             phase == HomeAIPhase.Failed -> Text("질문을 만들지 못했어요.", fontSize = 15.sp, color = MPAColor.TEXT_SECONDARY.color())
             else -> Skeleton(lines = 2)
         }
@@ -514,13 +565,13 @@ private fun PromptCard(phase: HomeAIPhase, onWrite: (String) -> Unit, onNext: ()
             Button(
                 onClick = { prompt?.let(onWrite) },
                 enabled = prompt != null,
-                modifier = Modifier.heightIn(min = 48.dp),
+                modifier = Modifier.testTag(TestTags.Home.PROMPT_WRITE).heightIn(min = 48.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MPAColor.BRAND_PRIMARY.color(),
                     contentColor = MPAColor.BRAND_ON_PRIMARY.color(),
                 ),
             ) { Text("쓰기", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
-            TextButton(onClick = onNext, enabled = phase != HomeAIPhase.Loading) {
+            TextButton(onClick = onNext, enabled = phase != HomeAIPhase.Loading, modifier = Modifier.testTag(TestTags.Home.PROMPT_ANOTHER)) {
                 Text("다른 질문", fontSize = 16.sp, color = MPAColor.BRAND_PRIMARY.color())
             }
         }
@@ -529,7 +580,7 @@ private fun PromptCard(phase: HomeAIPhase, onWrite: (String) -> Unit, onNext: ()
 
 @Composable
 private fun TodayPreviewCard(entry: Journal, onOpen: () -> Unit) {
-    SurfaceCard(Modifier.clickable(onClickLabel = "오늘 일기 열기", onClick = onOpen)) {
+    SurfaceCard(Modifier.testTag(TestTags.Home.TODAY_PREVIEW).clickable(onClickLabel = "오늘 일기 열기", onClick = onOpen)) {
         Row(Modifier.fillMaxWidth()) {
             Text(
                 "오늘의 일기",
@@ -587,15 +638,16 @@ private fun Thumbnail() {
 
 @Composable
 private fun PrinciplesSection(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.testTag(TestTags.Home.PRINCIPLES).then(modifier), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SectionHeader(
             title = "나의 원칙",
             subtitle = "일기 ${state.entries.size}개에서 찾았어요",
             actionTitle = "전체 보기",
+            actionTag = TestTags.Home.PRINCIPLES_SEE_ALL,
             onAction = actions.onOpenPrinciples,
         )
         BubbleCloud(state.principles, actions.onOpenEntry)
-        BubbleLegend(Modifier.align(Alignment.CenterHorizontally))
+        BubbleLegend(Modifier.testTag(TestTags.Home.PRINCIPLES_LEGEND).align(Alignment.CenterHorizontally))
     }
 }
 
@@ -649,6 +701,7 @@ private fun PrincipleBubble(
     Box(modifier) {
         Box(
             modifier = Modifier
+                .testTag(TestTags.Home.principlesBubble(principle.name))
                 .size(diameter + 12.dp)
                 .then(if (expanded) Modifier.border(2.dp, MPAColor.BRAND_PRIMARY.color(), CircleShape) else Modifier)
                 .padding(6.dp)
@@ -727,7 +780,7 @@ private fun BubbleLegend(modifier: Modifier = Modifier) {
 private fun PrincipleProgress(count: Int, modifier: Modifier = Modifier) {
     val threshold = HomeViewModel.PRINCIPLE_THRESHOLD
     val hairline = MPAColor.HAIRLINE.color()
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.testTag(TestTags.Home.PRINCIPLES).then(modifier), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SectionHeader(title = "나의 원칙")
         Row(
             modifier = Modifier
@@ -757,7 +810,7 @@ private fun PrincipleProgress(count: Int, modifier: Modifier = Modifier) {
                     color = MPAColor.TEXT_PRIMARY.color(),
                 )
                 Row(
-                    modifier = Modifier.semantics(mergeDescendants = true) {
+                    modifier = Modifier.testTag(TestTags.Home.PRINCIPLES_PROGRESS).semantics(mergeDescendants = true) {
                         contentDescription = "원칙 분석까지 $count / $threshold"
                         progressBarRangeInfo = ProgressBarRangeInfo(count.toFloat(), 0f..threshold.toFloat(), threshold)
                     },
@@ -795,6 +848,7 @@ private fun WeeklySummaryCard(state: HomeUiState, actions: HomeActions, modelAct
     val phase = state.summaryPhase
     AiCard(
         modifier = Modifier
+            .testTag(TestTags.AICard.HOME_WEEKLY)
             .clickable(onClick = modelActions.onToggleSummary)
             .semantics { stateDescription = if (state.isSummaryExpanded) "펼쳐짐" else "접힘" },
         isNeutral = phase == HomeAIPhase.Failed || phase == HomeAIPhase.Resting,
@@ -808,6 +862,7 @@ private fun WeeklySummaryCard(state: HomeUiState, actions: HomeActions, modelAct
                     color = MPAColor.TEXT_SECONDARY.color(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag(TestTags.Home.WEEKLY_SUMMARY_LINE),
                 )
             }
             val rotation by animateFloatAsState(if (state.isSummaryExpanded) 180f else 0f, label = "chevron")
@@ -821,12 +876,12 @@ private fun WeeklySummaryCard(state: HomeUiState, actions: HomeActions, modelAct
         if (state.isSummaryExpanded) {
             when (phase) {
                 is HomeAIPhase.Loaded -> {
-                    Text(phase.text.text, fontSize = 16.sp, lineHeight = 26.sp, color = MPAColor.TEXT_PRIMARY.color())
-                    SourceRow(state.sources(phase.text), actions.onOpenEntry)
+                    Text(phase.text.text, fontSize = 16.sp, lineHeight = 26.sp, color = MPAColor.TEXT_PRIMARY.color(), modifier = Modifier.testTag(TestTags.AICard.text(TestTags.AICard.HOME_WEEKLY)))
+                    SourceRow(TestTags.AICard.HOME_WEEKLY, state.sources(phase.text), actions.onOpenEntry)
                 }
                 HomeAIPhase.Failed -> {
                     Text("요약을 만들지 못했어요. 잠시 후 다시 시도해 주세요.", fontSize = 15.sp, color = MPAColor.TEXT_SECONDARY.color())
-                    OutlinedButton(onClick = modelActions.onRetrySummary) { Text("다시 시도", color = MPAColor.BRAND_PRIMARY.color()) }
+                    OutlinedButton(modifier = Modifier.testTag(TestTags.AICard.retry(TestTags.AICard.HOME_WEEKLY)), onClick = modelActions.onRetrySummary) { Text("다시 시도", color = MPAColor.BRAND_PRIMARY.color()) }
                 }
                 HomeAIPhase.Resting -> Text("오늘은 쉬어 갈게요", fontSize = 15.sp, color = MPAColor.TEXT_SECONDARY.color())
                 else -> Skeleton(lines = 3)
@@ -840,7 +895,7 @@ private fun WeeklySummaryCard(state: HomeUiState, actions: HomeActions, modelAct
 /** Android has no button here: the FAB handles writing (3.13). */
 @Composable
 private fun DiaryTodayCard() {
-    SurfaceCard {
+    SurfaceCard(Modifier.testTag(TestTags.Home.TODAY_CARD)) {
         Text("오늘의 일기", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MPAColor.TEXT_SECONDARY.color())
         Text("오늘 하루를 몇 줄로 남겨보세요", fontSize = 22.sp, color = MPAColor.TEXT_PRIMARY.color())
         Text("짧아도 괜찮아요. 오른쪽 아래 ‘쓰기’를 눌러 시작하세요.", fontSize = 15.sp, color = MPAColor.TEXT_SECONDARY.color())
@@ -849,8 +904,8 @@ private fun DiaryTodayCard() {
 
 @Composable
 private fun WeekStrip(state: HomeUiState, actions: HomeActions, modelActions: HomeModelActions, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionHeader(title = "이번 주", actionTitle = "캘린더", onAction = actions.onOpenJournal)
+    Column(Modifier.testTag(TestTags.Home.WEEK_STRIP).then(modifier), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionHeader(title = "이번 주", actionTitle = "캘린더", actionTag = TestTags.Home.WEEK_STRIP_CALENDAR, onAction = actions.onOpenJournal)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -867,7 +922,7 @@ private fun WeekStrip(state: HomeUiState, actions: HomeActions, modelActions: Ho
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             state.weekDays.forEach { day ->
-                WeekDayCell(day, Modifier.weight(1f)) {
+                WeekDayCell(day, Modifier.testTag(TestTags.Home.weekStripDay(day.date)).weight(1f)) {
                     val entry = HomeViewModel.newestFirst(state.entries).firstOrNull { it.day == day.date }
                     if (entry != null) actions.onOpenEntry(entry) else actions.onWrite(day.date, null)
                 }
@@ -915,10 +970,10 @@ private fun WeekDayCell(day: HomeWeekDay, modifier: Modifier = Modifier, onClick
 
 @Composable
 private fun RecentSection(entries: List<Journal>, actions: HomeActions, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        SectionHeader(title = "최근 기록", actionTitle = "모두 보기", onAction = actions.onOpenJournal)
+    Column(Modifier.testTag(TestTags.Home.RECENT).then(modifier)) {
+        SectionHeader(title = "최근 기록", actionTitle = "모두 보기", actionTag = TestTags.Home.RECENT_SEE_ALL, onAction = actions.onOpenJournal)
         entries.forEachIndexed { index, entry ->
-            RecentRow(entry) { actions.onOpenEntry(entry) }
+            RecentRow(entry, Modifier.testTag(TestTags.Home.recentItem(index + 1))) { actions.onOpenEntry(entry) }
             if (index < entries.lastIndex) HorizontalDivider(color = MPAColor.HAIRLINE.color())
         }
     }
@@ -926,9 +981,9 @@ private fun RecentSection(entries: List<Journal>, actions: HomeActions, modifier
 
 /** Date block + title + 2-line body + thumbnail. No keyword chips (3.13). */
 @Composable
-private fun RecentRow(entry: Journal, onClick: () -> Unit) {
+private fun RecentRow(entry: Journal, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(vertical = 14.dp),
@@ -951,7 +1006,7 @@ private fun RecentRow(entry: Journal, onClick: () -> Unit) {
 /** No in-screen button on Android: the "첫 일기 쓰기" FAB does it (3.14). */
 @Composable
 private fun HomeFirstRun(state: HomeUiState, actions: HomeActions) {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.testTag(TestTags.Home.EMPTY).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
             imageVector = ImageVector.vectorResource(R.drawable.ic_empty_journal),
             contentDescription = null,
@@ -969,9 +1024,10 @@ private fun HomeFirstRun(state: HomeUiState, actions: HomeActions) {
         )
         Column(Modifier.fillMaxWidth().padding(top = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("이런 질문으로 시작해 보세요", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MPAColor.TEXT_SECONDARY.color())
-            HomeSamples.exampleQuestions.forEach { question ->
+            HomeSamples.exampleQuestions.forEachIndexed { index, question ->
                 Row(
                     modifier = Modifier
+                        .testTag(TestTags.Home.emptyExample(index + 1))
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                         .clip(RoundedCornerShape(16.dp))
@@ -996,7 +1052,7 @@ private fun HomeFirstRun(state: HomeUiState, actions: HomeActions) {
             else "요약·키워드만 ${if (status.engine == AIEngine.OPENAI_API_KEY) "OpenAI" else "Gemini"}(내 키)로 전송돼요"
         }
         if (privacy != null) {
-            Row(Modifier.padding(top = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.testTag(TestTags.Home.PRIVACY_NOTE).padding(top = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.ic_settings_lock),
                     contentDescription = null,
