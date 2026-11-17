@@ -2,7 +2,7 @@
 name: screen
 description: specs/<화면 종류>/SCREEN_SPEC.md를 기준으로 iOS·Android 화면을 구현하고, 아이폰·아이패드에서 디자인과 일치하는지 검증한다.
 disable-model-invocation: true
-argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android] [-- 추가 지시]
+argument-hint: <화면 종류> [화면 이름] | <화면 종류><화면 이름>[,<화면 종류><화면 이름>…] [build | verify] [ios | android] [-- 추가 지시]
 ---
 
 # 화면 구현 + 검증
@@ -14,6 +14,11 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android] 
   - JournalEditorView.swift 의 `화면 종류` 는 Journal 이고 `화면 이름` 은 Editor 이다.
   - JournalEditorScreen.kt 의 `화면 종류` 는 Journal 이고 `화면 이름` 은 Editor 이다.
 - 화면을 구현하는 코드 파일 이름은 `<화면 종류><화면 이름>View` 혹은 `<화면 종류><화면 이름>Screen` 이다
+- 여러 화면을 한 번에 줄 때는 화면마다 `화면 종류`와 `화면 이름`을 붙여 쓴 파스칼 케이스 단어를 쉼표로 잇는다. 쉼표 앞뒤 공백은 무시한다 (예: `Home,JournalDetail,JournalEditor`)
+  - 첫 대문자 단어가 `화면 종류`, 나머지가 `화면 이름`이다 (`JournalEditor` → Journal, Editor / `Home` → Home, 화면 이름 없음)
+  - 끝에 `View` 나 `Screen` 이 붙어 있으면 떼고 해석한다
+  - 쉼표가 있으면 첫 단어 전체가 화면 목록이고, 그 뒤 단어는 모드·플랫폼으로 해석한다
+  - 여러 화면을 주면 아래 "여러 화면" 규칙을 따른다
 - 모드 (생략하면 build 후 verify 둘 다)
   - `build` : 구현만
   - `verify` : 검증만
@@ -45,6 +50,17 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android] 
   - specs 내 폴더 및 이미지 이름은 CamelCase 이다
 4. `specs/DesignSystem/SCREEN_SPEC.md` 은 Card, Chip, Button, Label 등을 만들 때 참고 가능한 파일이다
 
+## 여러 화면
+
+화면을 여러 개 주면 화면마다 따로 실행하지 않고 한 번의 실행으로 묶는다.
+
+- **0. 준비:** 화면마다 spec 과 참고 이미지를 찾는다. 같은 `화면 종류`의 화면은 `SCREEN_SPEC.md` 를 한 번만 읽는다. 화면 하나라도 spec 이 없으면 그 화면만 임의로 판단하고 사용자에게 알린다
+- **1. 구현 순서:** 여러 화면이 함께 쓰는 모델·뷰 모델을 먼저 만들고, 다른 화면이 이동해 들어오는 화면부터 구현한다. 다른 화면으로 이동시키는 화면과 진입점 내비게이션은 마지막에 연결한다
+- **빌드:** 플랫폼마다 모든 화면을 구현한 뒤 한 번 빌드한다. 실패 시 규칙은 한 화면일 때와 같다
+- **프리뷰:** 화면마다 기준 이미지와 같은 이름의 프리뷰를 만든다. 이름이 겹치면 프리뷰 이름 앞에 화면 이름을 붙인다 (예: `editor-saved`)
+- **2. 검증:** 서브에이전트 하나에 모든 화면을 넘긴다. 화면별 상태와 함께 화면 사이의 이동도 검사 대상에 넣는다
+- **3. 보고:** 보고표에 `화면` 칸을 맨 앞에 더한다. 여러 화면이 함께 쓰는 코드에서 나온 항목은 `공통`으로 적는다
+
 ## 1. 구현 (build)
 
 - 모든 작업 파일 첫 줄에 `// [NO AC] Spec: specs/<화면 종류>/SCREEN_SPEC.md` 주석을 넣는다
@@ -68,7 +84,7 @@ argument-hint: <화면 종류> [화면 이름] [build | verify] [ios | android] 
 검증은 구현한 맥락과 분리하기 위해 **서브에이전트에게 맡긴다.**
 
 서브에이전트에게는 아래만 넘긴다.
-- 화면 이름, spec 경로, images 경로, 검사할 기기·상태 목록
+- 화면 이름(여러 개면 모두), spec 경로, images 경로, 검사할 기기·상태 목록
 - `추가 지시` 중 검증에 관한 내용 (있을 때만)
 - 구현 과정이나 내가 내린 판단은 넘기지 않는다
 
