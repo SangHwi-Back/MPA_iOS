@@ -134,7 +134,7 @@ private val PHOTO_PLACEHOLDERS = listOf(Color(0xFFD7DBE4), Color(0xFFDED6CB))
 
 private data class JournalDetailActions(
     val onBack: () -> Unit = {},
-    val onEdit: (Journal) -> Unit = {},
+    val onEdit: ((Journal) -> Unit)? = null,
     val onDelete: (Journal) -> Unit = {},
     val onShare: (Journal) -> Unit = {},
     val onChangeDay: (LocalDate) -> Unit = {},
@@ -154,7 +154,7 @@ private data class JournalDetailActions(
 @Composable
 fun JournalDetailScreen(
     onBack: () -> Unit,
-    onEdit: (Journal) -> Unit,
+    onEdit: ((Journal) -> Unit)?,
     onDelete: (Journal) -> Unit,
     onOpenEntry: (Journal) -> Unit,
     onOpenPrinciple: (String) -> Unit = {},
@@ -221,7 +221,7 @@ private fun JournalDetailContent(
                 title = barTitle,
                 isScrolled = scrollState.value > 0,
                 onBack = actions.onBack,
-                onEdit = { journal?.let(actions.onEdit) },
+                onEdit = actions.onEdit?.let { edit -> { journal?.let(edit) } },
                 onShare = { journal?.let(actions.onShare) },
                 onChangeDay = { isDatePickerVisible = true },
                 onDelete = { journal?.let(actions.onDelete) },
@@ -341,7 +341,7 @@ private fun JournalDetailTopBar(
     title: String,
     isScrolled: Boolean,
     onBack: () -> Unit,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     onShare: () -> Unit,
     onChangeDay: () -> Unit,
     onDelete: () -> Unit,
@@ -356,8 +356,10 @@ private fun JournalDetailTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onEdit) {
-                Icon(ImageVector.vectorResource(R.drawable.ic_edit), contentDescription = "편집", tint = iconColor)
+            if (onEdit != null) {
+                IconButton(onClick = onEdit) {
+                    Icon(ImageVector.vectorResource(R.drawable.ic_edit), contentDescription = "편집", tint = iconColor)
+                }
             }
             Box {
                 IconButton(onClick = { isMenuOpen = true }) {

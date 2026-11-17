@@ -67,21 +67,32 @@ class JournalViewModel @Inject constructor(
     private val _recentSearches = MutableStateFlow(preferences.recentSearches)
     val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
 
+    /** The entry written on [day], if any. */
+    fun journal(on: LocalDate): Journal? = visibleJournals.value.firstOrNull { it.day == on }
+
+    /** Stores a new journal, or saves the changes made to one that is already stored. */
+    fun save(journal: Journal) {
+        viewModelScope.launch { repository.save(journal) }
+    }
+
+    /** Creates a journal for [day], or updates the title and body of the one already written that day. */
     fun addJournal(
         day: LocalDate = LocalDate.now(),
         title: String = "",
         body: String = "",
         prompt: String? = null,
     ): Journal {
-        val newJournal = Journal(
-            day = day,
-            createdAt = Clock.System.now(),
-            title = title,
-            body = body,
-            prompt = prompt,
-        )
-        viewModelScope.launch { repository.save(newJournal) }
-        return newJournal
+        val journal = journals.value.firstOrNull { it.day == day }
+            ?.copy(title = title, body = body)
+            ?: Journal(
+                day = day,
+                createdAt = Clock.System.now(),
+                title = title,
+                body = body,
+                prompt = prompt,
+            )
+        save(journal)
+        return journal
     }
 
     fun setViewMode(mode: JournalViewMode) {

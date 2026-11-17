@@ -25,19 +25,16 @@ import com.example.mpa_android.model.Journal
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.viewmodel.JournalViewModel
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.toJavaInstant
 import java.time.Instant as JavaInstant
 
 /**
- * 일기 작성/저장 화면. 디자인 시안(1.png = 새 일기, 2.png = 저장됨, 3.png = 날짜 선택)을 따른다.
- * 저장 전에는 "완료" 버튼으로 [JournalViewModel.addJournal]을 1회 호출해 저장하고,
- * 저장 후에는 저장 시각을 보여주는 상태로 전환된다 (저장 후 재편집은 아직 지원하지 않음).
+ * 일기 작성/편집 화면. 디자인 시안(1.png = 새 일기, 3.png = 날짜 선택)을 따른다.
+ * 그날 쓴 일기가 있으면 편집, 없으면 새 일기 작성이다. "완료"를 누르면 저장하고 닫는다.
  */
 @Composable
 fun JournalEditorScreen(
@@ -51,9 +48,33 @@ fun JournalEditorScreen(
     var body by rememberSaveable { mutableStateOf("") }
     var prompt by remember { mutableStateOf(initialPrompt) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var savedJournal by remember { mutableStateOf<Journal?>(null) }
+    var journal by remember { mutableStateOf(Journal(day = day, createdAt = Clock.System.now(), prompt = initialPrompt)) }
+    var mode by remember { mutableStateOf(JournalEditorMode.WRITE) }
 
     val isEmpty = title.isBlank() && body.isBlank()
+
+    // A journal already written on this day opens in edit mode.
+    LaunchedEffect(Unit) {
+        viewModel.journal(on = day)?.let { existing ->
+            journal = existing
+            title = existing.title
+            body = existing.body
+            prompt = existing.prompt ?: prompt
+            mode = JournalEditorMode.EDIT
+        }
+    }
+
+    /** Copies the edits into [journal] and stores it. */
+    fun save() {
+        journal = journal.copy(
+            day = day,
+            title = title,
+            body = body,
+            prompt = prompt,
+            editedAt = if (mode == JournalEditorMode.EDIT) Clock.System.now() else journal.editedAt,
+        )
+        viewModel.save(journal)
+    }
 
     Column(
         modifier = Modifier
@@ -62,16 +83,11 @@ fun JournalEditorScreen(
             .statusBarsPadding(),
     ) {
         EditorTopBar(
-            savedJournal = savedJournal,
             doneEnabled = !isEmpty,
             onClose = onClose,
             onDone = {
-                savedJournal = viewModel.addJournal(
-                    day = day,
-                    title = title,
-                    body = body,
-                    prompt = prompt,
-                )
+                save()
+                onClose()
             },
         )
 
@@ -94,9 +110,9 @@ fun JournalEditorScreen(
             EditorTitleField(value = title, onValueChange = { title = it })
             EditorBodyField(value = body, onValueChange = { body = it })
 
-            if (savedJournal != null && savedJournal?.visibleKeywords?.isNotEmpty() == true) {
+            if (journal.visibleKeywords.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
-                KeywordsSection(keywords = savedJournal!!.visibleKeywords.map { it.name })
+                KeywordsSection(keywords = journal.visibleKeywords.map { it.name })
             }
             Spacer(Modifier.height(16.dp))
         }
@@ -122,7 +138,6 @@ fun JournalEditorScreen(
 // ── Top bar ──────────────────────────────────────────────────────────
 @Composable
 private fun EditorTopBar(
-    savedJournal: Journal?,
     doneEnabled: Boolean,
     onClose: () -> Unit,
     onDone: () -> Unit,
@@ -143,45 +158,17 @@ private fun EditorTopBar(
 
         Spacer(Modifier.weight(1f))
 
-        if (savedJournal == null) {
-            Text(
-                text = "완료",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = if (doneEnabled) MPAColor.BRAND_ON_PRIMARY.color() else MPAColor.TEXT_TERTIARY.color(),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(if (doneEnabled) MPAColor.BRAND_PRIMARY.color() else MPAColor.SUNKEN.color())
-                    .clickable(enabled = doneEnabled, onClick = onDone)
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-            )
-        } else {
-            val savedTime = savedJournal.createdAt.toJavaInstant()
-                .atZone(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_check),
-                    contentDescription = null,
-                    tint = MPAColor.TEXT_SECONDARY.color(),
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = "저장됨 · $savedTime",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MPAColor.TEXT_SECONDARY.color(),
-                )
-            }
-            Spacer(Modifier.width(4.dp))
-            IconButton(onClick = { }) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_more_vert),
-                    contentDescription = "더 보기",
-                    tint = MPAColor.TEXT_PRIMARY.color(),
-                )
-            }
-        }
+        Text(
+            text = "완료",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = if (doneEnabled) MPAColor.BRAND_ON_PRIMARY.color() else MPAColor.TEXT_TERTIARY.color(),
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(if (doneEnabled) MPAColor.BRAND_PRIMARY.color() else MPAColor.SUNKEN.color())
+                .clickable(enabled = doneEnabled, onClick = onDone)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+        )
     }
 }
 
@@ -427,3 +414,5 @@ private fun EditorDatePickerDialog(
         )
     }
 }
+
+enum class JournalEditorMode { WRITE, EDIT }

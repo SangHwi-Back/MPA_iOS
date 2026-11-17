@@ -145,12 +145,18 @@ fun App() {
 
     val scrollBehavior = topAppBarModel.scrollBehavior()
 
-    fun openEditor(date: LocalDate? = null, prompt: String? = null) {
+    var isMissingJournalAlertVisible by remember { mutableStateOf(false) }
+
+    fun editorRoute(date: LocalDate?, prompt: String?): String {
         val query = buildList {
             date?.let { add("$JOURNAL_EDITOR_DATE_ARG=$it") }
             prompt?.let { add("$JOURNAL_EDITOR_PROMPT_ARG=${Uri.encode(it)}") }
         }.joinToString("&")
-        navController.navigate(if (query.isEmpty()) JOURNAL_EDITOR_ROUTE else "$JOURNAL_EDITOR_ROUTE?$query")
+        return if (query.isEmpty()) JOURNAL_EDITOR_ROUTE else "$JOURNAL_EDITOR_ROUTE?$query"
+    }
+
+    fun openEditor(date: LocalDate? = null, prompt: String? = null) {
+        navController.navigate(editorRoute(date, prompt))
     }
 
     fun selectTab(tab: TabDestination) {
@@ -276,8 +282,17 @@ fun App() {
                     composable(JOURNAL_DETAIL_PATTERN) {
                         JournalDetailScreen(
                             onBack = { navController.popBackStack() },
-                            // TODO: JournalEditorScreen cannot open an existing entry yet (Part C, 상세에서 편집).
-                            onEdit = {},
+                            onEdit = { journal ->
+                                // The journal is gone, so it cannot be edited: show an alert instead.
+                                if (journalViewModel.journals.value.none { it.id == journal.id }) {
+                                    isMissingJournalAlertVisible = true
+                                } else {
+                                    // Replace the detail with the editor, so going back skips the stale detail.
+                                    navController.navigate(editorRoute(journal.day, journal.prompt)) {
+                                        popUpTo(JOURNAL_DETAIL_PATTERN) { inclusive = true }
+                                    }
+                                }
+                            },
                             onDelete = { journal ->
                                 // Back to the list first, then the undo snackbar (Part A 3.8).
                                 navController.popBackStack(TabDestination.JOURNAL.route, inclusive = false)
@@ -327,6 +342,20 @@ fun App() {
                 }
             }
         }
+    )
+
+    if (isMissingJournalAlertVisible) {
+        MissingJournalAlert(onDismiss = { isMissingJournalAlertVisible = false })
+    }
+}
+
+@Composable
+private fun MissingJournalAlert(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("일기를 찾을 수 없어요") },
+        text = { Text("삭제되었거나 저장되지 않은 일기예요.") },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("확인") } },
     )
 }
 

@@ -125,4 +125,106 @@ struct JournalViewModelTests {
         #expect(viewModel.pendingDeletion?.journal.id == b.id)
         #expect(viewModel.entries.isEmpty)
     }
+
+    // MARK: - Query
+
+    @Test("journal returns nil when no journal exists for the day")
+    func journalReturnsNilWhenNoJournalExistsForTheDay() {
+        let (viewModel, _) = makeViewModel()
+        let day = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!
+
+        #expect(viewModel.journal(on: day) == nil)
+    }
+
+    @Test("journal returns the journal for the given day")
+    func journalReturnsTheJournalForTheGivenDay() {
+        let day = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!
+        let journal = Journal(day: day, title: "Trip", body: "Details")
+        let (viewModel, _) = makeViewModel([journal])
+
+        #expect(viewModel.journal(on: day)?.id == journal.id)
+    }
+
+    @Test("journal returns the correct journal among multiple")
+    func journalReturnsTheCorrectJournalAmongMultiple() {
+        let day1 = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!
+        let day2 = Calendar.current.date(from: DateComponents(year: 2024, month: 2, day: 20))!
+        let journal1 = Journal(day: day1, title: "One")
+        let journal2 = Journal(day: day2, title: "Two")
+        let (viewModel, _) = makeViewModel([journal1, journal2])
+
+        #expect(viewModel.journal(on: day1)?.id == journal1.id)
+        #expect(viewModel.journal(on: day2)?.id == journal2.id)
+    }
+
+    @Test("journal compares days ignoring time")
+    func journalComparesDaysIgnoringTime() {
+        let dayWithTime = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15, hour: 15, minute: 30))!
+        let dayMorning = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15, hour: 9, minute: 0))!
+        let journal = Journal(day: dayWithTime, title: "Trip")
+        let (viewModel, _) = makeViewModel([journal])
+
+        #expect(viewModel.journal(on: dayMorning)?.id == journal.id)
+    }
+
+    // MARK: - Saving
+
+    @Test("save stores a new journal")
+    func saveStoresANewJournal() {
+        let (viewModel, repository) = makeViewModel()
+        let journal = Journal(
+            day: Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!,
+            title: "Trip",
+            body: "Details"
+        )
+
+        viewModel.save(journal)
+
+        #expect(repository.journals.count == 1)
+        #expect(repository.journals.contains { $0.id == journal.id })
+    }
+
+    @Test("save works with an existing journal reference")
+    func saveWorksWithAnExistingJournalReference() {
+        let journal = Journal(
+            day: Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!,
+            title: "Trip",
+            body: "Details"
+        )
+        let (viewModel, repository) = makeViewModel([journal])
+
+        journal.title = "Updated"
+        journal.body = "New details"
+        viewModel.save(journal)
+
+        #expect(repository.journals.count == 1)
+        #expect(viewModel.entries.first?.title == "Updated")
+        #expect(viewModel.entries.first?.body == "New details")
+    }
+
+    @Test("addJournal updates existing journal for same day")
+    func addJournalUpdatesExistingJournalForSameDay() {
+        let day = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!
+        let (viewModel, repository) = makeViewModel()
+
+        let first = viewModel.addJournal(day: day, title: "Trip", body: "Details")
+        let second = viewModel.addJournal(day: day, title: "Trip Updated", body: "More details")
+
+        #expect(repository.journals.count == 1)
+        #expect(second?.id == first?.id)
+        #expect(second?.title == "Trip Updated")
+        #expect(second?.body == "More details")
+    }
+
+    @Test("addJournal returns the same instance when updating")
+    func addJournalReturnsTheSameInstanceWhenUpdating() {
+        let day = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 15))!
+        let (viewModel, _) = makeViewModel()
+
+        let first = viewModel.addJournal(day: day, title: "Trip", body: "Details")
+        let second = viewModel.addJournal(day: day, title: "Trip Updated", body: "More details")
+
+        #expect(second?.id == first?.id)
+        #expect(viewModel.entries.count == 1)
+    }
 }

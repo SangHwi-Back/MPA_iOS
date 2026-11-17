@@ -6,6 +6,7 @@ import com.android.identity.util.UUID
 import com.example.mpa_android.data.JournalRepository
 import com.example.mpa_android.model.Journal
 import java.time.LocalDate
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,6 +18,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -26,8 +28,13 @@ private class FakeJournalRepository : JournalRepository {
     val state = MutableStateFlow<List<Journal>>(emptyList())
     override val journals: Flow<List<Journal>> = state
 
+    /** Upserts by id, like the Room repository. */
     override suspend fun save(journal: Journal) {
-        state.value += journal
+        state.value = if (state.value.any { it.id == journal.id }) {
+            state.value.map { if (it.id == journal.id) journal else it }
+        } else {
+            state.value + journal
+        }
     }
 
     override suspend fun delete(id: UUID) {
@@ -172,4 +179,80 @@ class JournalViewModelTest {
 
         assertEquals(listOf(second.id), viewModel.visibleJournals.value.map { it.id })
     }
+
+    // region Query
+
+    @Test
+    fun journalReturnsNullWhenNoJournalExistsForTheDay() = runTest {
+        assertNull(viewModel.journal(on = LocalDate.of(2024, 1, 15)))
+    }
+
+    @Test
+    fun journalReturnsTheJournalForTheGivenDay() = runTest {
+        val day = LocalDate.of(2024, 1, 15)
+        val journal = Journal(day = day, createdAt = Clock.System.now(), title = "Trip", body = "Details")
+        repository.state.value = listOf(journal)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(journal.id, viewModel.journal(on = day)?.id)
+    }
+
+    @Test
+    fun journalReturnsTheCorrectJournalAmongMultiple() = runTest {
+        val day1 = LocalDate.of(2024, 1, 15)
+        val day2 = LocalDate.of(2024, 2, 20)
+        val journal1 = Journal(day = day1, createdAt = Clock.System.now(), title = "One")
+        val journal2 = Journal(day = day2, createdAt = Clock.System.now(), title = "Two")
+        repository.state.value = listOf(journal1, journal2)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(journal1.id, viewModel.journal(on = day1)?.id)
+        assertEquals(journal2.id, viewModel.journal(on = day2)?.id)
+    }
+
+    // endregion
+
+    // region Saving
+
+    @Test
+    fun saveStoresANewJournal() = runTest {
+        val journal = Journal(day = LocalDate.of(2024, 1, 15), createdAt = Clock.System.now(), title = "Trip", body = "Details")
+
+        viewModel.save(journal)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, repository.state.value.size)
+        assertTrue(repository.state.value.any { it.id == journal.id })
+    }
+
+    @Test
+    fun saveUpdatesAnExistingJournal() = runTest {
+        val journal = Journal(day = LocalDate.of(2024, 1, 15), createdAt = Clock.System.now(), title = "Trip", body = "Details")
+        repository.state.value = listOf(journal)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.save(journal.copy(title = "Updated", body = "New details"))
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, repository.state.value.size)
+        assertEquals("Updated", viewModel.journals.value.first().title)
+        assertEquals("New details", viewModel.journals.value.first().body)
+    }
+
+    @Test
+    fun addJournalUpdatesExistingJournalForSameDay() = runTest {
+        val day = LocalDate.of(2024, 1, 15)
+
+        val first = viewModel.addJournal(day = day, title = "Trip", body = "Details")
+        dispatcher.scheduler.advanceUntilIdle()
+        val second = viewModel.addJournal(day = day, title = "Trip Updated", body = "More details")
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, repository.state.value.size)
+        assertEquals(first.id, second.id)
+        assertEquals("Trip Updated", second.title)
+        assertEquals("More details", second.body)
+    }
+
+    // endregion
 }
