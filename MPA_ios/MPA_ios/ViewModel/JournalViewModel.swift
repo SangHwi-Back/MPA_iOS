@@ -244,7 +244,17 @@ final class JournalViewModel {
         selectedDate = latestEntryDay ?? (cal.isSameMonth(today, as: target) ? today : target)
     }
 
+    /// The entry written on `day`, if any.
+    func journal(on day: Date) -> Journal? {
+        entries.first { Calendar.current.isDate($0.day, inSameDayAs: day) }
+    }
+
     // MARK: - Mutations
+
+    /// Stores a new journal, or saves the changes made to one that is already stored.
+    func save(_ journal: Journal) {
+        try? repository.save(journal)
+    }
 
     /// Creates a new journal entry and stores it. Returns `nil` if saving failed.
     @discardableResult
@@ -254,7 +264,13 @@ final class JournalViewModel {
         body: String = "",
         prompt: String? = nil
     ) -> Journal? {
-        let journal = Journal(day: day, title: title, body: body, prompt: prompt)
+        let journal = repository.journals.first(where: {
+            Calendar.current.compare($0.day, to: day, toGranularity: .day) == .orderedSame
+        }) ?? Journal(day: day, title: title, body: body, prompt: prompt)
+        
+        journal.title = title
+        journal.body = body
+        
         do {
             try repository.save(journal)
             return journal

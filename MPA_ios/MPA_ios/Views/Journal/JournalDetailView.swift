@@ -45,7 +45,7 @@ struct JournalDetailView: View {
     @State private var model: JournalDetailViewModel
 
     var onOpenEntry: (Journal) -> Void
-    var onEdit: (Journal) -> Void
+    var onEdit: ((Journal) -> Void)?
     var onDelete: (Journal) -> Void
     var onOpenPrinciple: (String) -> Void
     var onOpenPhoto: (Journal, Int) -> Void
@@ -67,7 +67,7 @@ struct JournalDetailView: View {
         presentedKeyword: String? = nil,
         startsAtBottom: Bool = false,
         onOpenEntry: @escaping (Journal) -> Void = { _ in },
-        onEdit: @escaping (Journal) -> Void = { _ in },
+        onEdit: ((Journal) -> Void)? = nil,
         onDelete: @escaping (Journal) -> Void = { _ in },
         onOpenPrinciple: @escaping (String) -> Void = { _ in },
         onOpenPhoto: @escaping (Journal, Int) -> Void = { _, _ in },
@@ -293,14 +293,16 @@ struct JournalDetailView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
-            Button {
-                onEdit(journal)
-            } label: {
-                Image("edit")
-                    .renderingMode(.template)
-                    .foregroundStyle(Color.TEXT_PRIMARY)
+            if let onEdit {
+                Button {
+                    onEdit(journal)
+                } label: {
+                    Image("edit")
+                        .renderingMode(.template)
+                        .foregroundStyle(Color.TEXT_PRIMARY)
+                }
+                .accessibilityLabel("편집")
             }
-            .accessibilityLabel("편집")
 
             Menu {
                 ShareLink(item: shareText) {

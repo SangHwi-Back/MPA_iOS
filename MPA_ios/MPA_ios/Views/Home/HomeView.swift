@@ -33,6 +33,9 @@ struct HomeView: View {
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
     
+    @State private var navPath: [HomeNavigationPath] = []
+    @State private var isMissingJournalAlertPresented = false
+    
     @State private var editorRequest: HomeEditorRequest?
     @State private var openedEntryID: UUID?
     
@@ -67,6 +70,11 @@ struct HomeView: View {
             .presentationDetents([.large])
         }
         .sensoryFeedback(.impact(weight: .light), trigger: editorRequest?.id)
+        .alert("일기를 찾을 수 없어요", isPresented: $isMissingJournalAlertPresented) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text("삭제되었거나 저장되지 않은 일기예요.")
+        }
         // Entries come from the shared JournalRepository, so this reruns whenever one is added or deleted.
         .task(id: TaskKey(entryIDs: homeViewModel.entries.map(\.id), status: homeViewModel.aiStatus)) {
             homeViewModel.now = .now
@@ -123,7 +131,7 @@ struct HomeView: View {
     }
     
     private var HomeContent: some View {
-        NavigationStack {
+        NavigationStack(path: $navPath) {
             HomeContentView(
                 onWrite: { editorRequest = HomeEditorRequest(date: $0, prompt: $1) },
                 onOpenEntry: openEntry,
@@ -133,14 +141,25 @@ struct HomeView: View {
                     isSettingsDetailPresented = true
                 }
             )
-            .navigationDestination(item: $openedEntryID) { id in detail(id) }
+            .navigationDestination(for: HomeNavigationPath.self) { path in
+                switch path {
+                case .detail(let journal):
+                    detail(journal.id)
+                case .editor(let journal):
+                    JournalEditorView(
+                        initialDate: journal.day,
+                        initialPrompt: journal.prompt,
+                        onClose: { navPath.removeLast() }
+                    )
+                }
+            }
         }
     }
     
     // MARK: - Navigation
     
     private func openEntry(_ entry: Journal) {
-        openedEntryID = entry.id
+        navPath.append(.detail(entry))
     }
     
     @ViewBuilder
@@ -149,11 +168,26 @@ struct HomeView: View {
             JournalDetailView(
                 journal: entry,
                 onOpenEntry: openEntry,
-                onDelete: { _ in openedEntryID = nil },
+                onEdit: { journal in
+                    // Journal 이 없음. Edit 안됨. 알럿 호출
+                    guard homeViewModel.entries.contains(where: { $0.id == journal.id }) else {
+                        isMissingJournalAlertPresented = true
+                        return
+                    }
+                    
+                    navPath.removeLast()
+                    navPath.append(.editor(journal))
+                },
+                onDelete: { _ in navPath.removeLast() },
                 onOpenPrinciple: { _ in selectedTab = .principles }
             )
         }
     }
+}
+
+enum HomeNavigationPath: Hashable {
+    case detail(Journal)
+    case editor(Journal)
 }
 
 /// A request to open the editor: today's date by default, optionally with a 글감 question on top.

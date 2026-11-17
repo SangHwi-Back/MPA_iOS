@@ -19,7 +19,8 @@ struct JournalEditorView: View {
     @State private var bodyText: String = ""
     @State private var prompt: String?
     @State private var showDatePicker = false
-    @State private var savedJournal: Journal?
+    @State private var journal: Journal
+    @State private var mode: JournalEditorViewMode = .write
     
     @Environment(JournalViewModel.self) private var journalViewModel
     
@@ -29,6 +30,7 @@ struct JournalEditorView: View {
         _day = State(initialValue: startDay)
         _pendingDate = State(initialValue: startDay)
         _prompt = State(initialValue: initialPrompt)
+        _journal = State(initialValue: Journal(day: startDay, prompt: initialPrompt))
     }
     
     private var isEmpty: Bool {
@@ -51,8 +53,8 @@ struct JournalEditorView: View {
                     titleField
                     bodyField
                     
-                    if let savedJournal, !savedJournal.visibleKeywords.isEmpty {
-                        keywordsSection(savedJournal.visibleKeywords)
+                    if !journal.visibleKeywords.isEmpty {
+                        keywordsSection(journal.visibleKeywords)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -62,6 +64,17 @@ struct JournalEditorView: View {
             bottomToolbar
         }
         .background(Color.CANVAS)
+        .toolbarVisibility(.hidden, for: .navigationBar)
+        .onAppear {
+            // A journal already written on this day opens in edit mode.
+            if let existing = journalViewModel.journal(on: day) {
+                journal = existing
+                title = existing.title
+                bodyText = existing.body
+                prompt = existing.prompt ?? prompt
+                mode = .edit
+            }
+        }
         .sheet(isPresented: $showDatePicker) {
             datePickerSheet
         }
@@ -81,38 +94,34 @@ struct JournalEditorView: View {
             
             Spacer()
             
-            if let savedJournal {
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("저장됨 · \(savedTimeText(savedJournal.createdAt))")
-                        .font(.caption)
-                }
-                .foregroundStyle(Color.TEXT_SECONDARY)
-                
-                Button(action: {}) {
-                    Image(systemName: "ellipsis")
-                        .foregroundStyle(Color.TEXT_PRIMARY)
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-            } else {
-                Button {
-                    savedJournal = journalViewModel.addJournal(day: day, title: title, body: bodyText, prompt: prompt)
-                } label: {
-                    Text("완료")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(isEmpty ? Color.TEXT_TERTIARY : Color.BRAND_ON_PRIMARY)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Capsule().fill(isEmpty ? Color.SUNKEN : Color.BRAND_PRIMARY))
-                }
-                .buttonStyle(.plain)
-                .disabled(isEmpty)
+            Button {
+                save()
+                onClose()
+            } label: {
+                Text("완료")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(isEmpty ? Color.TEXT_TERTIARY : Color.BRAND_ON_PRIMARY)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(isEmpty ? Color.SUNKEN : Color.BRAND_PRIMARY))
             }
+            .buttonStyle(.plain)
+            .disabled(isEmpty)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+    
+    /// Copies the edits into `journal` and stores it.
+    private func save() {
+        journal.day = day
+        journal.title = title
+        journal.body = bodyText
+        journal.prompt = prompt
+        if mode == .edit {
+            journal.editedAt = .now
+        }
+        journalViewModel.save(journal)
     }
     
     // MARK: - Date field
@@ -140,13 +149,6 @@ struct JournalEditorView: View {
         let weekdayNames = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
         let idx = cal.component(.weekday, from: date) - 1
         return "\(month)월 \(dayNumber)일 \(weekdayNames[idx % 7])"
-    }
-    
-    private func savedTimeText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "a h:mm"
-        return formatter.string(from: date)
     }
     
     // MARK: - AI prompt chip
@@ -276,6 +278,11 @@ struct JournalEditorView: View {
         .presentationDetents([.medium])
     }
 }
+
+enum JournalEditorViewMode {
+case write, edit
+}
+
 #Preview {
     JournalEditorView(onClose: {})
         .environment(JournalViewModel(repository: InMemoryJournalRepository()))
