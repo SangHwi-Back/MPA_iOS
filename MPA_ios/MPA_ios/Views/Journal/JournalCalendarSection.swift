@@ -9,6 +9,7 @@ import SwiftUI
 
 struct JournalCalendarSection: View {
     @Bindable var viewModel: JournalViewModel
+    
     let keywordStages: [String: Int]
     let onOpenEntry: (Journal) -> Void
     let onWrite: (Date) -> Void
