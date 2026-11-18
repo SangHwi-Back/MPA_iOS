@@ -75,4 +75,37 @@ object TestTags {
         const val DRAWER_CALENDAR_SELECTED_HEADER = "home.drawer.calendar.selectedHeader"
         fun drawerCalendarEntry(index: Int) = "home.drawer.calendar.entry.$index"
     }
+
+    // Settings › 데이터는 어디에 저장되나요?
+    object InformationPrivacyDescription {
+        const val SCREEN = "informationPrivacyDescription.screen"
+        const val BACK = "informationPrivacyDescription.back"
+        const val TITLE = "informationPrivacyDescription.title"
+        const val STORAGE = "informationPrivacyDescription.storage"
+        const val READERS = "informationPrivacyDescription.readers"
+        const val DELETION = "informationPrivacyDescription.deletion"
+        /** [key]: "onDevice", "gemini", "openAI". */
+        fun reader(key: String) = "informationPrivacyDescription.reader.$key"
+        fun readerInUse(key: String) = "informationPrivacyDescription.reader.$key.inUse"
+    }
+
+    // Settings › 매일 쓰기 알림
+    object AlertDailyWriteDatePicker {
+        const val SCREEN = "alertDailyWriteDatePicker.screen"
+        const val CANCEL = "alertDailyWriteDatePicker.cancel"
+        const val CONFIRM = "alertDailyWriteDatePicker.confirm"
+        const val TOGGLE = "alertDailyWriteDatePicker.toggle"
+        const val TIME_PICKER = "alertDailyWriteDatePicker.timePicker"
+        const val INPUT_MODE_TOGGLE = "alertDailyWriteDatePicker.inputModeToggle"
+    }
+
+    // Settings › 기록 내보내기
+    object AlertExportJournals {
+        const val SCREEN = "alertExportJournals.screen"
+        const val MESSAGE = "alertExportJournals.message"
+        const val OPTION_MARKDOWN = "alertExportJournals.option.markdown"
+        const val OPTION_JSON = "alertExportJournals.option.json"
+        const val CONFIRM = "alertExportJournals.confirm"
+        const val CANCEL = "alertExportJournals.cancel"
+    }
 }

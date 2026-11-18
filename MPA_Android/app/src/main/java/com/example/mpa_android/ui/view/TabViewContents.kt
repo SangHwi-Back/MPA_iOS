@@ -30,6 +30,7 @@ fun TabViewContents(
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val journalViewModel: JournalViewModel = hiltViewModel()
     val settingsState by settingsViewModel.uiState.collectAsState()
+    val journals by journalViewModel.visibleJournals.collectAsState()
     val globalModel = LocalAppGlobalModel.current
 
     when (model.destination) {
@@ -58,7 +59,9 @@ fun TabViewContents(
         )
         TabDestination.SETTINGS -> SettingsScreen(
             viewModel = settingsViewModel,
+            journals = journals,
             onOpenAIConnection = { navController.navigate(SETTINGS_AI_CONNECTION_ROUTE) },
+            onOpenPrivacyDescription = { navController.navigate(SETTINGS_PRIVACY_DESCRIPTION_ROUTE) },
             dynamicTopAppBar = { model.onDrawTopAppBar(it) },
         )
     }

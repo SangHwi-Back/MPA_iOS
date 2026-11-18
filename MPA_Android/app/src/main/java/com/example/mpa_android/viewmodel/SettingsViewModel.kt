@@ -31,9 +31,18 @@ data class SettingsUiState(
     val testFailure: AIKeyTestFailure? = null,
     val consent: AIConsentRecord? = null,
     val biometricLockEnabled: Boolean = true,
-    val dailyReminderTime: String = "오후 9:30",
+    val dailyReminderEnabled: Boolean = true,
+    /** 0..23. */
+    val dailyReminderHour: Int = 21,
+    val dailyReminderMinute: Int = 30,
+    val isDailyReminderDialogPresented: Boolean = false,
+    val isExportDialogPresented: Boolean = false,
     val appVersion: String = "1.0.0",
 ) {
+    /** "오후 9:30", or "꺼짐" when the reminder is off. */
+    val dailyReminderTime: String
+        get() = if (dailyReminderEnabled) reminderTimeText(dailyReminderHour, dailyReminderMinute) else "꺼짐"
+
     val trimmedKey: String get() = apiKeyInput.trim()
 
     val hasKeyFormatError: Boolean
@@ -195,4 +204,34 @@ class SettingsViewModel @Inject constructor(
         fun maskedKey(key: String): String =
             if (key.length <= 7) "••••••" else "${key.take(4)}••••••${key.takeLast(3)}"
     }
+
+    // ---- Daily reminder ----
+
+    fun presentDailyReminder(isPresented: Boolean) {
+        _uiState.update { it.copy(isDailyReminderDialogPresented = isPresented) }
+    }
+
+    /** Applies the dialog's choice. The screen asks for notification permission when it is turned on. */
+    fun updateDailyReminder(enabled: Boolean, hour: Int, minute: Int) {
+        _uiState.update {
+            it.copy(
+                dailyReminderEnabled = enabled,
+                dailyReminderHour = hour,
+                dailyReminderMinute = minute,
+                isDailyReminderDialogPresented = false,
+            )
+        }
+    }
+
+    // ---- Export ----
+
+    fun presentExport(isPresented: Boolean) {
+        _uiState.update { it.copy(isExportDialogPresented = isPresented) }
+    }
+}
+
+fun reminderTimeText(hour: Int, minute: Int): String {
+    val period = if (hour < 12) "오전" else "오후"
+    val hour12 = if (hour % 12 == 0) 12 else hour % 12
+    return "$period $hour12:${"%02d".format(minute)}"
 }

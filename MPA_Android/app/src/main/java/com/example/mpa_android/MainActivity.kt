@@ -45,6 +45,7 @@ import com.example.mpa_android.ui.view.TabViewContentsModel
 import com.example.mpa_android.ui.view.journal.JournalDetailScreen
 import com.example.mpa_android.ui.view.journal.JournalEditorScreen
 import com.example.mpa_android.ui.view.settings.SettingsAIConnectionDetailScreen
+import com.example.mpa_android.ui.view.settings.SettingsInformationPrivacyDescriptionScreen
 import com.example.mpa_android.viewmodel.JournalDetailViewModel
 import com.example.mpa_android.viewmodel.JournalViewModel
 import com.example.mpa_android.viewmodel.SettingsViewModel
@@ -55,6 +56,7 @@ const val JOURNAL_EDITOR_ROUTE = "journal-editor"
 const val JOURNAL_EDITOR_DATE_ARG = "date"
 const val JOURNAL_EDITOR_PROMPT_ARG = "prompt"
 const val SETTINGS_AI_CONNECTION_ROUTE = "settings-ai-connection"
+const val SETTINGS_PRIVACY_DESCRIPTION_ROUTE = "settings-privacy-description"
 const val JOURNAL_DETAIL_ROUTE = "journal-detail"
 const val JOURNAL_DETAIL_PATTERN = "$JOURNAL_DETAIL_ROUTE/{${JournalDetailViewModel.ARG_JOURNAL_ID}}"
 
@@ -181,6 +183,7 @@ fun App() {
             // The journal detail draws its own app bar.
             if (currentRoute != null &&
                 currentRoute != JOURNAL_DETAIL_PATTERN &&
+                currentRoute != SETTINGS_PRIVACY_DESCRIPTION_ROUTE &&
                 !currentRoute.contains(JOURNAL_EDITOR_ROUTE)) {
 
                 MPATopAppBar(topAppBarModel, scrollBehavior)
@@ -190,6 +193,7 @@ fun App() {
             if (
                 !globalModel.isJournalSearchActive &&
                 currentRoute != SETTINGS_AI_CONNECTION_ROUTE &&
+                currentRoute != SETTINGS_PRIVACY_DESCRIPTION_ROUTE &&
                 currentRoute != JOURNAL_DETAIL_PATTERN
             ) {
                 NavigationBar(
@@ -241,7 +245,8 @@ fun App() {
             if (
                 currentRoute != TabDestination.JOURNAL.route &&
                 currentRoute != TabDestination.SETTINGS.route &&
-                currentRoute != SETTINGS_AI_CONNECTION_ROUTE
+                currentRoute != SETTINGS_AI_CONNECTION_ROUTE &&
+                currentRoute != SETTINGS_PRIVACY_DESCRIPTION_ROUTE
             ) {
                 WriteJournalFloatingActionButton(
                     isHome = currentRoute == TabDestination.TODAY.route,
@@ -253,7 +258,7 @@ fun App() {
         content = { innerPadding ->
             globalModel.localInnerPadding = innerPadding
 
-            val navPadding = if (currentRoute != null && (currentRoute == JOURNAL_DETAIL_PATTERN || currentRoute.contains(JOURNAL_EDITOR_ROUTE))) {
+            val navPadding = if (currentRoute != null && (currentRoute == JOURNAL_DETAIL_PATTERN || currentRoute == SETTINGS_PRIVACY_DESCRIPTION_ROUTE || currentRoute.contains(JOURNAL_EDITOR_ROUTE))) {
                 PaddingValues(
                     start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
                     end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
@@ -305,6 +310,12 @@ fun App() {
                                     launchSingleTop = true
                                 }
                             },
+                        )
+                    }
+                    composable(SETTINGS_PRIVACY_DESCRIPTION_ROUTE) {
+                        SettingsInformationPrivacyDescriptionScreen(
+                            aiConnection = settingsState.aiConnection,
+                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable(SETTINGS_AI_CONNECTION_ROUTE) {

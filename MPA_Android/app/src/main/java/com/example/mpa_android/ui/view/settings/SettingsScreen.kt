@@ -1,5 +1,9 @@
 package com.example.mpa_android.ui.view.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,6 +27,7 @@ import com.example.mpa_android.TopAppBarModel
 import com.example.mpa_android.model.AIConnectionState
 import com.example.mpa_android.model.AIKeyConnection
 import com.example.mpa_android.model.AIUnavailableReason
+import com.example.mpa_android.model.Journal
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.viewmodel.SettingsUiState
 import com.example.mpa_android.viewmodel.SettingsViewModel
@@ -32,25 +37,62 @@ internal val SettingsGutter = 20.dp
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    journals: List<Journal>,
     onOpenAIConnection: () -> Unit,
+    onOpenPrivacyDescription: () -> Unit,
     dynamicTopAppBar: (TopAppBarModel) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
+    // Android 13+ needs runtime permission to post the daily reminder.
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     SettingsContent(
         state = state,
-        onOpenAIConnection = onOpenAIConnection,
-        onBiometricLockChange = viewModel::setBiometricLock,
+        actions = SettingsListActions(
+            onOpenAIConnection = onOpenAIConnection,
+            onBiometricLockChange = viewModel::setBiometricLock,
+            onOpenPrivacyDescription = onOpenPrivacyDescription,
+            onOpenDailyReminder = { viewModel.presentDailyReminder(true) },
+            onOpenExport = { viewModel.presentExport(true) },
+        ),
         dynamicTopAppBar
     )
+
+    if (state.isDailyReminderDialogPresented) {
+        SettingsAlertDailyWriteDatePickerScreen(
+            enabled = state.dailyReminderEnabled,
+            hour = state.dailyReminderHour,
+            minute = state.dailyReminderMinute,
+            onConfirm = { enabled, hour, minute ->
+                viewModel.updateDailyReminder(enabled, hour, minute)
+                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
+            onDismiss = { viewModel.presentDailyReminder(false) },
+        )
+    }
+    if (state.isExportDialogPresented) {
+        SettingsAlertExportJournalsScreen(
+            journals = journals,
+            onDismiss = { viewModel.presentExport(false) },
+        )
+    }
 }
+
+private data class SettingsListActions(
+    val onOpenAIConnection: () -> Unit = {},
+    val onBiometricLockChange: (Boolean) -> Unit = {},
+    val onOpenPrivacyDescription: () -> Unit = {},
+    val onOpenDailyReminder: () -> Unit = {},
+    val onOpenExport: () -> Unit = {},
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsContent(
     state: SettingsUiState,
-    onOpenAIConnection: () -> Unit,
-    onBiometricLockChange: (Boolean) -> Unit,
+    actions: SettingsListActions,
     dynamicTopAppBar: (TopAppBarModel) -> Unit,
 ) {
     LaunchedEffect(Unit) {
@@ -86,7 +128,7 @@ private fun SettingsContent(
             iconRes = R.drawable.ic_settings_ai,
             title = "AI 연결",
             subtitle = connectionValue(state.aiConnection),
-            onClick = onOpenAIConnection,
+            onClick = actions.onOpenAIConnection,
         )
 
         SettingsSectionGap()
@@ -95,11 +137,15 @@ private fun SettingsContent(
             iconRes = R.drawable.ic_settings_lock,
             title = "지문·얼굴로 잠금",
             subtitle = "앱을 열 때마다 확인",
-            onClick = { onBiometricLockChange(!state.biometricLockEnabled) },
+            onClick = { actions.onBiometricLockChange(!state.biometricLockEnabled) },
         ) {
-            BiometricSwitch(state.biometricLockEnabled, onBiometricLockChange)
+            BiometricSwitch(state.biometricLockEnabled, actions.onBiometricLockChange)
         }
-        SettingsRow(iconRes = R.drawable.ic_settings_data, title = "데이터는 어디에 저장되나요?")
+        SettingsRow(
+            iconRes = R.drawable.ic_settings_data,
+            title = "데이터는 어디에 저장되나요?",
+            onClick = actions.onOpenPrivacyDescription,
+        )
 
         SettingsSectionGap()
         SettingsSectionHeader("기록")
@@ -107,11 +153,13 @@ private fun SettingsContent(
             iconRes = R.drawable.ic_settings_reminder,
             title = "매일 쓰기 알림",
             subtitle = state.dailyReminderTime,
+            onClick = actions.onOpenDailyReminder,
         )
         SettingsRow(
             iconRes = R.drawable.ic_settings_export,
             title = "기록 내보내기",
             subtitle = "텍스트 또는 JSON",
+            onClick = actions.onOpenExport,
         )
 
         SettingsSectionGap()
@@ -243,5 +291,11 @@ internal val PreviewKeyConnection = AIKeyConnection(
 @Composable
 private fun SettingsPreview() {
     val viewModel = remember { previewSettingsViewModel(AIConnectionState.DeviceAI(false)) }
-    SettingsScreen(viewModel = viewModel, onOpenAIConnection = {}, dynamicTopAppBar = {})
+    SettingsScreen(
+        viewModel = viewModel,
+        journals = emptyList(),
+        onOpenAIConnection = {},
+        onOpenPrivacyDescription = {},
+        dynamicTopAppBar = {},
+    )
 }
