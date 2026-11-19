@@ -17,12 +17,11 @@ struct JournalView: View {
     @State private var openSwipeRowID: UUID?
     @State private var scrollPosition = ScrollPosition(edge: .top)
     /// Pushed entry details, by id. The keyword sheet can push another entry on top.
-    @State private var detailPath: [UUID] = []
+    @State private var detailPath: [JournalNavigationPath] = []
     
     /// Opens the entry detail (Part B). When nil, the detail is pushed inside this tab.
     var onOpenEntry: ((Journal) -> Void)? = nil
-    /// Opens the editor for an existing entry (Part C).
-    var onEditEntry: (Journal) -> Void = { _ in }
+    
     /// Opens the list of entries for a keyword.
     var onOpenKeyword: (String) -> Void = { _ in }
     /// Starts with this row swiped open. Used by previews.
@@ -30,14 +29,6 @@ struct JournalView: View {
 
     private var isRegular: Bool { horizontalSizeClass == .regular }
 
-    private func openEntry(_ entry: Journal) {
-        if let onOpenEntry {
-            onOpenEntry(entry)
-        } else {
-            detailPath.append(entry.id)
-        }
-    }
-    
     var body: some View {
         NavigationStack(path: $detailPath) {
             JournalContentsView(
@@ -56,7 +47,7 @@ struct JournalView: View {
             if let entry = viewModel.entries.first(where: { $0.id == id }) {
                 JournalDetailView(
                     journal: entry,
-                    onOpenEntry: { detailPath.append($0.id) },
+                    onOpenEntry: { detailPath.append(.detail($0)) },
                     onEdit: onEditEntry,
                     onDelete: { deleted in
                         // Back to the list first, then the undo toast (Part A 3.8).
@@ -77,8 +68,21 @@ struct JournalView: View {
         }
     }
     
+    private func openEntry(_ entry: Journal) {
+        if let onOpenEntry {
+            onOpenEntry(entry)
+        } else {
+            detailPath.append(.detail(entry))
+        }
+    }
+    
     private func openEditor(on day: Date) {
         editorRequest = JournalEditorRequest(day: day)
+    }
+    
+    /// Opens the editor for an existing entry (Part C).
+    private func onEditEntry(_ entry: Journal) {
+        detailPath.append(.editor(entry))
     }
 
     @ViewBuilder
@@ -106,7 +110,10 @@ struct JournalView: View {
 }
 
 // MARK: - List parts
-
+enum JournalNavigationPath: Hashable {
+    case detail(Journal)
+    case editor(Journal)
+}
 
 
 // MARK: - Previews
