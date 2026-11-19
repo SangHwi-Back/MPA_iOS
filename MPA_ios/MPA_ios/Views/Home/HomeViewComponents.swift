@@ -34,7 +34,7 @@ struct HomeContentAdviceCard: View {
 
 /// Today's entry if there is one, otherwise the 글감 card.
 struct HomeContentTodayCard: View {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onWrite: (_ date: Date, _ prompt: String?) -> Void
     let onOpenEntry: (Journal) -> Void
     
     @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
@@ -45,7 +45,7 @@ struct HomeContentTodayCard: View {
         } else {
             HomePromptCard(
                 phase: homeViewModel.promptPhase,
-                onWrite: { onWrite(nil, $0) },
+                onWrite: { onWrite(Date.now, $0) },
                 onNextPrompt: { Task { await homeViewModel.nextPrompt() } }
             )
         }

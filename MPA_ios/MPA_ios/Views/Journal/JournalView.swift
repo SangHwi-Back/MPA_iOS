@@ -9,11 +9,6 @@
 
 import SwiftUI
 
-struct JournalEditorRequest: Identifiable {
-    let id = UUID()
-    let day: Date
-}
-
 struct JournalView: View {
     @Bindable var viewModel: JournalViewModel
     

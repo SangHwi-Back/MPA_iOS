@@ -12,7 +12,7 @@ import SwiftUI
 
 /// Phone sections, chosen by the state matrix.
 struct HomeContentSections: View {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onWrite: (_ date: Date, _ prompt: String?) -> Void
     let onOpenEntry: (Journal) -> Void
     let onSelectTab: (ContentTab) -> Void
     let onConnectKey: () -> Void
@@ -63,14 +63,14 @@ struct HomeContentSections: View {
 }
 
 private struct HomeContentFirstRun: View {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onWrite: (_ date: Date, _ prompt: String?) -> Void
     
     @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
     
     var body: some View {
         HomeFirstRunSection(
             privacyLine: homeViewModel.privacyLine,
-            onQuestion: { onWrite(nil, $0) }
+            onQuestion: { onWrite(Date.now, $0) }
         )
     }
 }
@@ -93,7 +93,7 @@ private struct HomeContentPrinciples: View {
 
 /// 일기 앱 모드: today's entry if there is one, otherwise the plain write card.
 private struct HomeContentDiaryTodayCard: View {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onWrite: (_ date: Date, _ prompt: String?) -> Void
     let onOpenEntry: (Journal) -> Void
     
     @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
@@ -102,7 +102,7 @@ private struct HomeContentDiaryTodayCard: View {
         if let entry = homeViewModel.todayEntry {
             HomeTodayPreviewCard(entry: entry) { onOpenEntry(entry) }
         } else {
-            HomeDiaryTodayCard { onWrite(nil, nil) }
+            HomeDiaryTodayCard { onWrite(Date.now, nil) }
         }
     }
 }

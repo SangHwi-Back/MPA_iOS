@@ -39,7 +39,7 @@ import SwiftUI
  */
 
 struct HomeContentView: View {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onWrite: (_ date: Date, _ prompt: String?) -> Void
     let onOpenEntry: (Journal) -> Void
     let onSelectTab: (ContentTab) -> Void
     let onConnectKey: () -> Void
@@ -53,8 +53,12 @@ struct HomeContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: HomeLayoutMetrics.sectionSpacing) {
-                HomeGreetingHeader(dateLine: homeViewModel.dateLine, greeting: homeViewModel.greeting)
-                    .padding(.bottom, 4)
+                HomeGreetingHeader(
+                    dateLine: homeViewModel.dateLine,
+                    greeting: homeViewModel.greeting
+                )
+                .padding(.bottom, 4)
+                
                 if isRegular, homeViewModel.layout == .full || homeViewModel.layout == .early {
                     HomeContentRegularColumns(
                         onWrite: onWrite,
@@ -108,7 +112,7 @@ struct HomeContentView: View {
 // MARK: - HomeContentToolbar
 
 private struct HomeContentToolbar: ToolbarContent {
-    let onWrite: (_ date: Date?, _ prompt: String?) -> Void
+    let onWrite: (_ date: Date, _ prompt: String?) -> Void
     
     @Environment(HomeViewModel.self) private var homeViewModel: HomeViewModel
     
@@ -132,7 +136,8 @@ private struct HomeContentToolbar: ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Button {
                 // An existing entry for today should open in edit mode; the editor cannot load one yet.
-                onWrite(nil, nil)
+                let date = homeViewModel.todayEntry?.day ?? Date.now
+                onWrite(date, nil)
             } label: {
                 Image(systemName: "plus")
                     .foregroundStyle(Color.TEXT_PRIMARY)

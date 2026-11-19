@@ -15,7 +15,7 @@ import SwiftUI
  - iPhone 세로: `home.screen` 이 보이고 `home.drawer` 는 없다
  - iPhone 가로로 돌리면: `home.drawer` 와 `home.screen` 이 함께 보인다
  - iPad: `home.drawer` 와 `home.screen` 가 보인다
- - 공통 : `home.newJournalButton` 가 보인다
+ - 공통 : `home.newJournalButton` 가 보인다. `home.newJournalButton` 를 탭하면 
  ## 제외
  - iPhone Duo: 시뮬레이터에서 힌지 상태를 만들 수 없음 (수동 확인)
  */
@@ -36,7 +36,7 @@ struct HomeView: View {
     @State private var navPath: [HomeNavigationPath] = []
     @State private var isMissingJournalAlertPresented = false
     
-    @State private var editorRequest: HomeEditorRequest?
+    @State private var editorRequest: JournalEditorRequest?
     @State private var openedEntryID: UUID?
     
     var body: some View {
@@ -63,7 +63,7 @@ struct HomeView: View {
         }
         .sheet(item: $editorRequest) { request in
             JournalEditorView(
-                initialDate: request.date,
+                initialDate: request.day,
                 initialPrompt: request.prompt,
                 onClose: { editorRequest = nil }
             )
@@ -109,7 +109,7 @@ struct HomeView: View {
             if homeViewModel.entries.isEmpty {
                 HomeFirstRunSection(
                     privacyLine: homeViewModel.privacyLine,
-                    onQuestion: { question in editorRequest = HomeEditorRequest(date: .now, prompt: question) }
+                    onQuestion: { question in editorRequest = JournalEditorRequest(day: .now, prompt: question) }
                 )
                 .padding()
             } else {
@@ -133,7 +133,7 @@ struct HomeView: View {
     private var HomeContent: some View {
         NavigationStack(path: $navPath) {
             HomeContentView(
-                onWrite: { editorRequest = HomeEditorRequest(date: $0, prompt: $1) },
+                onWrite: { editorRequest = JournalEditorRequest(day: $0, prompt: $1) },
                 onOpenEntry: openEntry,
                 onSelectTab: { selectedTab = $0 },
                 onConnectKey: {
@@ -188,13 +188,6 @@ struct HomeView: View {
 enum HomeNavigationPath: Hashable {
     case detail(Journal)
     case editor(Journal)
-}
-
-/// A request to open the editor: today's date by default, optionally with a 글감 question on top.
-struct HomeEditorRequest: Identifiable {
-    let id = UUID()
-    var date: Date? = nil
-    var prompt: String? = nil
 }
 
 // MARK: - Previews
