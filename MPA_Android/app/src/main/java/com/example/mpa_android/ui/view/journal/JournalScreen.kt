@@ -88,7 +88,7 @@ private fun Journal.searchSnippet(query: String): String {
     return "…" + text.substring(if (sentenceBreak >= 0) sentenceBreak + 2 else match)
 }
 
-private data class JournalActions(
+internal data class JournalActions(
     val onSetViewMode: (JournalViewMode) -> Unit = {},
     val onWrite: (LocalDate) -> Unit = {},
     val onOpenEntry: (Journal) -> Unit = {},
@@ -438,7 +438,7 @@ private fun JournalModeToggle(
     }
 }
 
-private fun LazyListScope.journalListItems(
+internal fun LazyListScope.journalListItems(
     journals: List<Journal>,
     keywordStages: Map<String, Int>,
     actions: JournalActions,

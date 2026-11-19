@@ -13,17 +13,12 @@ struct JournalView: View {
     @Bindable var viewModel: JournalViewModel
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var editorRequest: JournalEditorRequest?
+    @State private var showFullscreenEntryRequest: JournalEditorRequest?
     @State private var openSwipeRowID: UUID?
     @State private var scrollPosition = ScrollPosition(edge: .top)
     /// Pushed entry details, by id. The keyword sheet can push another entry on top.
     @State private var detailPath: [JournalNavigationPath] = []
     
-    /// Opens the entry detail (Part B). When nil, the detail is pushed inside this tab.
-    var onOpenEntry: ((Journal) -> Void)? = nil
-    
-    /// Opens the list of entries for a keyword.
-    var onOpenKeyword: (String) -> Void = { _ in }
     /// Starts with this row swiped open. Used by previews.
     var initialOpenSwipeRowID: UUID? = nil
 
@@ -34,55 +29,80 @@ struct JournalView: View {
             JournalContentsView(
                 viewModel: viewModel,
                 openSwipeRowID: $openSwipeRowID,
-                editorRequest: $editorRequest,
                 scrollPosition: $scrollPosition,
+                onOpenEntry: onOpenEntry,
                 onEditEntry: onEditEntry,
                 onOpenKeyword: onOpenKeyword,
                 onOpenEditor: openEditor(on:)
             )
+            .navigationDestination(for: JournalNavigationPath.self) { path in
+                switch path {
+                case .keyword(let keyword):
+                    JournalCollectionView(
+                        viewModel: viewModel,
+                        keyword: keyword,
+                        onOpenEntry: onOpenEntry
+                    )
+                case .detail(let journal):
+                    detail(journal.id)
+                case .editor(let journal):
+                    JournalEditorView(
+                        initialDate: journal.day,
+                        onClose: { detailPath.removeLast() }
+                    )
+                }
+            }
+            .environment(\.editorRequest, $showFullscreenEntryRequest)
         }
         .overlay(alignment: .bottom) { undoToast }
         .animation(.easeInOut(duration: 0.2), value: viewModel.pendingDeletion?.journal.id)
         .navigationDestination(for: UUID.self) { id in
-            if let entry = viewModel.entries.first(where: { $0.id == id }) {
-                JournalDetailView(
-                    journal: entry,
-                    onOpenEntry: { detailPath.append(.detail($0)) },
-                    onEdit: onEditEntry,
-                    onDelete: { deleted in
-                        // Back to the list first, then the undo toast (Part A 3.8).
-                        detailPath.removeAll()
-                        
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        viewModel.delete(deleted)
-                    }
-                )
-            }
+            detail(id)
         }
         .onAppear { openSwipeRowID = initialOpenSwipeRowID }
-        .fullScreenCover(item: $editorRequest) { request in
+        .fullScreenCover(item: $showFullscreenEntryRequest) { request in
             JournalEditorView(
                 initialDate: request.day,
-                onClose: { editorRequest = nil }
+                onClose: { showFullscreenEntryRequest = nil }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func detail(_ id: UUID) -> some View {
+        if let entry = viewModel.entries.first(where: { $0.id == id }) {
+            JournalDetailView(
+                journal: entry,
+                onOpenEntry: { detailPath.append(.detail($0)) },
+                onEdit: onEditEntry,
+                onDelete: { deleted in
+                    // Back to the list first, then the undo toast (Part A 3.8).
+                    detailPath.removeAll()
+                    
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    viewModel.delete(deleted)
+                }
             )
         }
     }
     
-    private func openEntry(_ entry: Journal) {
-        if let onOpenEntry {
-            onOpenEntry(entry)
-        } else {
-            detailPath.append(.detail(entry))
-        }
+    /// Opens the entry detail (Part B).
+    private func onOpenEntry(_ entry: Journal) {
+        detailPath.append(.detail(entry))
     }
     
     private func openEditor(on day: Date) {
-        editorRequest = JournalEditorRequest(day: day)
+        showFullscreenEntryRequest = JournalEditorRequest(day: day)
     }
     
     /// Opens the editor for an existing entry (Part C).
     private func onEditEntry(_ entry: Journal) {
         detailPath.append(.editor(entry))
+    }
+    
+    /// Opens the list of entries for a keyword. When nil, the list is pushed inside this tab.
+    private func onOpenKeyword(_ keyword: String) {
+        detailPath.append(.keyword(keyword))
     }
 
     @ViewBuilder
@@ -111,6 +131,7 @@ struct JournalView: View {
 
 // MARK: - List parts
 enum JournalNavigationPath: Hashable {
+    case keyword(String)
     case detail(Journal)
     case editor(Journal)
 }

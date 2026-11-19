@@ -9,6 +9,8 @@ import SwiftUI
 
 extension EnvironmentValues {
     @Entry var hingeStatus: DeviceHingeStatus? = nil
+    // MARK: - EnvironmentValues + Journal
+    @Entry var editorRequest: Binding<JournalEditorRequest?> = .constant(nil)
 }
 
 enum DeviceHingeStatus {

@@ -12,7 +12,6 @@ struct JournalGeneralContentsView: View {
     
     @Binding var scrollPosition: ScrollPosition
     @Binding var openSwipeRowID: UUID?
-    @Binding var editorRequest: JournalEditorRequest?
     
     var onOpenEntry: (Journal) -> Void
     var onOpenEditor: (Date) -> Void
@@ -53,7 +52,6 @@ struct JournalGeneralContentsView: View {
                         ForEach(viewModel.sortedByMonth, id: \.month) { section in
                             JournalListSection(
                                 viewModel: viewModel,
-                                editorRequest: $editorRequest,
                                 openSwipeRowID: $openSwipeRowID,
                                 section: section,
                                 keywordStages: keywordStages,

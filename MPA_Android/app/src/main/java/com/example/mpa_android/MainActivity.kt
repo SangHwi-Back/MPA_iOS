@@ -42,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.example.mpa_android.ui.view.TabViewContents
 import com.example.mpa_android.ui.view.TabViewContentsModel
+import com.example.mpa_android.ui.view.journal.JournalCollectionScreen
 import com.example.mpa_android.ui.view.journal.JournalDetailScreen
 import com.example.mpa_android.ui.view.journal.JournalEditorScreen
 import com.example.mpa_android.ui.view.settings.SettingsAIConnectionDetailScreen
@@ -59,6 +60,9 @@ const val SETTINGS_AI_CONNECTION_ROUTE = "settings-ai-connection"
 const val SETTINGS_PRIVACY_DESCRIPTION_ROUTE = "settings-privacy-description"
 const val JOURNAL_DETAIL_ROUTE = "journal-detail"
 const val JOURNAL_DETAIL_PATTERN = "$JOURNAL_DETAIL_ROUTE/{${JournalDetailViewModel.ARG_JOURNAL_ID}}"
+const val JOURNAL_COLLECTION_ROUTE = "journal-collection"
+const val JOURNAL_COLLECTION_KEYWORD_ARG = "keyword"
+const val JOURNAL_COLLECTION_PATTERN = "$JOURNAL_COLLECTION_ROUTE/{$JOURNAL_COLLECTION_KEYWORD_ARG}"
 
 val LocalAppGlobalModel = staticCompositionLocalOf {
     GlobalModel()
@@ -202,7 +206,9 @@ fun App() {
                     windowInsets = NavigationBarDefaults.windowInsets,
                 ) {
                     visibleTabs.forEach { destinations ->
-                        val isSelected = currentRoute == destinations.route
+                        // The keyword list is opened from the 기록 tab, so that tab stays selected there.
+                        val isSelected = currentRoute == destinations.route ||
+                            (destinations == TabDestination.JOURNAL && currentRoute == JOURNAL_COLLECTION_PATTERN)
                         NavigationBarItem(
                             selected = isSelected,
                             colors = NavigationBarItemDefaults.colors(
@@ -310,6 +316,16 @@ fun App() {
                                     launchSingleTop = true
                                 }
                             },
+                        )
+                    }
+                    composable(JOURNAL_COLLECTION_PATTERN) { entry ->
+                        JournalCollectionScreen(
+                            viewModel = journalViewModel,
+                            keyword = entry.arguments?.getString(JOURNAL_COLLECTION_KEYWORD_ARG).orEmpty(),
+                            onBack = { navController.popBackStack() },
+                            onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
+                            onEditEntry = { navController.navigate(editorRoute(it.day, it.prompt)) },
+                            dynamicTopAppBar = { dynamicTopAppBar(it) },
                         )
                     }
                     composable(SETTINGS_PRIVACY_DESCRIPTION_ROUTE) {

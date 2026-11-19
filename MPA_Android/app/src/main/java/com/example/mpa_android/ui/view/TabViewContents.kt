@@ -1,5 +1,6 @@
 package com.example.mpa_android.ui.view
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,6 +51,7 @@ fun TabViewContents(
             viewModel = journalViewModel,
             onWrite = { date -> navController.navigate("$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG=$date") },
             onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
+            onOpenKeyword = { navController.navigate("$JOURNAL_COLLECTION_ROUTE/${Uri.encode(it)}") },
             onSearchActiveChange = { globalModel.isJournalSearchActive = it },
             scrollToTopSignal = globalModel.journalScrollToTopSignal,
             dynamicTopAppBar = { model.onDrawTopAppBar(it) },

@@ -10,7 +10,6 @@ import SwiftUI
 struct JournalTabletContents: View {
     @Bindable var viewModel: JournalViewModel
     
-    @Binding var editorRequest: JournalEditorRequest?
     @Binding var scrollPosition: ScrollPosition
     
     var onOpenEntry: (Journal) -> Void
@@ -107,11 +106,7 @@ struct JournalTabletContents: View {
                                 onOpenEntry(entry)
                             }
                             .contextMenu {
-                                JournalContentsEntryMenu(
-                                    viewModel: viewModel,
-                                    editorRequest: $editorRequest,
-                                    entry: entry
-                                )
+                                JournalContentsEntryMenu(viewModel: viewModel, entry: entry)
                             }
                         }
                     }
@@ -153,15 +148,15 @@ struct JournalContentsTabletHeader: View {
 }
 
 struct JournalContentsEntryMenu: View {
-    @Bindable var viewModel: JournalViewModel
+    @Environment(\.editorRequest) private var showFullscreenEntryRequest
     
-    @Binding var editorRequest: JournalEditorRequest?
+    @Bindable var viewModel: JournalViewModel
     
     var entry: Journal
     
     var body: some View {
         Button {
-            editorRequest = JournalEditorRequest(day: entry.day)
+            showFullscreenEntryRequest.wrappedValue = JournalEditorRequest(day: entry.day)
         } label: {
             Label("편집", systemImage: "pencil")
         }

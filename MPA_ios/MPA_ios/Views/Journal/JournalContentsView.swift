@@ -9,11 +9,11 @@ import SwiftUI
 
 struct JournalContentsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.editorRequest) private var showFullscreenEntryRequest
     
     @Bindable var viewModel: JournalViewModel
     
     @Binding private var openSwipeRowID: UUID?
-    @Binding private var editorRequest: JournalEditorRequest?
     @Binding private var scrollPosition: ScrollPosition
     
     /// The tablet draws its own title row, and search takes over the top of the phone screen.
@@ -32,7 +32,6 @@ struct JournalContentsView: View {
     init(
         viewModel: JournalViewModel,
         openSwipeRowID: Binding<UUID?>,
-        editorRequest: Binding<JournalEditorRequest?>,
         scrollPosition: Binding<ScrollPosition>,
         onOpenEntry: ((Journal) -> Void)? = nil,
         onEditEntry: @escaping (Journal) -> Void,
@@ -41,7 +40,6 @@ struct JournalContentsView: View {
     ) {
         self.viewModel = viewModel
         self._openSwipeRowID = openSwipeRowID
-        self._editorRequest = editorRequest
         self._scrollPosition = scrollPosition
         self.onOpenEntry = onOpenEntry
         self.onEditEntry = onEditEntry
@@ -60,7 +58,6 @@ struct JournalContentsView: View {
             } else if isRegular {
                 JournalTabletContents(
                     viewModel: viewModel,
-                    editorRequest: $editorRequest,
                     scrollPosition: $scrollPosition,
                     onOpenEntry: onOpenEntry ?? { _ in },
                     onOpenEditor: onOpenEditor,
@@ -71,7 +68,6 @@ struct JournalContentsView: View {
                     viewModel: viewModel,
                     scrollPosition: $scrollPosition,
                     openSwipeRowID: $openSwipeRowID,
-                    editorRequest: $editorRequest,
                     onOpenEntry: onOpenEntry ?? { _ in },
                     onOpenEditor: onOpenEditor,
                     onOpenKeyword: onOpenKeyword

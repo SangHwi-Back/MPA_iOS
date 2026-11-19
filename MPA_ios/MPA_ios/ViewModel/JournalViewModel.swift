@@ -72,6 +72,15 @@ final class JournalViewModel {
     // MARK: - List grouping
 
     var sortedByMonth: [(month: Date, entries: [Journal])] {
+        Self.groupedByMonth(entries)
+    }
+
+    /// Entries that carry `keyword`, grouped like `sortedByMonth`.
+    func sortedByMonth(keyword: String) -> [(month: Date, entries: [Journal])] {
+        Self.groupedByMonth(entries.filter { $0.visibleKeywords.contains { $0.name == keyword } })
+    }
+
+    private static func groupedByMonth(_ entries: [Journal]) -> [(month: Date, entries: [Journal])] {
         let cal = Calendar.current
         let grouped = Dictionary(grouping: entries) { cal.startOfMonth(for: $0.day) }
         return grouped.keys
