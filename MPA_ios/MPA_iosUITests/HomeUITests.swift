@@ -56,11 +56,58 @@ final class HomeUITests: XCTestCase {
         XCTAssertTrue(element("home.screen").waitForExistence(timeout: 5))
     }
 
-    // uitest: HomeView | - 공통 : `home.newJournalButton` 가 보인다
-    @MainActor func test_HomeView_showsNewJournalButton() throws {
-        let button = element("home.newJournalButton")
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
-        XCTAssertTrue(button.isHittable)
+    // uitest: HomeView | - [빈 상태] 공통: 시나리오 "새 일기 작성"
+    //   1. `home.empty` 가 보인다
+    //   2. `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다
+    //   3. `editor.title`, `editor.body` 에 아무 내용이나 입력하고, 입력한 내용과 `editor.date` 내용을 기억해 놓은 뒤 `editor.done` 을 누른다
+    //   4. `home.recent.item.1` 혹은 `home.todayPreview` 이 보인다
+    //   5. `home.recent.item.1` 혹은 `home.todayPreview` 을 누르면 `detail.screen` 이 보인다. `detail.edit` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
+    //   6. `editor.close` 누른 후 `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
+    @MainActor func test_HomeView_newJournalScenario() throws {
+        // [빈 상태]: the app keeps journals in memory only, so a fresh launch has none.
+        let assertRemembered = { (title: String?, body: String?, date: String) in
+            XCTAssertEqual(self.element("editor.title").value as? String, title)
+            XCTAssertEqual(self.element("editor.body").value as? String, body)
+            XCTAssertEqual(self.element("editor.date").label, date)
+        }
+
+        // 1.
+        XCTAssertTrue(element("home.empty").waitForExistence(timeout: 5))
+
+        // 2.
+        element("home.newJournalButton").tap()
+        XCTAssertTrue(element("editor.screen").waitForExistence(timeout: 5))
+
+        // 3.
+        let title = element("editor.title")
+        title.tap()
+        title.typeText("uitest 3")
+        let body = element("editor.body")
+        body.tap()
+        body.typeText("uitest 3")
+        let rememberedTitle = title.value as? String
+        let rememberedBody = body.value as? String
+        let rememberedDate = element("editor.date").label
+        element("editor.done").tap()
+
+        // 4.
+        let recentItem = element("home.recent.item.1")
+        let todayPreview = element("home.todayPreview")
+        let entry = todayPreview.waitForExistence(timeout: 5) ? todayPreview : recentItem
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+
+        // 5.
+        entry.tap()
+        XCTAssertTrue(element("detail.screen").waitForExistence(timeout: 5))
+        element("detail.edit").tap()
+        XCTAssertTrue(element("editor.screen").waitForExistence(timeout: 5))
+        assertRemembered(rememberedTitle, rememberedBody, rememberedDate)
+
+        // 6.
+        element("editor.close").tap()
+        element("home.newJournalButton").tap()
+        XCTAssertTrue(element("editor.screen").waitForExistence(timeout: 5))
+        assertRemembered(rememberedTitle, rememberedBody, rememberedDate)
     }
 
     // MARK: - HomeSidebarView

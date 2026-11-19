@@ -63,6 +63,8 @@ struct JournalEditorView: View {
             
             bottomToolbar
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Editor.screen)
         .background(Color.CANVAS)
         .toolbarVisibility(.hidden, for: .navigationBar)
         .onAppear {
@@ -84,32 +86,40 @@ struct JournalEditorView: View {
     
     private var topBar: some View {
         HStack {
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color.TEXT_PRIMARY)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            
+            closeButton
             Spacer()
-            
-            Button {
-                save()
-                onClose()
-            } label: {
-                Text("완료")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isEmpty ? Color.TEXT_TERTIARY : Color.BRAND_ON_PRIMARY)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Capsule().fill(isEmpty ? Color.SUNKEN : Color.BRAND_PRIMARY))
-            }
-            .buttonStyle(.plain)
-            .disabled(isEmpty)
+            doneButton
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    private var closeButton: some View {
+        Button(action: onClose) {
+            Image(systemName: "xmark")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(Color.TEXT_PRIMARY)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.Editor.close)
+    }
+
+    private var doneButton: some View {
+        Button {
+            save()
+            onClose()
+        } label: {
+            Text("완료")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(isEmpty ? Color.TEXT_TERTIARY : Color.BRAND_ON_PRIMARY)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Capsule().fill(isEmpty ? Color.SUNKEN : Color.BRAND_PRIMARY))
+        }
+        .buttonStyle(.plain)
+        .disabled(isEmpty)
+        .accessibilityIdentifier(AccessibilityID.Editor.done)
     }
     
     /// Copies the edits into `journal` and stores it.
@@ -140,6 +150,7 @@ struct JournalEditorView: View {
             .foregroundStyle(Color.BRAND_PRIMARY)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.Editor.date)
     }
     
     private func formattedDate(_ date: Date) -> String {
@@ -170,11 +181,14 @@ struct JournalEditorView: View {
                     .foregroundStyle(Color.BRAND_ON_CONTAINER)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityID.Editor.promptRemove)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.BRAND_CONTAINER)
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Editor.prompt)
     }
     
     // MARK: - Title & body
@@ -184,6 +198,7 @@ struct JournalEditorView: View {
             .font(.title2.weight(.semibold))
             .foregroundStyle(Color.TEXT_PRIMARY)
             .textFieldStyle(.plain)
+            .accessibilityIdentifier(AccessibilityID.Editor.title)
     }
     
     private var bodyField: some View {
@@ -200,6 +215,7 @@ struct JournalEditorView: View {
                 .foregroundStyle(Color.TEXT_PRIMARY)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 280)
+                .accessibilityIdentifier(AccessibilityID.Editor.body)
         }
     }
     
@@ -216,16 +232,19 @@ struct JournalEditorView: View {
                     .foregroundStyle(Color.AI_ACCENT)
             }
             HStack(spacing: 8) {
-                ForEach(keywords, id: \.name) { keyword in
+                ForEach(Array(keywords.enumerated()), id: \.element.name) { offset, keyword in
                     Text(keyword.name)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(Color.TEXT_PRIMARY)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Capsule().fill(Color.SUNKEN))
+                        .accessibilityIdentifier(AccessibilityID.Editor.keyword(offset + 1))
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Editor.keywords)
     }
     
     // MARK: - Bottom toolbar
@@ -251,6 +270,8 @@ struct JournalEditorView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color.CONTAINER)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Editor.toolbar)
     }
     
     // MARK: - Date picker sheet
@@ -260,21 +281,25 @@ struct JournalEditorView: View {
             DatePicker("날짜 선택", selection: $pendingDate, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .tint(Color.BRAND_PRIMARY)
+                .accessibilityIdentifier(AccessibilityID.Editor.datePickerCalendar)
                 .padding()
                 .navigationTitle("날짜 선택")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("취소") { showDatePicker = false }
+                            .accessibilityIdentifier(AccessibilityID.Editor.datePickerCancel)
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("확인") {
                             day = Calendar.current.startOfDay(for: pendingDate)
                             showDatePicker = false
                         }
+                        .accessibilityIdentifier(AccessibilityID.Editor.datePickerConfirm)
                     }
                 }
         }
+        .accessibilityIdentifier(AccessibilityID.Editor.datePicker)
         .presentationDetents([.medium])
     }
 }

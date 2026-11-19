@@ -4,13 +4,19 @@
 package com.example.mpa_android.ui.home
 
 import android.content.pm.ActivityInfo
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.mpa_android.MainActivity
 import com.example.mpa_android.ui.TestTags
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
@@ -25,6 +31,18 @@ class HomeUITest {
     }
 
     private fun isTablet() = rule.activity.resources.configuration.smallestScreenWidthDp >= 600
+
+    private fun exists(tag: String) = rule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+
+    private fun waitFor(tag: String) = rule.waitUntil(5_000) { exists(tag) }
+
+    /** Text of a field, read from the merged node so the TextField's value is included. */
+    private fun editableText(tag: String) =
+        rule.onNodeWithTag(tag).fetchSemanticsNode().config.getOrNull(SemanticsProperties.EditableText)?.text
+
+    /** Visible text of a non-field element, read from the merged node so its child Texts are included. */
+    private fun text(tag: String) =
+        rule.onNodeWithTag(tag).fetchSemanticsNode().config.getOrNull(SemanticsProperties.Text)?.joinToString { it.text }
 
     // region HomeScreen
 
@@ -42,6 +60,61 @@ class HomeUITest {
         rule.waitForIdle()
         rule.onNodeWithTag(TestTags.Home.SCREEN, useUnmergedTree = true).assertIsDisplayed()
         rule.onNodeWithTag(TestTags.Home.NEW_JOURNAL_BUTTON, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    // uitest: HomeScreen | - [빈 상태] 공통: 시나리오 "새 일기 작성"
+    //   1. `home.empty` 가 보인다
+    //   2. `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다
+    //   3. `editor.title`, `editor.body` 에 아무 내용이나 입력하고, 입력한 내용과 `editor.date` 내용을 기억해 놓은 뒤 `editor.done` 을 누른다
+    //   4. `home.recent.item.1` 혹은 `home.todayPreview` 이 보인다
+    //   5. `home.recent.item.1` 혹은 `home.todayPreview` 을 누르면 `detail.screen` 이 보인다. `detail.edit` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
+    //   6. `editor.close` 누른 후 `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
+    @Test fun test_HomeScreen_newJournalScenario() {
+        // [빈 상태]: Test Orchestrator clears app data before each test, so the app starts with no journals.
+        fun assertRemembered(title: String?, body: String?, date: String?) {
+            assertEquals(title, editableText(TestTags.Editor.TITLE))
+            assertEquals(body, editableText(TestTags.Editor.BODY))
+            assertEquals(date, text(TestTags.Editor.DATE))
+        }
+
+        // 1.
+        waitFor(TestTags.Home.EMPTY)
+        rule.onNodeWithTag(TestTags.Home.EMPTY, useUnmergedTree = true).assertIsDisplayed()
+
+        // 2.
+        rule.onNodeWithTag(TestTags.Home.NEW_JOURNAL_BUTTON, useUnmergedTree = true).performClick()
+        waitFor(TestTags.Editor.SCREEN)
+        rule.onNodeWithTag(TestTags.Editor.SCREEN, useUnmergedTree = true).assertIsDisplayed()
+
+        // 3.
+        rule.onNodeWithTag(TestTags.Editor.TITLE).performTextInput("uitest 3")
+        rule.onNodeWithTag(TestTags.Editor.BODY).performTextInput("uitest 3")
+        val rememberedTitle = editableText(TestTags.Editor.TITLE)
+        val rememberedBody = editableText(TestTags.Editor.BODY)
+        val rememberedDate = text(TestTags.Editor.DATE)
+        rule.onNodeWithTag(TestTags.Editor.DONE, useUnmergedTree = true).performClick()
+
+        // 4.
+        rule.waitUntil(5_000) { exists(TestTags.Home.TODAY_PREVIEW) || exists(TestTags.Home.recentItem(1)) }
+        val entry = if (exists(TestTags.Home.TODAY_PREVIEW)) TestTags.Home.TODAY_PREVIEW else TestTags.Home.recentItem(1)
+        rule.onNodeWithTag(entry, useUnmergedTree = true).assertIsDisplayed()
+
+        // 5.
+        rule.onNodeWithTag(entry, useUnmergedTree = true).performClick()
+        waitFor(TestTags.Detail.SCREEN)
+        rule.onNodeWithTag(TestTags.Detail.SCREEN, useUnmergedTree = true).assertIsDisplayed()
+        rule.onNodeWithTag(TestTags.Detail.EDIT, useUnmergedTree = true).performClick()
+        waitFor(TestTags.Editor.SCREEN)
+        rule.onNodeWithTag(TestTags.Editor.SCREEN, useUnmergedTree = true).assertIsDisplayed()
+        assertRemembered(rememberedTitle, rememberedBody, rememberedDate)
+
+        // 6.
+        rule.onNodeWithTag(TestTags.Editor.CLOSE, useUnmergedTree = true).performClick()
+        waitFor(TestTags.Home.NEW_JOURNAL_BUTTON)
+        rule.onNodeWithTag(TestTags.Home.NEW_JOURNAL_BUTTON, useUnmergedTree = true).performClick()
+        waitFor(TestTags.Editor.SCREEN)
+        rule.onNodeWithTag(TestTags.Editor.SCREEN, useUnmergedTree = true).assertIsDisplayed()
+        assertRemembered(rememberedTitle, rememberedBody, rememberedDate)
     }
 
     // endregion

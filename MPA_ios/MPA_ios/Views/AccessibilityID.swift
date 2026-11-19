@@ -14,6 +14,7 @@ enum AccessibilityID {
     enum AICard {
         static let homeAdvice = "ai.card.homeAdvice"
         static let homeWeekly = "ai.card.homeWeekly"
+        static let journalComment = "ai.card.journalComment"
 
         static func text(_ card: String) -> String { "\(card).text" }
         static func sourceLabel(_ card: String) -> String { "\(card).sourceLabel" }
@@ -23,12 +24,16 @@ enum AccessibilityID {
         static func feedbackDown(_ card: String) -> String { "\(card).feedbackDown" }
         static func regenerate(_ card: String) -> String { "\(card).regenerate" }
         static func moreAdvice(_ card: String) -> String { "\(card).moreAdvice" }
+        /// Header that expands or collapses a card.
+        static func toggle(_ card: String) -> String { "\(card).toggle" }
         /// Source chip, numbered from 1 in display order.
         static func source(_ card: String, _ index: Int) -> String { "\(card).source.\(index)" }
     }
 
     enum AI {
         static let helpCard = "ai.helpCard"
+        static let helpCardCall = "ai.helpCard.call"
+        static let helpCardResources = "ai.helpCard.resources"
     }
 
     enum Home {
@@ -80,6 +85,58 @@ enum AccessibilityID {
         static func drawerCalendarDay(_ date: Date) -> String { "home.drawer.calendar.day.\(AccessibilityID.dayKey(date))" }
         static let drawerCalendarSelectedHeader = "home.drawer.calendar.selectedHeader"
         static func drawerCalendarEntry(_ index: Int) -> String { "home.drawer.calendar.entry.\(index)" }
+    }
+
+    // Journal › 일기 상세
+    enum Detail {
+        static let screen = "detail.screen"
+        static let back = "detail.back"
+        static let edit = "detail.edit"
+        static let more = "detail.more"
+        static let menuShare = "detail.menu.share"
+        static let menuChangeDay = "detail.menu.changeDay"
+        static let menuDelete = "detail.menu.delete"
+        static let keywords = "detail.keywords"
+        static let keywordsLoading = "detail.keywords.loading"
+        static func keyword(_ index: Int) -> String { "detail.keyword.\(index)" }
+        static let date = "detail.date"
+        static let title = "detail.title"
+        static let body = "detail.body"
+        static let photos = "detail.photos"
+        static func photo(_ index: Int) -> String { "detail.photo.\(index)" }
+        static let editedAt = "detail.editedAt"
+        static let keywordSheet = "detail.keywordSheet"
+        static let keywordSheetTitle = "detail.keywordSheet.title"
+        static let keywordSheetSummary = "detail.keywordSheet.summary"
+        static let keywordSheetPrinciple = "detail.keywordSheet.principle"
+        static let keywordSheetOutOfRank = "detail.keywordSheet.outOfRank"
+        static let keywordSheetClose = "detail.keywordSheet.close"
+        static func keywordSheetItem(_ index: Int) -> String { "detail.keywordSheet.item.\(index)" }
+        static let datePicker = "detail.datePicker"
+        static let datePickerCalendar = "detail.datePicker.calendar"
+        static let datePickerCancel = "detail.datePicker.cancel"
+        static let datePickerConfirm = "detail.datePicker.confirm"
+    }
+
+    // Journal › 에디터
+    enum Editor {
+        static let screen = "editor.screen"
+        static let close = "editor.close"
+        static let done = "editor.done"
+        static let date = "editor.date"
+        static let prompt = "editor.prompt"
+        static let promptRemove = "editor.prompt.remove"
+        static let title = "editor.title"
+        static let body = "editor.body"
+        static let keywords = "editor.keywords"
+        static func keyword(_ index: Int) -> String { "editor.keyword.\(index)" }
+        static let toolbar = "editor.toolbar"
+        static let toolbarPhoto = "editor.toolbar.photo"
+        static let toolbarMic = "editor.toolbar.mic"
+        static let datePicker = "editor.datePicker"
+        static let datePickerCalendar = "editor.datePicker.calendar"
+        static let datePickerCancel = "editor.datePicker.cancel"
+        static let datePickerConfirm = "editor.datePicker.confirm"
     }
 
     // Settings › 데이터는 어디에 저장되나요?

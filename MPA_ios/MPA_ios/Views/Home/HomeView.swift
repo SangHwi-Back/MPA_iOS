@@ -10,12 +10,19 @@ import SwiftUI
  ## 개요
  - HomeView 는 기기의 상태에 따라 적절한 화면을 보여주는 역할
  ## 용어 정리
- - 없음
+ - 준비 상태 (테스트 실행 인자로 만든다)
+   - `[빈 상태]` : 일기 0개
  ## 테스트할 요소
  - iPhone 세로: `home.screen` 이 보이고 `home.drawer` 는 없다
  - iPhone 가로로 돌리면: `home.drawer` 와 `home.screen` 이 함께 보인다
  - iPad: `home.drawer` 와 `home.screen` 가 보인다
- - 공통 : `home.newJournalButton` 가 보인다. `home.newJournalButton` 를 탭하면 
+ - [빈 상태] 공통: 시나리오 "새 일기 작성"
+   1. `home.empty` 가 보인다
+   2. `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다
+   3. `editor.title`, `editor.body` 에 아무 내용이나 입력하고, 입력한 내용과 `editor.date` 내용을 기억해 놓은 뒤 `editor.done` 을 누른다
+   4. `home.recent.item.1` 혹은 `home.todayPreview` 이 보인다
+   5. `home.recent.item.1` 혹은 `home.todayPreview` 을 누르면 `detail.screen` 이 보인다. `detail.edit` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
+   6. `editor.close` 누른 후 `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
  ## 제외
  - iPhone Duo: 시뮬레이터에서 힌지 상태를 만들 수 없음 (수동 확인)
  */

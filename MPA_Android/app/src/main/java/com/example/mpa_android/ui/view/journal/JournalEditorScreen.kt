@@ -16,11 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mpa_android.R
+import com.example.mpa_android.ui.TestTags
 import com.example.mpa_android.model.Journal
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.viewmodel.JournalViewModel
@@ -78,6 +82,7 @@ fun JournalEditorScreen(
 
     Column(
         modifier = Modifier
+            .testTag(TestTags.Editor.SCREEN)
             .fillMaxSize()
             .background(MPAColor.CANVAS.color())
             .statusBarsPadding(),
@@ -148,7 +153,7 @@ private fun EditorTopBar(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onClose) {
+        IconButton(onClick = onClose, modifier = Modifier.testTag(TestTags.Editor.CLOSE)) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_close),
                 contentDescription = "닫기",
@@ -164,6 +169,7 @@ private fun EditorTopBar(
             fontWeight = FontWeight.SemiBold,
             color = if (doneEnabled) MPAColor.BRAND_ON_PRIMARY.color() else MPAColor.TEXT_TERTIARY.color(),
             modifier = Modifier
+                .testTag(TestTags.Editor.DONE)
                 .clip(RoundedCornerShape(999.dp))
                 .background(if (doneEnabled) MPAColor.BRAND_PRIMARY.color() else MPAColor.SUNKEN.color())
                 .clickable(enabled = doneEnabled, onClick = onDone)
@@ -177,7 +183,7 @@ private fun EditorTopBar(
 private fun DateField(day: LocalDate, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.testTag(TestTags.Editor.DATE).clickable(onClick = onClick),
     ) {
         Text(
             text = "${day.monthValue}월 ${day.dayOfMonth}일 ${day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.KOREAN)}",
@@ -199,6 +205,7 @@ private fun DateField(day: LocalDate, onClick: () -> Unit) {
 private fun PromptChip(text: String, onDismiss: () -> Unit) {
     Row(
         modifier = Modifier
+            .testTag(TestTags.Editor.PROMPT)
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(MPAColor.BRAND_CONTAINER.color())
@@ -224,6 +231,7 @@ private fun PromptChip(text: String, onDismiss: () -> Unit) {
             contentDescription = "질문 지우기",
             tint = MPAColor.BRAND_ON_CONTAINER.color(),
             modifier = Modifier
+                .testTag(TestTags.Editor.PROMPT_REMOVE)
                 .size(18.dp)
                 .clickable(onClick = onDismiss),
         )
@@ -245,6 +253,7 @@ private fun EditorTitleField(value: String, onValueChange: (String) -> Unit) {
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier
+            .testTag(TestTags.Editor.TITLE)
             .fillMaxWidth()
             .padding(horizontal = 0.dp),
         placeholder = {
@@ -267,6 +276,7 @@ private fun EditorBodyField(value: String, onValueChange: (String) -> Unit) {
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier
+            .testTag(TestTags.Editor.BODY)
             .fillMaxWidth()
             .defaultMinSize(minHeight = 280.dp),
         placeholder = {
@@ -284,7 +294,7 @@ private fun EditorBodyField(value: String, onValueChange: (String) -> Unit) {
 // ── Keywords (shown only once the entry has been analyzed) ────────────
 @Composable
 private fun KeywordsSection(keywords: List<String>) {
-    Column {
+    Column(modifier = Modifier.testTag(TestTags.Editor.KEYWORDS)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_sparkle),
@@ -301,12 +311,13 @@ private fun KeywordsSection(keywords: List<String>) {
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            keywords.forEach { name ->
+            keywords.forEachIndexed { index, name ->
                 Text(
                     text = name,
                     style = MaterialTheme.typography.labelMedium,
                     color = MPAColor.TEXT_PRIMARY.color(),
                     modifier = Modifier
+                        .testTag(TestTags.Editor.keyword(index + 1))
                         .clip(RoundedCornerShape(999.dp))
                         .background(MPAColor.SUNKEN.color())
                         .padding(horizontal = 12.dp, vertical = 6.dp),
@@ -324,6 +335,7 @@ private fun EditorBottomToolbar(
 ) {
     Row(
         modifier = Modifier
+            .testTag(TestTags.Editor.TOOLBAR)
             .fillMaxWidth()
             .background(MPAColor.CONTAINER.color())
             .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -334,13 +346,13 @@ private fun EditorBottomToolbar(
             imageVector = ImageVector.vectorResource(R.drawable.ic_image_placeholder_glyph),
             contentDescription = "사진 추가",
             tint = MPAColor.TEXT_SECONDARY.color(),
-            modifier = Modifier.size(22.dp).clickable(onClick = onPhotoClick),
+            modifier = Modifier.testTag(TestTags.Editor.TOOLBAR_PHOTO).size(22.dp).clickable(onClick = onPhotoClick),
         )
         Icon(
             imageVector = ImageVector.vectorResource(R.drawable.ic_mic),
             contentDescription = "음성 입력",
             tint = MPAColor.TEXT_SECONDARY.color(),
-            modifier = Modifier.size(22.dp).clickable(onClick = onMicClick),
+            modifier = Modifier.testTag(TestTags.Editor.TOOLBAR_MIC).size(22.dp).clickable(onClick = onMicClick),
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -378,8 +390,12 @@ private fun EditorDatePickerDialog(
     )
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        // Dialogs are separate windows, so the app root's testTagsAsResourceId does not reach them.
+        modifier = Modifier
+            .testTag(TestTags.Editor.DATE_PICKER)
+            .semantics { testTagsAsResourceId = true },
         confirmButton = {
-            TextButton(onClick = {
+            TextButton(modifier = Modifier.testTag(TestTags.Editor.DATE_PICKER_CONFIRM), onClick = {
                 state.selectedDateMillis?.let { millis ->
                     onConfirm(JavaInstant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
                 } ?: onDismiss()
@@ -388,7 +404,7 @@ private fun EditorDatePickerDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag(TestTags.Editor.DATE_PICKER_CANCEL)) {
                 Text("취소", color = MPAColor.TEXT_SECONDARY.color())
             }
         },
@@ -404,6 +420,7 @@ private fun EditorDatePickerDialog(
     ) {
         DatePicker(
             state = state,
+            modifier = Modifier.testTag(TestTags.Editor.DATE_PICKER_CALENDAR),
             colors = DatePickerDefaults.colors(
                 containerColor = MPAColor.SURFACE.color(),
                 selectedDayContainerColor = MPAColor.BRAND_PRIMARY.color(),

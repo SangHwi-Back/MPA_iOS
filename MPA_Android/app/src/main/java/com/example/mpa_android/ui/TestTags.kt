@@ -9,6 +9,7 @@ object TestTags {
     object AICard {
         const val HOME_ADVICE = "ai.card.homeAdvice"
         const val HOME_WEEKLY = "ai.card.homeWeekly"
+        const val JOURNAL_COMMENT = "ai.card.journalComment"
 
         fun text(card: String) = "$card.text"
         fun sourceLabel(card: String) = "$card.sourceLabel"
@@ -18,12 +19,16 @@ object TestTags {
         fun feedbackDown(card: String) = "$card.feedbackDown"
         fun regenerate(card: String) = "$card.regenerate"
         fun moreAdvice(card: String) = "$card.moreAdvice"
+        /** Header that expands or collapses a card. */
+        fun toggle(card: String) = "$card.toggle"
         /** Source chip, numbered from 1 in display order. */
         fun source(card: String, index: Int) = "$card.source.$index"
     }
 
     object AI {
         const val HELP_CARD = "ai.helpCard"
+        const val HELP_CARD_CALL = "ai.helpCard.call"
+        const val HELP_CARD_RESOURCES = "ai.helpCard.resources"
     }
 
     object Home {
@@ -74,6 +79,58 @@ object TestTags {
         fun drawerCalendarDay(date: LocalDate) = "home.drawer.calendar.day.$date"
         const val DRAWER_CALENDAR_SELECTED_HEADER = "home.drawer.calendar.selectedHeader"
         fun drawerCalendarEntry(index: Int) = "home.drawer.calendar.entry.$index"
+    }
+
+    // Journal › 일기 상세
+    object Detail {
+        const val SCREEN = "detail.screen"
+        const val BACK = "detail.back"
+        const val EDIT = "detail.edit"
+        const val MORE = "detail.more"
+        const val MENU_SHARE = "detail.menu.share"
+        const val MENU_CHANGE_DAY = "detail.menu.changeDay"
+        const val MENU_DELETE = "detail.menu.delete"
+        const val KEYWORDS = "detail.keywords"
+        const val KEYWORDS_LOADING = "detail.keywords.loading"
+        fun keyword(index: Int) = "detail.keyword.$index"
+        const val DATE = "detail.date"
+        const val TITLE = "detail.title"
+        const val BODY = "detail.body"
+        const val PHOTOS = "detail.photos"
+        fun photo(index: Int) = "detail.photo.$index"
+        const val EDITED_AT = "detail.editedAt"
+        const val KEYWORD_SHEET = "detail.keywordSheet"
+        const val KEYWORD_SHEET_TITLE = "detail.keywordSheet.title"
+        const val KEYWORD_SHEET_SUMMARY = "detail.keywordSheet.summary"
+        const val KEYWORD_SHEET_PRINCIPLE = "detail.keywordSheet.principle"
+        const val KEYWORD_SHEET_OUT_OF_RANK = "detail.keywordSheet.outOfRank"
+        const val KEYWORD_SHEET_CLOSE = "detail.keywordSheet.close"
+        fun keywordSheetItem(index: Int) = "detail.keywordSheet.item.$index"
+        const val DATE_PICKER = "detail.datePicker"
+        const val DATE_PICKER_CALENDAR = "detail.datePicker.calendar"
+        const val DATE_PICKER_CANCEL = "detail.datePicker.cancel"
+        const val DATE_PICKER_CONFIRM = "detail.datePicker.confirm"
+    }
+
+    // Journal › 에디터
+    object Editor {
+        const val SCREEN = "editor.screen"
+        const val CLOSE = "editor.close"
+        const val DONE = "editor.done"
+        const val DATE = "editor.date"
+        const val PROMPT = "editor.prompt"
+        const val PROMPT_REMOVE = "editor.prompt.remove"
+        const val TITLE = "editor.title"
+        const val BODY = "editor.body"
+        const val KEYWORDS = "editor.keywords"
+        fun keyword(index: Int) = "editor.keyword.$index"
+        const val TOOLBAR = "editor.toolbar"
+        const val TOOLBAR_PHOTO = "editor.toolbar.photo"
+        const val TOOLBAR_MIC = "editor.toolbar.mic"
+        const val DATE_PICKER = "editor.datePicker"
+        const val DATE_PICKER_CALENDAR = "editor.datePicker.calendar"
+        const val DATE_PICKER_CANCEL = "editor.datePicker.cancel"
+        const val DATE_PICKER_CONFIRM = "editor.datePicker.confirm"
     }
 
     // Settings › 데이터는 어디에 저장되나요?

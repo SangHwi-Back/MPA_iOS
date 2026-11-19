@@ -1,5 +1,5 @@
 // [NO AC] Spec: specs/journal/SCREEN_SPEC.md
-@file:OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 
 package com.example.mpa_android.ui.view.journal
 
@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,6 +66,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -75,6 +76,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -82,6 +84,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -103,6 +106,7 @@ import com.example.mpa_android.model.JournalKeywordSummary
 import com.example.mpa_android.model.JournalPhoto
 import com.example.mpa_android.model.JournalSamples
 import com.example.mpa_android.model.PRINCIPLE_STAGE_COUNT
+import com.example.mpa_android.ui.TestTags
 import com.example.mpa_android.ui.theme.MPAColor
 import com.example.mpa_android.ui.theme.MPA_AndroidTheme
 import com.example.mpa_android.viewmodel.JournalCommentPhase
@@ -215,6 +219,7 @@ private fun JournalDetailContent(
     }
 
     Scaffold(
+        modifier = Modifier.testTag(TestTags.Detail.SCREEN),
         containerColor = MPAColor.CANVAS.color(),
         topBar = {
             JournalDetailTopBar(
@@ -249,6 +254,7 @@ private fun JournalDetailContent(
 
                 Text(
                     text = JournalDetailViewModel.dateLine(journal.day, journal.createdAt, zone),
+                    modifier = Modifier.testTag(TestTags.Detail.DATE),
                     fontSize = 15.sp,
                     color = MPAColor.TEXT_SECONDARY.color(),
                 )
@@ -257,6 +263,7 @@ private fun JournalDetailContent(
                     Text(
                         text = journal.title,
                         modifier = Modifier
+                            .testTag(TestTags.Detail.TITLE)
                             .padding(top = 8.dp)
                             .semantics { heading() }
                             .onGloballyPositioned { titleBottom = (it.positionInParent().y + it.size.height).toInt() },
@@ -270,14 +277,14 @@ private fun JournalDetailContent(
 
                 JournalDetailBody(
                     paragraphs = JournalDetailViewModel.paragraphs(journal.body),
-                    modifier = Modifier.padding(top = if (state.hasTitle) 22.dp else 12.dp),
+                    modifier = Modifier.testTag(TestTags.Detail.BODY).padding(top = if (state.hasTitle) 22.dp else 12.dp),
                 )
 
                 if (journal.photos.isNotEmpty()) {
                     JournalDetailPhotoGrid(
                         photos = journal.photos,
                         onOpenPhoto = { actions.onOpenPhoto(journal, it) },
-                        modifier = Modifier.padding(top = 28.dp),
+                        modifier = Modifier.testTag(TestTags.Detail.PHOTOS).padding(top = 28.dp),
                     )
                 }
 
@@ -285,16 +292,17 @@ private fun JournalDetailContent(
                     JournalHelpResourceCard(
                         onCall = actions.onCallHelpLine,
                         onOpenResources = actions.onOpenHelpResources,
-                        modifier = Modifier.padding(top = 28.dp),
+                        modifier = Modifier.testTag(TestTags.AI.HELP_CARD).padding(top = 28.dp),
                     )
                 } else if (state.isAIAvailable) {
-                    JournalCommentCard(state, actions, modifier = Modifier.padding(top = 28.dp))
+                    JournalCommentCard(state, actions, modifier = Modifier.testTag(TestTags.AICard.JOURNAL_COMMENT).padding(top = 28.dp))
                 }
 
                 journal.editedAt?.let { editedAt ->
                     Text(
                         text = JournalDetailViewModel.editedLine(editedAt, zone),
                         modifier = Modifier
+                            .testTag(TestTags.Detail.EDITED_AT)
                             .fillMaxWidth()
                             .padding(top = 24.dp),
                         fontSize = 13.sp,
@@ -351,18 +359,18 @@ private fun JournalDetailTopBar(
     TopAppBar(
         title = { Text(text = title, fontSize = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         navigationIcon = {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = onBack, modifier = Modifier.testTag(TestTags.Detail.BACK)) {
                 Icon(ImageVector.vectorResource(R.drawable.ic_arrow_back), contentDescription = "뒤로", tint = iconColor)
             }
         },
         actions = {
             if (onEdit != null) {
-                IconButton(onClick = onEdit) {
+                IconButton(onClick = onEdit, modifier = Modifier.testTag(TestTags.Detail.EDIT)) {
                     Icon(ImageVector.vectorResource(R.drawable.ic_edit), contentDescription = "편집", tint = iconColor)
                 }
             }
             Box {
-                IconButton(onClick = { isMenuOpen = true }) {
+                IconButton(onClick = { isMenuOpen = true }, modifier = Modifier.testTag(TestTags.Detail.MORE)) {
                     Icon(ImageVector.vectorResource(R.drawable.ic_more_vert), contentDescription = "더보기", tint = iconColor)
                 }
                 DropdownMenu(
@@ -370,11 +378,20 @@ private fun JournalDetailTopBar(
                     onDismissRequest = { isMenuOpen = false },
                     containerColor = MPAColor.CONTAINER.color(),
                 ) {
-                    DropdownMenuItem(text = { Text("공유") }, onClick = { isMenuOpen = false; onShare() })
-                    DropdownMenuItem(text = { Text("날짜 변경") }, onClick = { isMenuOpen = false; onChangeDay() })
+                    DropdownMenuItem(
+                        text = { Text("공유") },
+                        onClick = { isMenuOpen = false; onShare() },
+                        modifier = Modifier.testTag(TestTags.Detail.MENU_SHARE),
+                    )
+                    DropdownMenuItem(
+                        text = { Text("날짜 변경") },
+                        onClick = { isMenuOpen = false; onChangeDay() },
+                        modifier = Modifier.testTag(TestTags.Detail.MENU_CHANGE_DAY),
+                    )
                     DropdownMenuItem(
                         text = { Text("삭제", color = MPAColor.DANGER.color()) },
                         onClick = { isMenuOpen = false; onDelete() },
+                        modifier = Modifier.testTag(TestTags.Detail.MENU_DELETE),
                     )
                 }
             }
@@ -404,6 +421,7 @@ private fun JournalDetailKeywordRow(state: JournalDetailUiState, onClick: (Strin
         JournalKeywordRow.Hidden -> Unit
         JournalKeywordRow.Skeleton -> Row(
             modifier = Modifier
+                .testTag(TestTags.Detail.KEYWORDS_LOADING)
                 .padding(bottom = 24.dp)
                 .semantics { contentDescription = "키워드를 찾는 중" },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -419,15 +437,17 @@ private fun JournalDetailKeywordRow(state: JournalDetailUiState, onClick: (Strin
         }
         is JournalKeywordRow.Chips -> Row(
             modifier = Modifier
+                .testTag(TestTags.Detail.KEYWORDS)
                 .padding(bottom = 24.dp)
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            row.keywords.forEach { keyword ->
+            row.keywords.forEachIndexed { index, keyword ->
                 JournalDetailKeywordChip(
                     name = keyword.name,
                     stage = state.keywordStages[keyword.name] ?: 0,
                     onClick = { onClick(keyword.name) },
+                    modifier = Modifier.testTag(TestTags.Detail.keyword(index + 1)),
                 )
             }
         }
@@ -436,9 +456,9 @@ private fun JournalDetailKeywordRow(state: JournalDetailUiState, onClick: (Strin
 
 /** M3 Assist chip look: radius 8 with a 1dp outline. */
 @Composable
-private fun JournalDetailKeywordChip(name: String, stage: Int, onClick: () -> Unit) {
+private fun JournalDetailKeywordChip(name: String, stage: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable(role = Role.Button, onClickLabel = "이 키워드가 나온 일기 보기", onClick = onClick)
@@ -502,6 +522,7 @@ private fun JournalDetailPhoto(photo: JournalPhoto, index: Int, aspectRatio: Flo
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
             modifier = Modifier
+                .testTag(TestTags.Detail.photo(index + 1))
                 .fillMaxWidth()
                 .aspectRatio(aspectRatio)
                 .clip(RoundedCornerShape(PHOTO_RADIUS))
@@ -536,6 +557,7 @@ private fun JournalCommentCard(state: JournalDetailUiState, actions: JournalDeta
     ) {
         Row(
             modifier = Modifier
+                .testTag(TestTags.AICard.toggle(TestTags.AICard.JOURNAL_COMMENT))
                 .fillMaxWidth()
                 .height(COMMENT_HEADER_HEIGHT)
                 .clickable(role = Role.Button, onClick = actions.onToggleComment)
@@ -572,7 +594,11 @@ private fun JournalCommentCard(state: JournalDetailUiState, actions: JournalDeta
                 when (val phase = state.commentPhase) {
                     JournalCommentPhase.Idle, JournalCommentPhase.Loading -> JournalCommentSkeleton()
                     is JournalCommentPhase.Loaded -> {
-                        JournalCommentText(phase.comment.text, state.revealsCommentByWord)
+                        JournalCommentText(
+                            phase.comment.text,
+                            state.revealsCommentByWord,
+                            modifier = Modifier.testTag(TestTags.AICard.text(TestTags.AICard.JOURNAL_COMMENT)),
+                        )
                         JournalCommentFooter(phase.comment, actions)
                     }
                     JournalCommentPhase.Failed -> {
@@ -581,7 +607,10 @@ private fun JournalCommentCard(state: JournalDetailUiState, actions: JournalDeta
                             fontSize = 15.sp,
                             color = MPAColor.TEXT_SECONDARY.color(),
                         )
-                        TextButton(onClick = actions.onRetryComment) {
+                        TextButton(
+                            onClick = actions.onRetryComment,
+                            modifier = Modifier.testTag(TestTags.AICard.retry(TestTags.AICard.JOURNAL_COMMENT)),
+                        ) {
                             Text("다시 시도", color = MPAColor.BRAND_PRIMARY.color(), fontWeight = FontWeight.SemiBold)
                         }
                     }
@@ -619,7 +648,7 @@ private fun JournalCommentSkeleton() {
 
 /** Fades the comment in word by word right after it is generated. */
 @Composable
-private fun JournalCommentText(text: String, revealsByWord: Boolean) {
+private fun JournalCommentText(text: String, revealsByWord: Boolean, modifier: Modifier = Modifier) {
     val words = remember(text) { text.split(" ") }
     var visibleWords by remember(text) { mutableIntStateOf(if (revealsByWord) 0 else Int.MAX_VALUE) }
     LaunchedEffect(text, revealsByWord) {
@@ -643,7 +672,7 @@ private fun JournalCommentText(text: String, revealsByWord: Boolean) {
     }
     Text(
         text = annotated,
-        modifier = Modifier
+        modifier = modifier
             .padding(end = 12.dp)
             .semantics { contentDescription = text },
         fontSize = BODY_SIZE.sp,
@@ -657,7 +686,7 @@ private fun JournalCommentFooter(comment: AIText, actions: JournalDetailActions)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = comment.engine.sourceLabel,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.testTag(TestTags.AICard.sourceLabel(TestTags.AICard.JOURNAL_COMMENT)).weight(1f),
             fontSize = 13.sp,
             color = MPAColor.TEXT_SECONDARY.color(),
         )
@@ -672,6 +701,13 @@ private fun JournalCommentFooter(comment: AIText, actions: JournalDetailActions)
                     actions.onFeedback(feedback)
                 },
                 modifier = Modifier
+                    .testTag(
+                        if (feedback == AIFeedback.HELPFUL) {
+                            TestTags.AICard.feedbackUp(TestTags.AICard.JOURNAL_COMMENT)
+                        } else {
+                            TestTags.AICard.feedbackDown(TestTags.AICard.JOURNAL_COMMENT)
+                        },
+                    )
                     .size(ACTION_SIZE)
                     .semantics { selected = isSelected },
             ) {
@@ -682,7 +718,10 @@ private fun JournalCommentFooter(comment: AIText, actions: JournalDetailActions)
                 )
             }
         }
-        IconButton(onClick = actions.onRegenerateComment, modifier = Modifier.size(ACTION_SIZE)) {
+        IconButton(
+            onClick = actions.onRegenerateComment,
+            modifier = Modifier.testTag(TestTags.AICard.regenerate(TestTags.AICard.JOURNAL_COMMENT)).size(ACTION_SIZE),
+        ) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_refresh),
                 contentDescription = "다시 생성",
@@ -724,12 +763,13 @@ internal fun JournalHelpResourceCard(onCall: () -> Unit, onOpenResources: () -> 
         ) {
             Button(
                 onClick = onCall,
+                modifier = Modifier.testTag(TestTags.AI.HELP_CARD_CALL),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MPAColor.BRAND_PRIMARY.color(),
                     contentColor = MPAColor.BRAND_ON_PRIMARY.color(),
                 ),
             ) { Text("109 자살예방상담전화") }
-            OutlinedButton(onClick = onOpenResources) {
+            OutlinedButton(onClick = onOpenResources, modifier = Modifier.testTag(TestTags.AI.HELP_CARD_RESOURCES)) {
                 Text("다른 상담 창구", color = MPAColor.BRAND_PRIMARY.color())
             }
         }
@@ -763,7 +803,8 @@ private fun JournalKeywordSheetContent(
     onOpenPrinciple: () -> Unit,
     onOpenEntry: (Journal) -> Unit,
 ) {
-    Column {
+    // The bottom sheet is its own window, so the resource-id flag is set again here.
+    Column(modifier = Modifier.testTag(TestTags.Detail.KEYWORD_SHEET).semantics { testTagsAsResourceId = true }) {
         Row(
             modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -778,13 +819,14 @@ private fun JournalKeywordSheetContent(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = summary.name,
-                    modifier = Modifier.semantics { heading() },
+                    modifier = Modifier.testTag(TestTags.Detail.KEYWORD_SHEET_TITLE).semantics { heading() },
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = MPAColor.TEXT_PRIMARY.color(),
                 )
                 Text(
                     text = "${summary.entries.size}개의 일기에서 발견 · 처음 ${JournalDetailViewModel.shortDate(summary.firstSeen)}",
+                    modifier = Modifier.testTag(TestTags.Detail.KEYWORD_SHEET_SUMMARY),
                     fontSize = 15.sp,
                     color = MPAColor.TEXT_SECONDARY.color(),
                 )
@@ -792,6 +834,7 @@ private fun JournalKeywordSheetContent(
                     Text(
                         text = "원칙에서 자세히 보기 →",
                         modifier = Modifier
+                            .testTag(TestTags.Detail.KEYWORD_SHEET_PRINCIPLE)
                             .heightIn(min = ACTION_SIZE)
                             .clickable(role = Role.Button, onClick = onOpenPrinciple)
                             .padding(vertical = 12.dp),
@@ -802,7 +845,7 @@ private fun JournalKeywordSheetContent(
                 } else {
                     Text(
                         text = "지금은 원칙 순위 밖이에요",
-                        modifier = Modifier.padding(vertical = 12.dp),
+                        modifier = Modifier.testTag(TestTags.Detail.KEYWORD_SHEET_OUT_OF_RANK).padding(vertical = 12.dp),
                         fontSize = 15.sp,
                         color = MPAColor.TEXT_SECONDARY.color(),
                     )
@@ -811,10 +854,11 @@ private fun JournalKeywordSheetContent(
         }
         HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = MPAColor.HAIRLINE.color())
         LazyColumn {
-            items(summary.entries, key = { it.id.toString() }) { entry ->
+            itemsIndexed(summary.entries, key = { _, it -> it.id.toString() }) { index, entry ->
                 val isCurrent = entry.id.toString() == currentJournalId
                 Row(
                     modifier = Modifier
+                        .testTag(TestTags.Detail.keywordSheetItem(index + 1))
                         .fillMaxWidth()
                         .height(SHEET_ROW_HEIGHT)
                         .background(if (isCurrent) MPAColor.AI_TINT.color() else Color.Transparent)
@@ -867,15 +911,24 @@ private fun JournalDetailDatePicker(initialDay: LocalDate, onConfirm: (LocalDate
     )
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        // The dialog is its own window, so the resource-id flag is set again here.
+        modifier = Modifier
+            .testTag(TestTags.Detail.DATE_PICKER)
+            .semantics { testTagsAsResourceId = true },
         confirmButton = {
-            TextButton(onClick = {
-                val millis = pickerState.selectedDateMillis ?: return@TextButton onDismiss()
-                onConfirm(JavaInstant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-            }) { Text("확인") }
+            TextButton(
+                onClick = {
+                    val millis = pickerState.selectedDateMillis ?: return@TextButton onDismiss()
+                    onConfirm(JavaInstant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                },
+                modifier = Modifier.testTag(TestTags.Detail.DATE_PICKER_CONFIRM),
+            ) { Text("확인") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag(TestTags.Detail.DATE_PICKER_CANCEL)) { Text("취소") }
+        },
     ) {
-        DatePicker(state = pickerState)
+        DatePicker(state = pickerState, modifier = Modifier.testTag(TestTags.Detail.DATE_PICKER_CALENDAR))
     }
 }
 

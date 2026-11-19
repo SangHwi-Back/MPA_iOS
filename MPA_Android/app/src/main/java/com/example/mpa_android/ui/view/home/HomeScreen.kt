@@ -110,12 +110,21 @@ private data class HomeModelActions(
  - HomeScreen 은 오늘 탭의 화면. 공용 상단 바에 인사·날짜·AI 경고 버튼을 넘기고, 본문은 HomeContent 가 그린다
  - 폰과 태블릿, 세로와 가로 모두 같은 한 칸 배치를 쓴다 (iOS 의 사이드바 같은 분기가 없다)
  ## 용어 정리
+ - 준비 상태 (테스트 실행 인자로 만든다)
+   - `[빈 상태]` : 일기 0개
  - `AI 경고 버튼` : `home.aiWarningButton`. AI 를 쓸 수 없을 때만 상단 바에 보인다
  - `새 일기 버튼` : `home.newJournalButton`. 오늘 탭에서만 태그가 붙는 공용 FAB
  ## 테스트할 요소
  - 공통: `home.screen` 과 `home.newJournalButton` 이 보인다
  - 폰 가로로 돌리면: `home.screen` 과 `home.newJournalButton` 이 그대로 보인다
  - [일기 앱] 공통: `home.aiWarningButton` 을 누르면 알림이 뜨고, 알림의 확인 버튼을 누르면 알림이 사라진다
+ - [빈 상태] 공통: 시나리오 "새 일기 작성"
+   1. `home.empty` 가 보인다
+   2. `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다
+   3. `editor.title`, `editor.body` 에 아무 내용이나 입력하고, 입력한 내용과 `editor.date` 내용을 기억해 놓은 뒤 `editor.done` 을 누른다
+   4. `home.recent.item.1` 혹은 `home.todayPreview` 이 보인다
+   5. `home.recent.item.1` 혹은 `home.todayPreview` 을 누르면 `detail.screen` 이 보인다. `detail.edit` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
+   6. `editor.close` 누른 후 `home.newJournalButton` 을 누르면 `editor.screen` 이 보인다. 기억해 놓은 내용이 `editor.title`, `editor.body`, `editor.date` 에 정확히 들어있는지 확인한다.
  ## 제외
  - 인사·날짜: 모든 탭이 같이 쓰는 상단 바(MainActivity)의 제목이라 홈 전용 태그가 없음
  - 알림의 API 키 연결 버튼: 설정 화면으로 넘어가는 동작이라 그 화면의 태그가 생긴 뒤에 추가

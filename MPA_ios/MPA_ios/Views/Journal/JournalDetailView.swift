@@ -103,6 +103,8 @@ struct JournalDetailView: View {
                 .coordinateSpace(.named(DetailCoordinateSpace.content))
         }
         .defaultScrollAnchor(startsAtBottom ? .bottom : .top)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Detail.screen)
         // The transform reads `titleBottom`, so it is re-evaluated once the title is measured.
         // That also covers a screen that opens already scrolled, where no scroll change follows.
         .onScrollGeometryChange(for: Bool.self) { geometry in
@@ -142,6 +144,7 @@ struct JournalDetailView: View {
             Text(JournalDetailViewModel.dateLine(day: journal.day, createdAt: journal.createdAt))
                 .font(.system(size: 15))
                 .foregroundStyle(Color.TEXT_SECONDARY)
+                .accessibilityIdentifier(AccessibilityID.Detail.date)
 
             if model.hasTitle {
                 Text(journal.title)
@@ -150,6 +153,7 @@ struct JournalDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
                     .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier(AccessibilityID.Detail.title)
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.frame(in: .named(DetailCoordinateSpace.content)).maxY
                     } action: { titleBottom = $0 }
@@ -160,6 +164,8 @@ struct JournalDetailView: View {
 
             if !journal.photos.isEmpty {
                 photoGrid
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(AccessibilityID.Detail.photos)
                     .padding(.top, 28)
             }
 
@@ -168,9 +174,13 @@ struct JournalDetailView: View {
                     onCall: { openURL(URL(string: "tel:109")!) },
                     onOpenResources: onOpenHelpResources
                 )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(AccessibilityID.AI.helpCard)
                 .padding(.top, 28)
             } else if model.isAIAvailable {
                 JournalCommentCard(model: model)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(AccessibilityID.AICard.journalComment)
                     .padding(.top, 28)
             }
 
@@ -179,6 +189,7 @@ struct JournalDetailView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(Color.TEXT_SECONDARY)
                     .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier(AccessibilityID.Detail.editedAt)
                     .padding(.top, 24)
             }
         }
@@ -203,21 +214,25 @@ struct JournalDetailView: View {
             .padding(.bottom, 24)
             .accessibilityElement()
             .accessibilityLabel("키워드를 찾는 중")
+            .accessibilityIdentifier(AccessibilityID.Detail.keywordsLoading)
         case .chips(let keywords):
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
-                    ForEach(keywords, id: \.name) { keyword in
+                    ForEach(Array(keywords.enumerated()), id: \.element.name) { index, keyword in
                         JournalDetailKeywordChip(
                             name: keyword.name,
                             stage: journalViewModel.keywordStages[keyword.name] ?? 0
                         ) {
                             model.presentedKeyword = keyword.name
                         }
+                        .accessibilityIdentifier(AccessibilityID.Detail.keyword(index + 1))
                     }
                 }
             }
             .scrollIndicators(.hidden)
             .scrollClipDisabled()
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityID.Detail.keywords)
             .padding(.bottom, 24)
         }
     }
@@ -235,6 +250,7 @@ struct JournalDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .textSelection(.enabled)
+        .accessibilityIdentifier(AccessibilityID.Detail.body)
     }
 
     // MARK: - Photos
@@ -278,6 +294,7 @@ struct JournalDetailView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(photo.caption.isEmpty ? "사진 \(index + 1)" : photo.caption)
+            .accessibilityIdentifier(AccessibilityID.Detail.photo(index + 1))
 
             if !photo.caption.isEmpty {
                 Text(photo.caption)
@@ -302,29 +319,34 @@ struct JournalDetailView: View {
                         .foregroundStyle(Color.TEXT_PRIMARY)
                 }
                 .accessibilityLabel("편집")
+                .accessibilityIdentifier(AccessibilityID.Detail.edit)
             }
 
             Menu {
                 ShareLink(item: shareText) {
                     Label("공유", systemImage: "square.and.arrow.up")
                 }
+                .accessibilityIdentifier(AccessibilityID.Detail.menuShare)
                 Button {
                     pendingDay = journal.day
                     isDatePickerPresented = true
                 } label: {
                     Label("날짜 변경", systemImage: "calendar")
                 }
+                .accessibilityIdentifier(AccessibilityID.Detail.menuChangeDay)
                 Button(role: .destructive) {
                     journalViewModel.delete(journal)
                     onDelete(journal)
                 } label: {
                     Label("삭제", systemImage: "trash")
                 }
+                .accessibilityIdentifier(AccessibilityID.Detail.menuDelete)
             } label: {
                 Image(systemName: "ellipsis")
                     .foregroundStyle(Color.TEXT_PRIMARY)
             }
             .accessibilityLabel("더보기")
+            .accessibilityIdentifier(AccessibilityID.Detail.more)
         }
     }
 
@@ -364,6 +386,7 @@ struct JournalDetailView: View {
         NavigationStack {
             DatePicker("날짜", selection: $pendingDay, in: ...journalViewModel.today, displayedComponents: .date)
                 .datePickerStyle(.graphical)
+                .accessibilityIdentifier(AccessibilityID.Detail.datePickerCalendar)
                 .tint(Color.BRAND_PRIMARY)
                 .padding(.horizontal, 16)
                 .navigationTitle("날짜 변경")
@@ -371,15 +394,19 @@ struct JournalDetailView: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("취소") { isDatePickerPresented = false }
+                            .accessibilityIdentifier(AccessibilityID.Detail.datePickerCancel)
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("완료") {
                             model.changeDay(to: pendingDay)
                             isDatePickerPresented = false
                         }
+                        .accessibilityIdentifier(AccessibilityID.Detail.datePickerConfirm)
                     }
                 }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Detail.datePicker)
         .presentationDetents([.medium, .large])
     }
 }
@@ -452,6 +479,7 @@ private struct JournalCommentCard: View {
             }
             .buttonStyle(.plain)
             .accessibilityValue(model.isCommentExpanded ? "펼쳐짐" : "접힘")
+            .accessibilityIdentifier(AccessibilityID.AICard.toggle(AccessibilityID.AICard.journalComment))
 
             if model.isCommentExpanded {
                 expandedContent
@@ -480,6 +508,7 @@ private struct JournalCommentCard: View {
         case .loaded(let comment):
             VStack(alignment: .leading, spacing: 8) {
                 JournalCommentText(text: comment.text, revealsByWord: model.revealsCommentByWord)
+                    .accessibilityIdentifier(AccessibilityID.AICard.text(AccessibilityID.AICard.journalComment))
                 footer(comment)
             }
         case .failed:
@@ -493,6 +522,7 @@ private struct JournalCommentCard: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.BRAND_PRIMARY)
                 .frame(minHeight: JournalDetailLayout.actionSize)
+                .accessibilityIdentifier(AccessibilityID.AICard.retry(AccessibilityID.AICard.journalComment))
             }
         }
     }
@@ -503,6 +533,7 @@ private struct JournalCommentCard: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Color.TEXT_SECONDARY)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier(AccessibilityID.AICard.sourceLabel(AccessibilityID.AICard.journalComment))
             Spacer(minLength: 8)
             feedbackButton(.helpful, comment: comment, image: "thumb_up", label: "도움이 됐어요")
             feedbackButton(.notHelpful, comment: comment, image: "thumb_down", label: "도움이 안 됐어요")
@@ -513,6 +544,7 @@ private struct JournalCommentCard: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("다시 생성")
+            .accessibilityIdentifier(AccessibilityID.AICard.regenerate(AccessibilityID.AICard.journalComment))
         }
         .sensoryFeedback(.selection, trigger: comment.feedback)
     }
@@ -527,6 +559,9 @@ private struct JournalCommentCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(label)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier(feedback == .helpful
+            ? AccessibilityID.AICard.feedbackUp(AccessibilityID.AICard.journalComment)
+            : AccessibilityID.AICard.feedbackDown(AccessibilityID.AICard.journalComment))
     }
 
     private func actionIcon(_ name: String) -> some View {
@@ -644,6 +679,7 @@ struct JournalHelpResourceCard: View {
                 .background(Capsule().fill(Color.BRAND_PRIMARY))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.AI.helpCardCall)
 
         Button(action: onOpenResources) {
             Text("다른 상담 창구")
@@ -654,6 +690,7 @@ struct JournalHelpResourceCard: View {
                 .overlay(Capsule().stroke(Color.HAIRLINE, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.AI.helpCardResources)
     }
 }
 
@@ -672,13 +709,16 @@ private struct JournalKeywordSheet: View {
             Rectangle().fill(Color.HAIRLINE).frame(height: 1)
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(summary.entries, id: \.id) { entry in
+                    ForEach(Array(summary.entries.enumerated()), id: \.element.id) { index, entry in
                         row(entry)
+                            .accessibilityIdentifier(AccessibilityID.Detail.keywordSheetItem(index + 1))
                         Rectangle().fill(Color.HAIRLINE).frame(height: 1)
                     }
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.Detail.keywordSheet)
     }
 
     private var header: some View {
@@ -694,9 +734,11 @@ private struct JournalKeywordSheet: View {
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(Color.TEXT_PRIMARY)
                     .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier(AccessibilityID.Detail.keywordSheetTitle)
                 Text("\(summary.entries.count)개의 일기에서 발견 · 처음 \(JournalDetailViewModel.shortDate(summary.firstSeen))")
                     .font(.system(size: 15))
                     .foregroundStyle(Color.TEXT_SECONDARY)
+                    .accessibilityIdentifier(AccessibilityID.Detail.keywordSheetSummary)
 
                 if summary.isPrinciple {
                     Button(action: onOpenPrinciple) {
@@ -706,11 +748,13 @@ private struct JournalKeywordSheet: View {
                             .frame(minHeight: JournalDetailLayout.actionSize)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier(AccessibilityID.Detail.keywordSheetPrinciple)
                 } else {
                     Text("지금은 원칙 순위 밖이에요")
                         .font(.system(size: 15))
                         .foregroundStyle(Color.TEXT_SECONDARY)
                         .frame(minHeight: JournalDetailLayout.actionSize)
+                        .accessibilityIdentifier(AccessibilityID.Detail.keywordSheetOutOfRank)
                 }
             }
 
@@ -726,6 +770,7 @@ private struct JournalKeywordSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("닫기")
+            .accessibilityIdentifier(AccessibilityID.Detail.keywordSheetClose)
         }
         .padding(.leading, JournalDetailLayout.gutter)
         .padding(.trailing, 12)
