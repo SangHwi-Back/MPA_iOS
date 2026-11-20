@@ -51,6 +51,8 @@ fun TabViewContents(
             viewModel = journalViewModel,
             onWrite = { date -> navController.navigate("$JOURNAL_EDITOR_ROUTE?$JOURNAL_EDITOR_DATE_ARG=$date") },
             onOpenEntry = { navController.navigate("$JOURNAL_DETAIL_ROUTE/${it.id}") },
+            // The list menu opens the editor as a modal, like iOS (no detail is on the stack here).
+            onEditEntry = { model.openEditor(it.day, null) },
             onOpenKeyword = { navController.navigate("$JOURNAL_COLLECTION_ROUTE/${Uri.encode(it)}") },
             onSearchActiveChange = { globalModel.isJournalSearchActive = it },
             scrollToTopSignal = globalModel.journalScrollToTopSignal,
