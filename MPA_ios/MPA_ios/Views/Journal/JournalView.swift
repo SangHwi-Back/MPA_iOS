@@ -96,8 +96,16 @@ struct JournalView: View {
     }
     
     /// Opens the editor for an existing entry (Part C).
+    ///
+    /// When detail view that using same entry exist, dismiss.
     private func onEditEntry(_ entry: Journal) {
         detailPath.append(.editor(entry))
+        detailPath.removeAll { path in
+            if case .detail(let _entry) = path, _entry == entry {
+                return true
+            }
+            return false
+        }
     }
     
     /// Opens the list of entries for a keyword. When nil, the list is pushed inside this tab.
