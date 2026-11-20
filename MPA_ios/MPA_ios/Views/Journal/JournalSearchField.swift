@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct JournalSearchField: View {
-    @Binding var query: String
-    @Binding var isActive: Bool
+    @Bindable var viewModel: JournalViewModel
+    
     let isEnabled: Bool
     var height: CGFloat = 40
     var cornerRadius: CGFloat = 12
@@ -25,15 +25,15 @@ struct JournalSearchField: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(Color.TEXT_TERTIARY)
 
-                TextField("제목, 본문, 키워드 검색", text: $query)
+                TextField("제목, 본문, 키워드 검색", text: $viewModel.searchQuery)
                     .font(.system(size: 16))
                     .focused($isFocused)
                     .submitLabel(.search)
                     .onSubmit(onSubmit)
 
-                if !query.isEmpty {
+                if !viewModel.searchQuery.isEmpty {
                     Button {
-                        query = ""
+                        viewModel.searchQuery = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 16))
@@ -47,7 +47,7 @@ struct JournalSearchField: View {
             .frame(height: height)
             .background(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(Color.SUNKEN))
             .overlay {
-                if isActive {
+                if viewModel.isSearchActive {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .stroke(Color.BRAND_PRIMARY, lineWidth: 1.5)
                 }
@@ -55,10 +55,12 @@ struct JournalSearchField: View {
             .opacity(isEnabled ? 1 : 0.6)
             .disabled(!isEnabled)
             .onChange(of: isFocused) { _, focused in
-                if focused { isActive = true }
+                if focused {
+                    viewModel.isSearchActive = true
+                }
             }
 
-            if isActive {
+            if viewModel.isSearchActive {
                 Button("취소") {
                     isFocused = false
                     onCancel()

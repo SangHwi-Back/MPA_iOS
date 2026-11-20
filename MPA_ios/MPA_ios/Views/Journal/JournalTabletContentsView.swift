@@ -29,11 +29,8 @@ struct JournalTabletContents: View {
 
                 HStack(spacing: 12) {
                     JournalSearchField(
-                        query: $viewModel.searchQuery,
-                        isActive: $viewModel.isSearchActive,
+                        viewModel: viewModel,
                         isEnabled: true,
-                        height: 44,
-                        cornerRadius: 22,
                         onCancel: { viewModel.deactivateSearch() },
                         onSubmit: { viewModel.commitRecentSearch() }
                     )

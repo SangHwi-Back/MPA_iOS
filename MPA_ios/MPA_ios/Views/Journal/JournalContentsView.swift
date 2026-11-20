@@ -50,11 +50,7 @@ struct JournalContentsView: View {
     var body: some View {
         Group {
             if viewModel.entries.isEmpty {
-                JournalEmptyContentView(
-                    viewModel: viewModel,
-                    isRegular: isRegular,
-                    onOpenEditor: onOpenEditor
-                )
+                JournalEmptyContentView(viewModel: viewModel, onOpenEditor: onOpenEditor)
             } else if isRegular {
                 JournalTabletContents(
                     viewModel: viewModel,
@@ -94,24 +90,23 @@ struct JournalContentsView: View {
 }
 
 private struct JournalEmptyContentView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
     @Bindable var viewModel: JournalViewModel
     
-    let isRegular: Bool
+    private var isRegular: Bool { horizontalSizeClass == .regular }
     
     var onOpenEditor: (Date) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if isRegular {
-                JournalContentsTabletHeader(
-                    viewModel: viewModel,
-                    onOpenEditor: onOpenEditor
-                )
-                .padding(.leading, JournalLayout.tabletGutter)
-                .padding(.trailing, JournalLayout.tabletHeaderTrailing)
+                JournalContentsTabletHeader(viewModel: viewModel, onOpenEditor: onOpenEditor)
+                    .padding(.leading, JournalLayout.tabletGutter)
+                    .padding(.trailing, JournalLayout.tabletHeaderTrailing)
             }
 
-            JournalSearchField(query: $viewModel.searchQuery, isActive: $viewModel.isSearchActive, isEnabled: false)
+            JournalSearchField(viewModel: viewModel, isEnabled: false)
                 .padding(.horizontal, isRegular ? JournalLayout.tabletGutter : JournalLayout.phoneGutter)
                 .padding(.top, 8)
 

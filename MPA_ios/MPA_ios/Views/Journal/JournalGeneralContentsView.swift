@@ -22,11 +22,8 @@ struct JournalGeneralContentsView: View {
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 JournalSearchField(
-                    query: $viewModel.searchQuery,
-                    isActive: $viewModel.isSearchActive,
+                    viewModel: viewModel,
                     isEnabled: true,
-                    height: 40,
-                    cornerRadius: 12,
                     onCancel: { viewModel.deactivateSearch() },
                     onSubmit: { viewModel.commitRecentSearch() }
                 )
